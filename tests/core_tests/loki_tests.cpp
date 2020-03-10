@@ -2060,6 +2060,19 @@ bool loki_name_system_update_mapping::generate(std::vector<test_event_entry> &ev
   }
   uint64_t register_height = gen.height();
 
+  loki_register_callback(events, "check_registered", [=](cryptonote::core &c, size_t ev_index)
+  {
+    DEFINE_TESTS_ERROR_CONTEXT("check_registered");
+    lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
+
+    std::string name_hash = lns::name_to_base64_hash(session_name1);
+    std::vector<lns::mapping_record> records = lns_db.get_mappings({static_cast<uint16_t>(lns::mapping_type::session)}, name_hash);
+
+    CHECK_EQ(records.size(), 1);
+    CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, records[0], lns::mapping_type::session, session_name1, miner_key.session_value, register_height, session_tx_hash1, {} /*prev_txid*/, miner_key.key, {} /*backup_owner*/));
+    return true;
+  });
+
   // Test update mapping with same name fails
   {
     cryptonote::transaction tx1 = gen.create_loki_name_system_tx_update(miner, lns::mapping_type::session, session_name1, &miner_key.session_value);
@@ -2110,7 +2123,8 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
     crypto_sign_ed25519_keypair(owner1.data, owner1_key.data);
     crypto_sign_ed25519_keypair(owner2.data, owner2_key.data);
 
-    std::string name = "Hello World";
+    std::string name      = "Hello World";
+    std::string name_hash = lns::name_to_base64_hash(name);
     cryptonote::transaction tx1 = gen.create_and_add_loki_name_system_tx(miner, lns::mapping_type::session, name, miner_key.session_value, &owner1, &owner2);
     gen.create_and_add_next_block({tx1});
     uint64_t height = gen.height();
@@ -2121,7 +2135,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
     {
       const char* perr_context = "check_update0";
       lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
-      lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name);
+      lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name_hash);
       CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, record, lns::mapping_type::session, name, miner_key.session_value, height, txid, prev_txid, owner1, owner2 /*backup_owner*/));
       return true;
     });
@@ -2131,7 +2145,8 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       lns_keys_t temp_keys = make_lns_keys(gen.add_account());
       crypto::generic_signature signature;
 
-      crypto::hash hash = lns::tx_extra_signature_hash(temp_keys.session_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
+      lns::mapping_value encrypted_value = helper_encrypt_lns_value(name, temp_keys.session_value);
+      crypto::hash hash = lns::tx_extra_signature_hash(encrypted_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
       crypto_sign_detached(signature.data, NULL, reinterpret_cast<unsigned char *>(hash.data), sizeof(hash), owner1_key.data);
 
       cryptonote::transaction tx2 = gen.create_and_add_loki_name_system_tx_update(miner, lns::mapping_type::session, name, &temp_keys.session_value, nullptr /*owner*/, nullptr /*backup_owner*/, &signature);
@@ -2143,7 +2158,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       {
         const char* perr_context = "check_update1";
         lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
-        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name);
+        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name_hash);
         CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, record, lns::mapping_type::session, name, temp_keys.session_value, height, txid, prev_txid, owner1, owner2 /*backup_owner*/));
         return true;
       });
@@ -2154,7 +2169,8 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       lns_keys_t temp_keys = make_lns_keys(gen.add_account());
       crypto::generic_signature signature;
 
-      crypto::hash hash = lns::tx_extra_signature_hash(temp_keys.session_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
+      lns::mapping_value encrypted_value = helper_encrypt_lns_value(name, temp_keys.session_value);
+      crypto::hash hash = lns::tx_extra_signature_hash(encrypted_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
       crypto_sign_detached(signature.data, NULL, reinterpret_cast<unsigned char *>(hash.data), sizeof(hash), owner2_key.data);
 
       cryptonote::transaction tx2 = gen.create_and_add_loki_name_system_tx_update(miner, lns::mapping_type::session, name, &temp_keys.session_value, nullptr /*owner*/, nullptr /*backup_owner*/, &signature);
@@ -2166,7 +2182,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       {
         const char* perr_context = "check_update2";
         lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
-        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name);
+        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name_hash);
         CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, record, lns::mapping_type::session, name, temp_keys.session_value, height, txid, prev_txid, owner1, owner2 /*backup_owner*/));
         return true;
       });
@@ -2184,6 +2200,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
     crypto::generate_keys(owner2.monero, owner2_key);
 
     std::string name            = "Hello Sailor";
+    std::string name_hash = lns::name_to_base64_hash(name);
     cryptonote::transaction tx1 = gen.create_and_add_loki_name_system_tx(miner, lns::mapping_type::session, name, miner_key.session_value, &owner1, &owner2);
     gen.create_and_add_next_block({tx1});
     uint64_t height        = gen.height();
@@ -2195,7 +2212,8 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       lns_keys_t temp_keys = make_lns_keys(gen.add_account());
       crypto::generic_signature signature;
 
-      crypto::hash hash = lns::tx_extra_signature_hash(temp_keys.session_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
+      lns::mapping_value encrypted_value = helper_encrypt_lns_value(name, temp_keys.session_value);
+      crypto::hash hash = lns::tx_extra_signature_hash(encrypted_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
       crypto::generate_signature(hash, owner1.monero, owner1_key, signature.monero);
 
       cryptonote::transaction tx2 = gen.create_and_add_loki_name_system_tx_update(miner, lns::mapping_type::session, name, &temp_keys.session_value, nullptr /*owner*/, nullptr /*backup_owner*/, &signature);
@@ -2207,7 +2225,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       {
         const char* perr_context = "check_update3";
         lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
-        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name);
+        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name_hash);
         CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, record, lns::mapping_type::session, name, temp_keys.session_value, height, txid, prev_txid, owner1, owner2 /*backup_owner*/));
         return true;
       });
@@ -2218,7 +2236,8 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       lns_keys_t temp_keys = make_lns_keys(gen.add_account());
       crypto::generic_signature signature;
 
-      crypto::hash hash = lns::tx_extra_signature_hash(temp_keys.session_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
+      lns::mapping_value encrypted_value = helper_encrypt_lns_value(name, temp_keys.session_value);
+      crypto::hash hash = lns::tx_extra_signature_hash(encrypted_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
       crypto::generate_signature(hash, owner2.monero, owner2_key, signature.monero);
 
       cryptonote::transaction tx2 = gen.create_and_add_loki_name_system_tx_update(miner, lns::mapping_type::session, name, &temp_keys.session_value, nullptr /*owner*/, nullptr /*backup_owner*/, &signature);
@@ -2230,7 +2249,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       {
         const char* perr_context = "check_update3";
         lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
-        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name);
+        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name_hash);
         CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, record, lns::mapping_type::session, name, temp_keys.session_value, height, txid, prev_txid, owner1, owner2 /*backup_owner*/));
         return true;
       });
@@ -2248,6 +2267,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
     crypto::generate_keys(owner2.monero, owner2_key);
 
     std::string name = "Hello Driver";
+    std::string name_hash = lns::name_to_base64_hash(name);
     cryptonote::transaction tx1 = gen.create_and_add_loki_name_system_tx(miner, lns::mapping_type::session, name, miner_key.session_value, &owner1, &owner2);
     gen.create_and_add_next_block({tx1});
     uint64_t height        = gen.height();
@@ -2259,7 +2279,8 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       lns_keys_t temp_keys = make_lns_keys(gen.add_account());
       crypto::generic_signature signature;
 
-      crypto::hash hash = lns::tx_extra_signature_hash(temp_keys.session_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
+      lns::mapping_value encrypted_value = helper_encrypt_lns_value(name, temp_keys.session_value);
+      crypto::hash hash = lns::tx_extra_signature_hash(encrypted_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
       crypto_sign_detached(signature.data, NULL, reinterpret_cast<unsigned char *>(hash.data), sizeof(hash), owner1_key.data);
 
       cryptonote::transaction tx2 = gen.create_and_add_loki_name_system_tx_update(miner, lns::mapping_type::session, name, &temp_keys.session_value, nullptr /*owner*/, nullptr /*backup_owner*/, &signature);
@@ -2271,7 +2292,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       {
         const char* perr_context = "check_update4";
         lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
-        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name);
+        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name_hash);
         CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, record, lns::mapping_type::session, name, temp_keys.session_value, height, txid, prev_txid, owner1, owner2 /*backup_owner*/));
         return true;
       });
@@ -2282,7 +2303,8 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       lns_keys_t temp_keys = make_lns_keys(gen.add_account());
       crypto::generic_signature signature;
 
-      crypto::hash hash = lns::tx_extra_signature_hash(temp_keys.session_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
+      lns::mapping_value encrypted_value = helper_encrypt_lns_value(name, temp_keys.session_value);
+      crypto::hash hash = lns::tx_extra_signature_hash(encrypted_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
       crypto::generate_signature(hash, owner2.monero, owner2_key, signature.monero);
 
       cryptonote::transaction tx2 = gen.create_and_add_loki_name_system_tx_update(miner, lns::mapping_type::session, name, &temp_keys.session_value, nullptr /*owner*/, nullptr /*backup_owner*/, &signature);
@@ -2294,7 +2316,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       {
         const char* perr_context = "check_update5";
         lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
-        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name);
+        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name_hash);
         CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, record, lns::mapping_type::session, name, temp_keys.session_value, height, txid, prev_txid, owner1, owner2 /*backup_owner*/));
         return true;
       });
@@ -2312,6 +2334,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
     crypto_sign_ed25519_keypair(owner2.data, owner2_key.data);
 
     std::string name = "Hello Passenger";
+    std::string name_hash = lns::name_to_base64_hash(name);
     cryptonote::transaction tx1 = gen.create_and_add_loki_name_system_tx(miner, lns::mapping_type::session, name, miner_key.session_value, &owner1, &owner2);
     gen.create_and_add_next_block({tx1});
     uint64_t height        = gen.height();
@@ -2323,7 +2346,8 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       lns_keys_t temp_keys = make_lns_keys(gen.add_account());
       crypto::generic_signature signature;
 
-      crypto::hash hash = lns::tx_extra_signature_hash(temp_keys.session_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
+      lns::mapping_value encrypted_value = helper_encrypt_lns_value(name, temp_keys.session_value);
+      crypto::hash hash = lns::tx_extra_signature_hash(encrypted_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
       crypto::generate_signature(hash, owner1.monero, owner1_key, signature.monero);
 
       cryptonote::transaction tx2 = gen.create_and_add_loki_name_system_tx_update(miner, lns::mapping_type::session, name, &temp_keys.session_value, nullptr /*owner*/, nullptr /*backup_owner*/, &signature);
@@ -2335,7 +2359,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       {
         const char* perr_context = "check_update6";
         lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
-        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name);
+        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name_hash);
         CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, record, lns::mapping_type::session, name, temp_keys.session_value, height, txid, prev_txid, owner1, owner2 /*backup_owner*/));
         return true;
       });
@@ -2346,7 +2370,8 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       lns_keys_t temp_keys = make_lns_keys(gen.add_account());
       crypto::generic_signature signature;
 
-      crypto::hash hash = lns::tx_extra_signature_hash(temp_keys.session_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
+      lns::mapping_value encrypted_value = helper_encrypt_lns_value(name, temp_keys.session_value);
+      crypto::hash hash = lns::tx_extra_signature_hash(encrypted_value.to_span(), nullptr /*owner*/, nullptr /*backup_owner*/, txid);
       crypto_sign_detached(signature.data, NULL, reinterpret_cast<unsigned char *>(hash.data), sizeof(hash), owner2_key.data);
 
       cryptonote::transaction tx2 = gen.create_and_add_loki_name_system_tx_update(miner, lns::mapping_type::session, name, &temp_keys.session_value, nullptr /*owner*/, nullptr /*backup_owner*/, &signature);
@@ -2358,7 +2383,7 @@ bool loki_name_system_update_mapping_multiple_owners::generate(std::vector<test_
       {
         const char* perr_context = "check_update7";
         lns::name_system_db const &lns_db = c.get_blockchain_storage().name_system_db();
-        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name);
+        lns::mapping_record const record = lns_db.get_mapping(lns::mapping_type::session, name_hash);
         CHECK_TEST_CONDITION(verify_lns_mapping_record(perr_context, record, lns::mapping_type::session, name, temp_keys.session_value, height, txid, prev_txid, owner1, owner2 /*backup_owner*/));
         return true;
       });
