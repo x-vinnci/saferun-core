@@ -1,3 +1,9 @@
+loki (8.1.4-2~ubuntu2004) focal; urgency=medium
+
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Fri, 27 Nov 2020 13:35:12 -0400
+
 loki (8.1.4-1~ubuntu2004) focal; urgency=medium
 
   [ Jason Rhinelander ]
