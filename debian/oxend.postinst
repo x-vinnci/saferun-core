@@ -1,0 +1,41 @@
+#!/bin/sh
+
+set -e
+
+if [ "$1" = configure ]; then
+    if ! getent passwd _oxen >/dev/null; then
+        # Rename an existing _loki -> _oxen user if it exists, otherwise create it
+        if getent passwd _loki >/dev/null; then
+            usermod --badnames --login _oxen _loki
+            if [ -d /var/lib/loki ]; then
+                ln -s loki /var/lib/oxen
+                ln -s loki /var/log/oxen
+            fi
+        else
+            adduser --force-badname --system --quiet --home /var/lib/oxen --group --gecos "Oxen node" _oxen
+        fi
+    fi
+
+    if ! getent group _oxen >/dev/null; then
+        if getent group _loki >/dev/null; then
+            groupmod --new-name _oxen _loki
+        else
+            addgroup --force-badname --system --quiet _oxen
+        fi
+    fi
+
+    # Make sure the _oxen user is part of the _oxen group
+    if ! id -Gn _oxen | grep -qw _oxen; then
+        adduser --force-badname --quiet _oxen _oxen
+    fi
+
+    mkdir -p /var/log/oxen
+    chown _oxen:_oxen /var/log/oxen
+
+    mkdir -p /var/lib/oxen
+    su -s /bin/sh _oxen -c "test -O /var/lib/oxen &&
+        test -G /var/lib/oxen" || \
+        chown _oxen:_oxen /var/lib/oxen
+fi
+
+#DEBHELPER#

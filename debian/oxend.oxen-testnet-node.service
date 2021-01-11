@@ -1,20 +1,20 @@
 [Unit]
-Description=Loki network node
+Description=Oxen network node
 After=network-online.target
 Before=loki-testnet-storage.service
 
 [Service]
-User=_loki
+User=_oxen
 Type=notify
 TimeoutStartSec=infinity
 WatchdogSec=5min
-WorkingDirectory=/var/lib/loki
+WorkingDirectory=/var/lib/oxen
 Restart=always
 RestartSec=5s
-ExecStart=/usr/bin/lokid --non-interactive --config-file /etc/loki/testnet.conf
+ExecStart=/usr/bin/oxend --non-interactive --config-file /etc/oxen/testnet.conf
 # Enable coloured daemon output:
 Environment=TERM=xterm
 
 [Install]
 WantedBy=multi-user.target
-
+Alias=loki-testnet-node.service
