@@ -1,0 +1,2 @@
+/usr/lib/*/oxen/libdevice_trezor.so.@LIBOXEN_VER@
+/usr/lib/*/oxen/libwallet.so.@LIBOXEN_VER@
