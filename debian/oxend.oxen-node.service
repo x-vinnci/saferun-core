@@ -4,7 +4,7 @@ After=network-online.target
 Before=loki-storage.service
 
 [Service]
-User=_oxen
+User=_loki
 Type=notify
 TimeoutStartSec=infinity
 WatchdogSec=5min
