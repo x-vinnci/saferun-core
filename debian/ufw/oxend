@@ -1,0 +1,4 @@
+[oxend]
+title=Oxen network daemon
+description=Oxen daemon for running a local node or service node
+ports=22022,22025,38156,38159/tcp
