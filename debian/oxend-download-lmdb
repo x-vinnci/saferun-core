@@ -19,7 +19,7 @@ fi
 
 if ! [ -e /var/lib/oxen/lmdb ]; then
     mkdir /var/lib/oxen/lmdb
-    chown _oxen:_oxen /var/lib/oxen/lmdb
+    chown _loki:_loki /var/lib/oxen/lmdb
 fi
 
 node_active=
@@ -54,7 +54,7 @@ fi
 
 curl "$1" >/var/lib/oxen/lmdb/data.mdb
 
-chown _oxen:_oxen /var/lib/oxen/lmdb/data.mdb
+chown _loki:_loki /var/lib/oxen/lmdb/data.mdb
 echo "Downloaded data.mdb:"
 ls -l --si /var/lib/oxen/lmdb/data.mdb
 
