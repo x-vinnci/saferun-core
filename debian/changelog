@@ -1,3 +1,186 @@
+oxen (8.1.5-1~ubuntu1804) bionic; urgency=medium
+
+  * Oxen rebrand
+
+  [ Sean Darcy ]
+  * new function for list stakes
+  * calls correctly
+  * Wallet2 list_current_stakes() implemented
+  * query locked stakes utilises list_current_stakes
+  * stub for wallet2_api.h method created
+  * implemented wallet api function
+  * removed address parameter
+  * Removed the address_info and subaddress parameters from create_stake_tx
+
+  [ Jason Rhinelander ]
+  * Remove obsolete JSON serialization
+  * Make static variable pack code less nasty
+  * Error when trying to sign using a watch-only wallet
+  * Fix encrypted connections in utils/lmq-rpc.py
+  * Print to stderr to not break `| jq .`
+  * Fix abort not actually aborting
+  * Fix loki-sn-keys ed25519 key restoration
+  * Ledger support updates
+  * Improve cli wallet output with Ledger
+  * Overhaul tx prefix comms; rename some overloaded methods
+  * GUI hardware wallet support
+  * Allow prompting for restore height for hw wallet
+  * Compilation fixes
+  * Remove mlsag generation
+  * Make RingCT and RangeProof types type-safe enum classes
+  * Fix LNS test in debug build
+  * Remove impossible code
+  * Reduce header use
+  * Remove epee::to_hex::formatted
+  * Split up and DRY Modernize and DRY ringct serialization tests
+  * Remove MLSAG generation
+  * Rename serialization test category for consistency
+  * Fix inconsistent indenting
+  * ringct tests: Update ringct type to CLSAG
+  * Fix CLSAG broken test
+  * Fix dumb parameters
+  * Fix ringct tests
+  * Add helpful message to error string
+
+  [ moneromooo-monero ]
+  * use memwipe on secret k/alpha values
+
+  [ Jason Rhinelander ]
+  * Remove epee scope handler from core code
+  * Remove Borromean generation
+  * Ledger: Remove obsolete MLSAG instruction
+  * Reformat length function signatures
+  * Ledger: Revise/fix/optimize data chunk transmission
+  * Clean up HW debug code
+  * Revert protocol version to 1
+  * Don't calculate CLSAG `c` on the device
+  * Add cmd response time to debugging log output
+  * Clean up more nasty C code
+  * Improve CMD debugging
+  * Code cleanups
+  * Switch version strings to string_view's
+  * Ledger: don't send nulls for no reason
+  * Improve crappy ledger C++ code
+  * Clean up how options get set with VALIDATE
+  * Fix buggy, wrong command IDs
+  * Use send_u32
+  * Remove long-done TODO
+  * Fix awful random scalar generating code
+  * fix
+  * C++ code nastiness cleanups
+  * Fix keccak include
+  * Annotate and split up ring signature code
+  * Add random_scalar returning function
+  * Improve crypto test code
+  * Fix: annotate and split up
+  * Move key image signature generation into device
+  * Add tx secret key via device layer
+  * Remove nonce (replace with 0) from stake unlock
+  * De-inline LNS methods
+  * Move txversion/txtype outside of cryptonote_basic.h
+  * Ledger: Add stake unlock signature support
+  * Fix extracted txversion/txtype
+  * Move LNS signature generation into device code
+  * Fix key image signature instruction code
+  * Revert wallet-side clsag c generation
+  * Remove "wrong account index" from error message
+
+  [ Sean Darcy ]
+  * removed redundant loop on locked stakes
+
+  [ Jason Rhinelander ]
+  * Properly display SW_WRONG_LENGTH errors
+  * Cleanups
+  * Add missing <vector> header
+  * Disable uninitialized value warning in jh.c
+  * De-inline cryptonote_basic
+  * Replace `keypair::generate` with a `keypair` constructor taking a hwdev
+  * Remove pre-HF16 CLSAG check and gen CLSAG txes in core test
+  * Minor code cleanup
+  * Rename hw::reset_mode to hw::mode_resetter
+  * Reset mode after making LNS signature
+  * Stake unlock: catch and show exceptions properly
+  * Add debugging to SN vote disallowing
+  * Test suite: add big junk tx generator
+  * Test fix: confirm SNs before adding a dereg
+  * Test fixes for old tx construction removal
+  * Make hf table generation non-sequential
+  * Fix some stake unlock wallet_api code compilation problems
+  * Remove dead LSR values
+  * Make `deferred` properly movable
+  * Test suite: add tx version hack and remove broken tests
+  * Fix multisig tests: switch to CLSAG txes
+  * Remove invalid Borromean test case
+  * Annotate and fix double spend test
+  * Fix the staking requirement test
+  * Don't invoke cryptonote_core functions from device code
+  * Inline get_unlock_time to resolve build dep issue
+  * Compilation fixes for windows/mobile
+
+  [ Sean Darcy ]
+  * Clean up stake pending api call
+
+  [ Jason Rhinelander ]
+  * Change stake amounts to uint64_t's
+  * Fix Monero P2P remote DOS
+  * Update electron wallet filename
+  * Fix cli wallet on Windows not saving properly
+
+  [ Sean Darcy ]
+  * Replaces check for in sync with is close to being synced
+
+  [ Jason Rhinelander ]
+  * Combine is_synced/is_close_to_synced
+  * Add optional stake amount calculation to rpc
+  * Remove all but the wallet2_api header for ios
+  * Add 'include' & 'lib' dirs into android deps archive
+  * builds.lokinet.dev -> oxen.rocks
+  * Fix android tarfile creation
+  * Update dependencies to latest stable versions
+
+  [ Sean Darcy ]
+  * initial loki -> oxen pass
+  * compiles
+  * executable names changed
+  * lokinet revert
+  * previously used an old monero log version
+  * Drone static upload still looking for loki executables
+  * tests
+  * ascii art
+  * straighten ascii
+  * poor grammar
+  * handle .loki directory, leave .loki namespace
+
+  [ Jason Rhinelander ]
+  * Change Jason.oxen -> Blocks.loki in lmq lookup example script
+  * Update default ipc socket in lmq-rpc.py
+  * Change Loki startup message from green -> cyan
+  * Revert .oxen back to .loki in lns unit tests
+  * Add some color in main.cpp before log init
+  * Rename loki.conf -> oxen.conf when appropriate
+
+  [ Sean Darcy ]
+  * default directory migration, .loki -> .oxen moved to .main
+  * make lokid.sock and move the .oxen folder migration to before logs initialise folder
+  * line break
+  * oxen name system back to passing tests
+
+  [ Jason Rhinelander ]
+  * Eliminate tools::create_directories_if_necessary
+  * Config file migration fixes
+  * Bump version to 8.1.5
+  * Fix a couple missed .oxen LNS suffixes
+  * Disable Trezor by default
+  * Remove protobuf from deps list
+  * Export symbols and strip debug symbols from android static lib
+  * Remove mining-related functions from wallet api
+  * Make ios static lib match android static lib name
+  * Disable android x86 build
+  * Rediff patches
+  * Debian packaging for oxen rename
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 11 Jan 2021 15:23:44 -0400
+
 loki (8.1.4-2~ubuntu1804) bionic; urgency=medium
 
   * Rediff patches
