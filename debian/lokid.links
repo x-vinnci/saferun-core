@@ -1,0 +1,3 @@
+/usr/bin/oxend /usr/bin/lokid
+/usr/bin/oxen-sn-keys /usr/bin/loki-sn-keys
+/usr/bin/oxend-download-lmdb /usr/bin/lokid-download-lmdb
