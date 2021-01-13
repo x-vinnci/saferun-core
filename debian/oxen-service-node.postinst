@@ -2,6 +2,8 @@
 
 set -e
 
+restart_oxend=
+
 if [ "$1" = configure ]; then
     . /usr/share/debconf/confmodule
     db_get oxen-service-node/ip-address
@@ -34,6 +36,8 @@ if [ "$1" = configure ]; then
     sed -i '/^service-node-public-ip=/{h;s/=.*/='"$IP"'/};${x;/^$/{s//service-node-public-ip='"$IP"'/;H};x}' \
         ${tmpdir}/oxen.conf ${tmpdir}/testnet.conf
 
+    orig_md5=$(md5sum /etc/oxen/{oxen,testnet}.conf 2>/dev/null || true)
+
     for x in oxen.conf testnet.conf; do
         if ! [ -f /etc/oxen/$x ]; then
             mv ${tmpdir}/$x /etc/oxen/$x
@@ -49,18 +53,21 @@ if [ "$1" = configure ]; then
         # NB: also purge in postrm
         ucfr oxen-service-node /etc/oxen/$conf
     done
+
+    # If we updated config files then we need to make sure oxend restarts below.
+    if [ "$(md5sum /etc/oxen/{oxen,testnet}.conf 2>/dev/null || true)" != "$orig_main_md5" ]; then
+        restart_oxend=1
+    fi
 fi
 
 #DEBHELPER#
 
 # Debhelper doesn't do this here because the oxen-service-node package doesn't contain the service files:
 if [ "$1" = "configure" ] || [ "$1" = "abort-upgrade" ] || [ "$1" = "abort-deconfigure" ] || [ "$1" = "abort-remove" ] ; then
-    if [ -d /run/systemd/system ]; then
+    if [ -d /run/systemd/system ] && [ -n "$restart_oxend" ]; then
         systemctl --system daemon-reload >/dev/null || true
-        action=start
-        if [ -n "$2" ]; then action=restart; fi
         for s in oxen-node oxen-testnet-node; do
-            deb-systemd-invoke $action $s.service >/dev/null || true
+            deb-systemd-invoke restart $s.service || true
         done
     fi
 fi
