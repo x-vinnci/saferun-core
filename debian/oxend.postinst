@@ -37,11 +37,9 @@ if [ "$1" = configure ]; then
     # oxen-node enabled status so that the new oxen-node.service file ends up in the right state
     # (i.e. not enabled if loki-node.service wasn't enabled).
     if [ -z "$2" ] && [ -f /var/lib/dpkg/info/lokid.list ]; then
-        lokid_restart=""
         for s in node.service testnet-node.service; do
             if deb-systemd-helper --quiet was-enabled "loki-$s"; then
                 deb-systemd-helper enable "oxen-$s"
-                lokid_restart="$lokid_restart oxen-$s"
             else
                 deb-systemd-helper disable "oxen-$s"
             fi
@@ -50,12 +48,3 @@ if [ "$1" = configure ]; then
 fi
 
 #DEBHELPER#
-
-if [ -n "$lokid_restart" ]; then
-    # The dh_installsystemd script above only tries a restart on upgrades, but since we are doing
-    # the loki -> oxen rename on the service, it isn't an upgrade on a new oxend package
-    # installation and so it only tries a start, rather than restart, but this is a no-op when the
-    # (old) loki-node.service is already running, so force the restart here on such an upgrade.
-    echo "LOKI -> OXEN migration detected; restarting $lokid_restart"
-    deb-systemd-invoke restart $lokid_restart >/dev/null || true
-fi
