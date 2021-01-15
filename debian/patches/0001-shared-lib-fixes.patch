@@ -1,8 +1,8 @@
 From: Jason Rhinelander <jason@imaginary.ca>
 Date: Sun, 5 May 2019 01:27:17 -0300
-Subject: Make loki build and install shared libs
+Subject: Make oxen build and install shared libs
 
-Patch the loki cmake files to properly build and install shared libs.
+Patch the oxen cmake files to properly build and install shared libs.
 ---
  CMakeLists.txt              | 17 +++++++++++++++--
  contrib/epee/CMakeLists.txt |  6 ++++++
@@ -11,7 +11,7 @@ Patch the loki cmake files to properly build and install shared libs.
  4 files changed, 33 insertions(+), 4 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f3123f5..e1af614 100644
+index f3123f5..f71016d 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -44,7 +44,7 @@ if(CCACHE_PROGRAM)
@@ -38,15 +38,15 @@ index f3123f5..e1af614 100644
    endif()
  endif()
  
-+set(lokilibs epee blockchain_db checkpoints common cncrypto cryptonote_basic
++set(oxenlibs epee blockchain_db checkpoints common cncrypto cryptonote_basic
 +        cryptonote_core cryptonote_protocol device device_trezor lmdb_lib mnemonics
 +        multisig net p2p ringct_basic ringct
 +        rpc_server_base rpc rpc_http_client rpc_commands daemon_rpc_server
 +        wallet easylogging lmdb randomx blocks version)
-+install(TARGETS ${lokilibs}
++install(TARGETS ${oxenlibs}
 +    ARCHIVE DESTINATION lib${OXEN_INSTALL_LIBDIR_SUFFIX}
 +    LIBRARY DESTINATION lib${OXEN_INSTALL_LIBDIR_SUFFIX})
-+set_target_properties(${lokilibs} PROPERTIES
++set_target_properties(${oxenlibs} PROPERTIES
 +    VERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}.${PROJECT_VERSION_PATCH}")
 +
  find_package(PythonInterp)
@@ -63,19 +63,19 @@ index 2af962a..c7a707a 100644
 +
 +install(
 +    DIRECTORY include/
-+    DESTINATION include${OXEN_INSTALL_INCLUDEDIR_SUFFIX}
++    DESTINATION include${LOKI_INSTALL_INCLUDEDIR_SUFFIX}
 +    COMPONENT development
 +    FILES_MATCHING PATTERN "*.h" PATTERN "*.inl")
 diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
-index 7a90f57..366f42d 100644
+index cadafd0..92ebd45 100644
 --- a/external/CMakeLists.txt
 +++ b/external/CMakeLists.txt
 @@ -73,7 +73,7 @@ endif()
  
  
  if(NOT LOKIMQ_FOUND)
--  message(STATUS "Using in-tree lokimq")
-+  message(FATAL_ERROR "Using in-tree lokimq")
+-  message(STATUS "Using in-tree oxenmq")
++  message(FATAL_ERROR "Refusing to use in-tree oxenmq in a deb build")
    if (DEPENDS)
      # The depends system builds a static libzmq so set up a target loki-mq can use to avoid building
      add_library(libzmq STATIC IMPORTED GLOBAL)
@@ -85,7 +85,7 @@ index 7a90f57..366f42d 100644
  
 +install(
 +  DIRECTORY boost
-+  DESTINATION include${OXEN_INSTALL_INCLUDEDIR_SUFFIX}
++  DESTINATION include${LOKI_INSTALL_INCLUDEDIR_SUFFIX}
 +  COMPONENT   development
 +  FILES_MATCHING PATTERN "*.hpp")
 +
@@ -111,5 +111,5 @@ index e664856..4cc2df9 100644
 +
 +install(
 +    DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}/"
-+    DESTINATION "include${OXEN_INSTALL_INCLUDEDIR_SUFFIX}"
++    DESTINATION "include${LOKI_INSTALL_INCLUDEDIR_SUFFIX}"
 +    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
