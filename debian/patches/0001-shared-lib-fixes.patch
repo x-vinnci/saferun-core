@@ -53,7 +53,7 @@ index f3123f5..f71016d 100644
  find_program(iwyu_tool_path NAMES iwyu_tool.py iwyu_tool)
  if (iwyu_tool_path AND PYTHONINTERP_FOUND)
 diff --git a/contrib/epee/CMakeLists.txt b/contrib/epee/CMakeLists.txt
-index 2af962a..c7a707a 100644
+index 2af962a..d52baa5 100644
 --- a/contrib/epee/CMakeLists.txt
 +++ b/contrib/epee/CMakeLists.txt
 @@ -28,3 +28,9 @@
@@ -67,7 +67,7 @@ index 2af962a..c7a707a 100644
 +    COMPONENT development
 +    FILES_MATCHING PATTERN "*.h" PATTERN "*.inl")
 diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
-index cadafd0..92ebd45 100644
+index cadafd0..2d5fc48 100644
 --- a/external/CMakeLists.txt
 +++ b/external/CMakeLists.txt
 @@ -57,7 +57,7 @@ elseif(MINIUPNPC_FOUND)
@@ -102,7 +102,7 @@ index cadafd0..92ebd45 100644
  # ourselves.
  if (NOT CMAKE_VERSION VERSION_LESS 3.12)
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index e664856..4cc2df9 100644
+index e664856..ae4460c 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
 @@ -58,7 +58,6 @@ function (oxen_add_executable target binary)
