@@ -16,7 +16,7 @@ if [ "$1" = configure ]; then
         adduser --force-badname --quiet _loki _loki
     fi
 
-    # Create and chown /var/{lib,log}/loki
+    # Create and chown /var/{lib,log}/oxen
     for d in lib log; do
         if ! [ -d /var/$d/oxen ]; then
             if [ -d /var/$d/loki ]; then
@@ -31,6 +31,12 @@ if [ "$1" = configure ]; then
             test -G /var/$d/oxen" || \
             chown _loki:_loki /var/$d/oxen
     done
+
+    # Make /var/lib/loki -> oxen compatibility symlink (lokinet, at least, still depends on
+    # this)
+    if ! [ -d /var/lib/loki ] && ! [ -h /var/lib/loki ] && [ -d /var/lib/oxen ]; then
+        ln -s oxen /var/$d/loki
+    fi
 
     # If this is a new install then see if we also have a lokid package installed: if so then we
     # have to deal with the service rename by copying the loki-node enabled status into the
