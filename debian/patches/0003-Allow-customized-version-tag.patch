@@ -7,7 +7,7 @@ Subject: Allow customized version tag
  1 file changed, 4 insertions(+), 1 deletion(-)
 
 diff --git a/cmake/Version.cmake b/cmake/Version.cmake
-index 7d7a927..fb124fd 100644
+index 7d7a927..04311ad 100644
 --- a/cmake/Version.cmake
 +++ b/cmake/Version.cmake
 @@ -32,7 +32,10 @@ function (write_static_version_header hash)
