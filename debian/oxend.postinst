@@ -35,7 +35,7 @@ if [ "$1" = configure ]; then
     # Make /var/lib/loki -> oxen compatibility symlink (lokinet, at least, still depends on
     # this)
     if ! [ -d /var/lib/loki ] && ! [ -h /var/lib/loki ] && [ -d /var/lib/oxen ]; then
-        ln -s oxen /var/$d/loki
+        ln -s oxen /var/lib/loki
     fi
 
     # If this is a new install then see if we also have a lokid package installed: if so then we
