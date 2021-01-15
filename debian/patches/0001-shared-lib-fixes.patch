@@ -63,7 +63,7 @@ index 2af962a..c7a707a 100644
 +
 +install(
 +    DIRECTORY include/
-+    DESTINATION include${LOKI_INSTALL_INCLUDEDIR_SUFFIX}
++    DESTINATION include${OXEN_INSTALL_INCLUDEDIR_SUFFIX}
 +    COMPONENT development
 +    FILES_MATCHING PATTERN "*.h" PATTERN "*.inl")
 diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
@@ -94,7 +94,7 @@ index cadafd0..92ebd45 100644
  
 +install(
 +  DIRECTORY boost
-+  DESTINATION include${LOKI_INSTALL_INCLUDEDIR_SUFFIX}
++  DESTINATION include${OXEN_INSTALL_INCLUDEDIR_SUFFIX}
 +  COMPONENT   development
 +  FILES_MATCHING PATTERN "*.hpp")
 +
@@ -120,5 +120,5 @@ index e664856..4cc2df9 100644
 +
 +install(
 +    DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}/"
-+    DESTINATION "include${LOKI_INSTALL_INCLUDEDIR_SUFFIX}"
++    DESTINATION "include${OXEN_INSTALL_INCLUDEDIR_SUFFIX}"
 +    FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp")
