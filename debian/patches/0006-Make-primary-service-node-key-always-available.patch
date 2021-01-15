@@ -1,0 +1,26 @@
+From: Jason Rhinelander <jason@imaginary.ca>
+Date: Fri, 15 Jan 2021 16:10:51 -0400
+Subject: Make primary service node key always available
+
+Not having it available is a huge nuissance for debs because we can end
+up in a situation where lokinet or loki-storage-server wants to start up
+and get keys from lokid, but lokid hasn't yet been reconfigured into
+service node mode.  This makes the primary keys always available to
+simplify that greatly.
+---
+ src/cryptonote_core/cryptonote_core.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/cryptonote_core/cryptonote_core.cpp b/src/cryptonote_core/cryptonote_core.cpp
+index 0dde86e..a049244 100644
+--- a/src/cryptonote_core/cryptonote_core.cpp
++++ b/src/cryptonote_core/cryptonote_core.cpp
+@@ -928,7 +928,7 @@ namespace cryptonote
+     // backwards compatibility with existing active service nodes.)  The legacy key consists of
+     // *just* the private point, but not the seed, and so cannot be used for full Ed25519 signatures
+     // (which rely on the seed for signing).
+-    if (m_service_node) {
++    if (true || m_service_node) {
+       if (std::error_code ec; !fs::exists(m_config_folder / "key", ec)) {
+         epee::wipeable_string privkey_signhash;
+         privkey_signhash.resize(crypto_hash_sha512_BYTES);
