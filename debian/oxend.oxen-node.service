@@ -17,4 +17,3 @@ Environment=TERM=xterm
 
 [Install]
 WantedBy=multi-user.target
-Alias=loki-node.service
