@@ -43,13 +43,20 @@ if [ "$1" = configure ]; then
     # oxen-node enabled status so that the new oxen-node.service file ends up in the right state
     # (i.e. not enabled if loki-node.service wasn't enabled).
     if [ -z "$2" ] && [ -f /var/lib/dpkg/info/lokid.list ]; then
-        for s in node.service testnet-node.service; do
-            if deb-systemd-helper --quiet was-enabled "loki-$s"; then
-                deb-systemd-helper enable "oxen-$s"
-            else
-                deb-systemd-helper disable "oxen-$s"
-            fi
-        done
+        # Enabled by default, so disable if the old one was not enabled:
+        if ! deb-systemd-helper --quiet was-enabled loki-node.service; then
+            # The enable-disable is a bit weird, but the first "d-s-h enable" call does
+            # initialization so we have to flip it on and off again to make d-s-h realize that it
+            # was explicitly disabled when it tries to call d-s-h enable again in the automatic
+            # debhelper scripts, below:
+            deb-systemd-helper enable oxen-node.service
+            deb-systemd-helper disable oxen-node.service
+        fi
+
+        # Disabled by default, so enable only if the old one was enabled:
+        if deb-systemd-helper --quiet was-enabled loki-testnet-node.service; then
+            deb-systemd-helper enable oxen-testnet-node.service
+        fi
     fi
 fi
 
