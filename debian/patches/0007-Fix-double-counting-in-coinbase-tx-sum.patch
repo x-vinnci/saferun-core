@@ -1,0 +1,66 @@
+From: Jason Rhinelander <jason@imaginary.ca>
+Date: Fri, 19 Feb 2021 02:42:50 -0400
+Subject: Fix double-counting in coinbase tx sum
+
+The coinbase tx sum rpc call had an off-by-one error that made it
+double-count a block the first time it was reloaded at any height.  This
+caused the deviation of oxen.observer and lokiblocks.com emissions
+counts (because one is being called more frequently than the other), and
+caused *both* to grow too quickly over time.
+---
+ src/blockchain_db/blockchain_db.h       |  2 +-
+ src/cryptonote_core/cryptonote_core.cpp | 10 +++++-----
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+diff --git a/src/blockchain_db/blockchain_db.h b/src/blockchain_db/blockchain_db.h
+index 682357b..7d6f038 100644
+--- a/src/blockchain_db/blockchain_db.h
++++ b/src/blockchain_db/blockchain_db.h
+@@ -1711,7 +1711,7 @@ public:
+    * not found.  Current implementations simply return false.
+    *
+    * @param h1 the start height
+-   * @param h2 the end height
++   * @param h2 the end height (inclusive)
+    * @param std::function fn the function to run
+    *
+    * @return false if the function returns false for any block, otherwise true
+diff --git a/src/cryptonote_core/cryptonote_core.cpp b/src/cryptonote_core/cryptonote_core.cpp
+index a049244..3d678e0 100644
+--- a/src/cryptonote_core/cryptonote_core.cpp
++++ b/src/cryptonote_core/cryptonote_core.cpp
+@@ -1695,7 +1695,7 @@ namespace cryptonote
+           emission_amount = m_coinbase_cache.emissions;
+           total_fee_amount = m_coinbase_cache.fees;
+           burnt_oxen = m_coinbase_cache.burnt;
+-          start_offset = m_coinbase_cache.height;
++          start_offset = m_coinbase_cache.height + 1;
+           count -= m_coinbase_cache.height;
+         }
+         // else don't change anything; we need a subset of blocks that ends before the cache.
+@@ -1712,12 +1712,12 @@ namespace cryptonote
+         if (m_coinbase_cache.building)
+           return std::nullopt; // Another thread is already updating the cache
+ 
+-        if (m_coinbase_cache.height > start_offset) {
++        if (m_coinbase_cache.height >= start_offset) {
+           // Someone else updated the cache while we were acquiring the unique lock, so update our variables
+           if (m_coinbase_cache.height >= start_offset + count) {
+             // The cache is now *beyond* us, which means we can't use it, so reset start/count back
+             // to what they were originally.
+-            count += start_offset;
++            count += start_offset - 1;
+             start_offset = 0;
+             cache_to = 0;
+           } else {
+@@ -1725,8 +1725,8 @@ namespace cryptonote
+             emission_amount = m_coinbase_cache.emissions;
+             total_fee_amount = m_coinbase_cache.fees;
+             burnt_oxen = m_coinbase_cache.burnt;
+-            count -= m_coinbase_cache.height - start_offset;
+-            start_offset = m_coinbase_cache.height;
++            count -= m_coinbase_cache.height - start_offset + 1;
++            start_offset = m_coinbase_cache.height + 1;
+           }
+         }
+         if (cache_to > 0 && count > CACHE_EXCLUSIVE) {
