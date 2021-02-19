@@ -1,8 +1,9 @@
 oxen (8.1.5-2) unstable; urgency=medium
 
+  * Fix double-counting in coinbase tx sum
   * Update randomx with arm64 bugfix
 
- -- Jason Rhinelander <jason@imaginary.ca>  Sat, 13 Feb 2021 21:04:32 -0400
+ -- Jason Rhinelander <jason@imaginary.ca>  Fri, 19 Feb 2021 02:55:05 -0400
 
 oxen (8.1.5-1) unstable; urgency=medium
 
