@@ -1,3 +1,9 @@
+oxen (8.1.5-2~ubuntu2010) groovy; urgency=medium
+
+  * Fix double-counting in coinbase tx sum
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Fri, 19 Feb 2021 02:55:44 -0400
+
 oxen (8.1.5-1~ubuntu2010) groovy; urgency=medium
 
   * Oxen rebrand
