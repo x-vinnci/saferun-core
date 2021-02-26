@@ -51,7 +51,7 @@ message(STATUS "CMake version ${CMAKE_VERSION}")
 set(CMAKE_OSX_DEPLOYMENT_TARGET 10.12 CACHE STRING "macOS deployment target (Apple clang only)")
 
 project(oxen
-    VERSION 8.1.5
+    VERSION 8.1.6
     LANGUAGES CXX C)
   set(OXEN_RELEASE_CODENAME "Salty Saga")
 
@@ -984,8 +984,9 @@ add_custom_target(strip_binaries_all ${strip_binaries_all} DEPENDS ${oxen_exec_t
 execute_process(COMMAND tar --version RESULT_VARIABLE tar_exit_code OUTPUT_VARIABLE tar_vers)
 set(git_tag "-unknown")
 if(GIT_FOUND)
-  execute_process(COMMAND "${GIT_EXECUTABLE}" rev-parse --abbrev-ref HEAD RESULT_VARIABLE ret OUTPUT_VARIABLE branch OUTPUT_STRIP_TRAILING_WHITESPACE)
-  if(NOT ret AND branch STREQUAL "stable")
+  execute_process(COMMAND "${GIT_EXECUTABLE}" rev-parse HEAD RESULT_VARIABLE ret OUTPUT_VARIABLE curr_commit OUTPUT_STRIP_TRAILING_WHITESPACE)
+  execute_process(COMMAND "${GIT_EXECUTABLE}" rev-parse stable RESULT_VARIABLE ret2 OUTPUT_VARIABLE stable_commit OUTPUT_STRIP_TRAILING_WHITESPACE)
+  if(NOT ret AND NOT ret2 AND curr_commit STREQUAL "${stable_commit}")
     # Get the tag description; for a tagged release this will be just the tag (v1.2.3); for
     # something following a tag this will be something like "v1.2.3-2-abcdef" for something 2
     # commits beyond the tag, currently at commit "abcdef".
