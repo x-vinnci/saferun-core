@@ -1,3 +1,15 @@
+oxen (8.1.6-1~ubuntu2010) groovy; urgency=medium
+
+  * Fix tagged builds file naming
+  * Add SN rewards to miner block, even if 0
+  * Make a 8.1.6 release
+  * Fix double-counting in coinbase tx sum
+  * Make sure we don't skip block 0
+  * Add scary warnings before revealing seed/spendkey
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Fri, 26 Feb 2021 14:26:39 -0400
+
 oxen (8.1.5-2~ubuntu2010) groovy; urgency=medium
 
   * Fix double-counting in coinbase tx sum
