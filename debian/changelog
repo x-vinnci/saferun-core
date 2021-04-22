@@ -1,4 +1,10 @@
-oxen (9.1.0-1) unstable; urgency=medium
+oxen (9.1.0-1~deb11) bullseye; urgency=medium
+
+  * Add bullseye deb
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Thu, 22 Apr 2021 14:24:59 -0300
+
+oxen (9.1.0-0) unstable; urgency=medium
 
   [ Sean Darcy ]
   * Replaces check for in sync with is close to being synced
