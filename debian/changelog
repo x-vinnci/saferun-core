@@ -1,3 +1,9 @@
+oxen (9.1.0-1~ubuntu2104) hirsute; urgency=medium
+
+  * Add hirsute debs
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Thu, 22 Apr 2021 14:23:48 -0300
+
 oxen (9.1.0-1~ubuntu2010) groovy; urgency=medium
 
   [ Sean Darcy ]
