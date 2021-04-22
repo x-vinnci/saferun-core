@@ -4,7 +4,7 @@ local distro_docker = 'ubuntu:hirsute';
 
 local apt_get_quiet = 'apt-get -o=Dpkg::Use-Pty=0 -q';
 
-local repo_suffix = '/'; // can be /beta or /staging for non-primary repo deps
+local repo_suffix = '/staging'; // can be /beta or /staging for non-primary repo deps
 
 local submodules_commands = ['git fetch --tags', 'git submodule update --init --recursive --depth=1'];
 local submodules = {
