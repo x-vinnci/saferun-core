@@ -11,7 +11,7 @@ Patch the oxen cmake files to properly build and install shared libs.
  4 files changed, 34 insertions(+), 5 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 02f3615..413a6fa 100644
+index b4424ce..e3e543c 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -44,7 +44,7 @@ if(CCACHE_PROGRAM)
@@ -34,7 +34,7 @@ index 02f3615..413a6fa 100644
  
  if(APPLE)
    include_directories(SYSTEM /usr/include/malloc)
-@@ -948,6 +950,17 @@ if(BUILD_DOCUMENTATION)
+@@ -943,6 +945,17 @@ if(BUILD_DOCUMENTATION)
    endif()
  endif()
  
@@ -67,7 +67,7 @@ index 2af962a..d52baa5 100644
 +    COMPONENT development
 +    FILES_MATCHING PATTERN "*.h" PATTERN "*.inl")
 diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
-index cadafd0..2d5fc48 100644
+index 83459f0..44a03cd 100644
 --- a/external/CMakeLists.txt
 +++ b/external/CMakeLists.txt
 @@ -57,7 +57,7 @@ elseif(MINIUPNPC_FOUND)
