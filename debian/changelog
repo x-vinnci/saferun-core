@@ -1,3 +1,259 @@
+oxen (9.1.0-1~deb10) buster; urgency=medium
+
+  [ Sean Darcy ]
+  * Replaces check for in sync with is close to being synced
+  * quorumnet message for timestamp requests
+  * bump to 9.0.0
+  * min version, delay testnet hardfork
+  * hardfork hardcoded
+
+  [ Jason Rhinelander ]
+  * Fix Monero P2P remote DOS
+
+  [ Sean Darcy ]
+  * initial loki -> oxen pass
+  * compiles
+  * executable names changed
+  * lokinet revert
+  * previously used an old monero log version
+  * Drone static upload still looking for loki executables
+  * tests
+  * ascii art
+  * straighten ascii
+  * poor grammar
+
+  [ Jason Rhinelander ]
+  * Add optional stake amount calculation to rpc
+
+  [ Sean Darcy ]
+  * handle .loki directory, leave .loki namespace
+
+  [ Jason Rhinelander ]
+  * Remove all but the wallet2_api header for ios
+  * Add 'include' & 'lib' dirs into android deps archive
+  * builds.lokinet.dev -> oxen.rocks
+  * Update electron wallet filename
+  * Change Jason.oxen -> Blocks.loki in lmq lookup example script
+  * Update default ipc socket in lmq-rpc.py
+  * Change Loki startup message from green -> cyan
+  * Revert .oxen back to .loki in lns unit tests
+  * Add some color in main.cpp before log init
+  * Rename loki.conf -> oxen.conf when appropriate
+  * Update dependencies to latest stable versions
+
+  [ Sean Darcy ]
+  * default directory migration, .loki -> .oxen moved to .main
+
+  [ Jason Rhinelander ]
+  * Fix cli wallet on Windows not saving properly
+
+  [ Sean Darcy ]
+  * make lokid.sock and move the .oxen folder migration to before logs initialise folder
+  * line break
+  * oxen name system back to passing tests
+
+  [ Jason Rhinelander ]
+  * Combine is_synced/is_close_to_synced
+  * Eliminate tools::create_directories_if_necessary
+  * Config file migration fixes
+  * Fix android tarfile creation
+  * Fix a couple missed .oxen LNS suffixes
+  * Fix another potential windows rename failure
+  * Rename lokimq -> oxenmq
+  * Fix oxenmq link lib in epee
+
+  [ Sean Darcy ]
+  * need to setup the amount() to return the correct staked amount
+  * call the staking transferred function if available rather than returning amount
+  * wallet api to have hardfork version
+  * update gitmodules for randomxl
+  * update loki-mq
+  * clear unused variable error in simplewallet
+
+  [ Alex Opie ]
+  * Initialise m_should_use_bootstrap_daemon
+  * Always close the wallet the same way, and safely
+  * Drop log level of wallet-closing logs
+
+  [ Sean Darcy ]
+  * Added versions for SS and lokinet to be saved to core, generate_uptime_proof adds them to the proof
+  * Serialize the uptime proof using btencoding
+  * RPC to return SS and lokinet versions, renaming variables
+  * shorten wire names
+
+  [ Jason Rhinelander ]
+  * Update randomx with arm64 patch
+  * Fix main exceptions resulting in no output
+  * Fix exception when given a relative --log-file
+  * Fix removed/deprecated options
+  * Add SN rewards to miner block, even if 0
+  * Fix double-counting in coinbase tx sum
+  * Make sure we don't skip block 0
+  * Add scary warnings before revealing seed/spendkey
+  * Fix lock time calculation
+
+  [ Chris Buccella ]
+  * Fix URL in the wallet welcome message
+
+  [ Jason Rhinelander ]
+  * Fix lokimq -> oxenmq namespace that crept in
+
+  [ Chris Buccella ]
+  * Update contribution rules: Monero -> Oxen
+
+  [ Sean ]
+  * bump HF versions (#1420)
+
+  [ Jason Rhinelander ]
+  * Switch out unmaintained testnet seed node
+  * Tweak uptime proof times; reduce times for testnet
+  * Avoid calling get_net_config() too early
+  * Disable upnp router poking by default
+
+  [ Sean Darcy ]
+  * Test suite fix for HF18
+  * added new reason field to status change
+  * start testing for reason
+  * reason bitmask
+  * moved bitmask processing to if the testing failed
+  * reason field in tx_extra serialised
+  * tests to pass in 0 for reason
+  * build the reasons into the dereg transaction
+  * serializing and deserializing obligation votes
+  * add new decommision reasons from time sync PR
+  * enumeration
+
+  [ Jason Rhinelander ]
+  * Retrofit versioning to state change serialization
+
+  [ Sean Darcy ]
+  * print reason for decommission
+  * enum type
+  * Add multiple decommission reasons to output.
+
+  [ Jason Rhinelander ]
+  * Add state_change compilation in test suite
+  * Invert and/or logic for reason codes
+  * Expose reasons in rpc tx_extra details
+  * Show decomm reasons in `oxend status`
+  * Fix RPC to return coded strings, not readable; shorten codes
+
+  [ Chris Buccella ]
+  * Add oxend Dockerfile and build script
+
+  [ Sean Darcy ]
+  * Test suite fix for HF18
+
+  [ Jason Rhinelander ]
+  * Make print_sn_status more compact
+  * Current Status: ACTIVE; fallback to any (or no) reasons
+  * Move Current Status to the bottom of the status list
+  * Show both all & some reasons
+  * Clean up unused/unmaintained contrib and utils
+
+  [ Joshalosh ]
+  * Fix up most loki links to point to oxen
+
+  [ Jason Rhinelander ]
+  * lmq -> omq internal rename
+  * Storage server RPC improvements
+  * Remove unused, unenforced blockchain testing endpoint
+
+  [ Sean Darcy ]
+  * added new wallet RPC method for export transfers
+  * return string of CSV data rather than write to file
+  * Enable ONS mapping type=wallet and resolve ONS wallet addresses
+  * rebrand lns -> ons
+  * big and small int binding for sqlite statements
+  * bump HF
+  * Move RPC for ons resolve address into ons resolve and decrypt wallet side
+  * ONS purchase guesses wallet if the value is address
+  * update tests for valid address
+  * to readable value shows wallet address
+
+  [ Sean ]
+  * Update src/cryptonote_core/oxen_name_system.cpp
+
+  [ Sean Darcy ]
+  * Remove magic numbers and enforce nettype for is_valid_address
+  * refactor wallet decrypting
+
+  [ Sean ]
+  * simplify encrypted wallet length check
+  * Update src/cryptonote_core/oxen_name_system.cpp
+
+  [ Sean Darcy ]
+  * rename ons_owners_by_names merge wallet and session name check
+  * uninitialised tests
+  * merge conflicts
+
+  [ Jason Rhinelander ]
+  * Switch burn= parsing to use parse_amount
+  * Make extra burn apply to any tx type, not just blink/ONS
+  * Remove limit on burned fee
+
+  [ Sean Darcy ]
+  * Wrong constant name
+  * Use fs::exists from common tools
+  * initialise mapping_value
+  * reduce fees
+  * reduce ONS fee
+
+  [ Jason Rhinelander ]
+  * Make get_human_time_ago use `seconds` rather than ints
+  * Re-do how SS ping tests are handled
+  * Add missing lokinet/ss versions to RPC
+  * print_sn display tweaks
+  * Fix get_new_swarm_id() returning MAX_ID/2 when single swarm
+  * Don't sort an already-sorted vector
+  * Add a pre-determined list of random swarm ids
+  * Add tests for a couple 1-swarm starting point ids
+  * Fix time_t conversion on macos
+  * Add a virtual destructor to http_server_base
+  * Increase various potentially fatal error log levels
+  * Add hack to fix testnet sync
+
+  [ Sean Darcy ]
+  * Serialise extra fields for participation checks
+
+  [ Jason Rhinelander ]
+  * Add warning if restoring an ed25519 key to a file name .../key
+
+  [ Sean Darcy ]
+  * initialise version and pretty print if no version
+  * ONS tests - allow for extra burn in certain situations
+
+  [ Jason Rhinelander ]
+  * Dep update: uWebSockets to 19.2.0
+  * Dep update: cpr to 1.6.0
+  * Dep update: ghc::filesystem v1.5.4
+  * Dep update: libuv to 1.41.0
+  * Dep update: oxenmq to 1.2.5
+  * Dep update: miniupnpc to 2.2.2
+  * Update bundled deps for static binaries
+  * Boost build fixes
+  * Try again with cross compiler fix
+  * Fix broken curl hash
+
+  [ Sean Darcy ]
+  * Creates a new ons pay_type for show_transfers
+
+  [ Jason Rhinelander ]
+  * Undo version check on zmq patch
+  * Don't build libuv on ios
+
+  [ Sean ]
+  * Update README.md
+
+  [ Sean Darcy ]
+  * Bump versions and minimum versions for uptime proofs
+  *  Mainnet hardfork 18 block and timestamp
+
+  [ Jason Rhinelander ]
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Thu, 22 Apr 2021 03:44:57 -0300
+
 oxen (8.1.6-1~deb10) buster; urgency=medium
 
   * Fix tagged builds file naming
