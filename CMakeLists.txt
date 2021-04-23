@@ -53,14 +53,14 @@ set(CMAKE_OSX_DEPLOYMENT_TARGET 10.12 CACHE STRING "macOS deployment target (App
 project(oxen
     VERSION 9.1.0
     LANGUAGES CXX C)
-  set(OXEN_RELEASE_CODENAME "Salty Saga")
+set(OXEN_RELEASE_CODENAME "Audacious Aurochs")
 
 # String value to append to the full version string; this is intended to easily identify whether a
 # binary was build from the release or development branches.  This should be permanently set to an
 # empty string on `stable`, "-dev" on the `dev` branch, and can be set externally (via cmake
 # arguments) where it makes sense to take some other branch release with an extra value.
 if(NOT DEFINED OXEN_RELEASE_SUFFIX)
-  set(OXEN_RELEASE_SUFFIX "-dev")
+  set(OXEN_RELEASE_SUFFIX "")
 endif()
 
 if(POLICY CMP0079)
