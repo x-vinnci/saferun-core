@@ -1,3 +1,14 @@
+oxen (9.1.1-1~ubuntu1804) bionic; urgency=medium
+
+  * Update gbp main branch name to stable
+  * Build in /staging
+  * Remove -dev tag from stable branch
+  * Update codename
+  * Don't use timestamp from proof
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Fri, 23 Apr 2021 02:55:27 -0300
+
 oxen (9.1.0-1~ubuntu1804) bionic; urgency=medium
 
   [ Sean Darcy ]
