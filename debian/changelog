@@ -1,5 +1,12 @@
 oxen (9.1.1-1~ubuntu2010) groovy; urgency=medium
 
+  * 9.1.1 version bump
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Fri, 23 Apr 2021 03:18:35 -0300
+
+oxen (9.1.1-0~ubuntu2010) groovy; urgency=medium
+
   * Update gbp main branch name to stable
   * Build in /staging
   * Remove -dev tag from stable branch
