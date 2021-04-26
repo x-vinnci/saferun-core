@@ -1,3 +1,9 @@
+oxen (9.1.1-2~deb11) bullseye; urgency=medium
+
+  * Disable randomx jit on arm64
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 26 Apr 2021 18:30:06 -0300
+
 oxen (9.1.1-1~deb11) bullseye; urgency=medium
 
   * 9.1.1 version bump
