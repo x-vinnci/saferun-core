@@ -1,3 +1,9 @@
+oxen (9.1.2-1~ubuntu1804) bionic; urgency=medium
+
+  * 9.1.2 hotfix -- fix proofs for older nodes with both pubkeys
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Thu, 29 Apr 2021 21:28:24 -0300
+
 oxen (9.1.1-2~ubuntu1804) bionic; urgency=medium
 
   * Disable randomx jit on arm64
