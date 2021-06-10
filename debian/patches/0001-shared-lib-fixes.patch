@@ -11,7 +11,7 @@ Patch the oxen cmake files to properly build and install shared libs.
  4 files changed, 33 insertions(+), 4 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 3859647..3f39405 100644
+index f397c8b..e6d3856 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -44,7 +44,7 @@ if(CCACHE_PROGRAM)
@@ -23,7 +23,7 @@ index 3859647..3f39405 100644
  message(STATUS "CMake version ${CMAKE_VERSION}")
  
  # Has to be set before `project()`, and ignored on non-macos:
-@@ -337,7 +337,9 @@ endif()
+@@ -347,7 +347,9 @@ endif()
  
  include(cmake/check_for_std_filesystem.cmake)
  
@@ -34,7 +34,7 @@ index 3859647..3f39405 100644
  
  if(APPLE)
    include_directories(SYSTEM /usr/include/malloc)
-@@ -943,6 +945,17 @@ if(BUILD_DOCUMENTATION)
+@@ -917,6 +919,17 @@ if(BUILD_DOCUMENTATION)
    endif()
  endif()
  
@@ -67,19 +67,19 @@ index 2af962a..d52baa5 100644
 +    COMPONENT development
 +    FILES_MATCHING PATTERN "*.h" PATTERN "*.inl")
 diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
-index 83459f0..8ba88a8 100644
+index ea98271..74af91e 100644
 --- a/external/CMakeLists.txt
 +++ b/external/CMakeLists.txt
-@@ -73,7 +73,7 @@ endif()
+@@ -71,7 +71,7 @@ endif()
  
  
- if(NOT LOKIMQ_FOUND)
+ if(NOT OXENMQ_FOUND)
 -  message(STATUS "Using in-tree oxenmq")
 +  message(FATAL_ERROR "Refusing to use in-tree oxenmq in a deb build")
-   if (DEPENDS)
-     # The depends system builds a static libzmq so set up a target loki-mq can use to avoid building
-     add_library(libzmq STATIC IMPORTED GLOBAL)
-@@ -103,6 +103,12 @@ add_subdirectory(db_drivers)
+   add_subdirectory(loki-mq)
+ else()
+   add_library(oxenmq INTERFACE)
+@@ -84,6 +84,12 @@ add_subdirectory(db_drivers)
  add_subdirectory(easylogging++ easyloggingpp)
  add_subdirectory(randomx EXCLUDE_FROM_ALL)
  
@@ -93,10 +93,10 @@ index 83459f0..8ba88a8 100644
  # ourselves.
  if (NOT CMAKE_VERSION VERSION_LESS 3.12)
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index e664856..ae4460c 100644
+index e6a4d97..82d047d 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -58,7 +58,6 @@ function (oxen_add_executable target binary)
+@@ -47,7 +47,6 @@ function (oxen_add_executable target binary)
    set_property(GLOBAL PROPERTY oxen_executable_targets "${exec_tgt}")
  endfunction ()
  
@@ -104,7 +104,7 @@ index e664856..ae4460c 100644
  add_library(version ${CMAKE_BINARY_DIR}/version.cpp)
  add_dependencies(version genversion)
  
-@@ -104,3 +103,8 @@ endif()
+@@ -93,3 +92,8 @@ endif()
  
  add_subdirectory(device)
  add_subdirectory(device_trezor)
