@@ -142,7 +142,7 @@ Description: transitional package
 Package: oxen-service-node
 Architecture: all
 Pre-Depends: curl
-Depends: oxend (=${binary:Version}), oxen-storage-server (>= 2.0.8), lokinet-router (>= 0.8.2), ucf
+Depends: oxend (=${binary:Version}), oxen-storage-server (>= 2.1.1), lokinet-router (>= 0.9.3), ucf
 Replaces: loki-service-node (<< 8.1.5-1~)
 Breaks: loki-service-node (<< 8.1.5-1~)
 Description: Oxen service node metapackage
