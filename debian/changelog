@@ -1,3 +1,44 @@
+oxen (9.1.3-1~ubuntu1804) bionic; urgency=medium
+
+  [ Chris Buccella ]
+  * Bump version used in oxend dockerfile to 9.1.0
+
+  [ Jason Rhinelander ]
+  * Update codename
+  * Don't use timestamp from proof
+  * Fix SN info upgrade in debug build
+  * 9.1.2 hotfix -- fix proofs for older nodes with both pubkeys
+  * Remove dead DEPENDS code
+  * Remove STACK_TRACE option
+  * Clean up pkg-config use
+  * Modernize how -pie gets set
+  * Disable -fstack-clash-protection on macOS
+  * Add local deps mirror to android builds
+
+  [ Sean Darcy ]
+  * local devnet scripts
+
+  [ javabudd ]
+  * Check if SN has a ping from lokinet and the storage server before registration (#1457)
+
+  [ Jason Rhinelander ]
+  * Add registered ons entry counts to get_info RPC
+  * Add missing unique index
+  * Remove superfluous SQL identifier quoting
+  * Remove unneeded raw string literals
+  * Fix broken index
+  * Update boost download URL
+  * Fix handling of ONS names when a backup owner
+  * Fix cli wallet showing wrong Owner value for backup owner
+  * Add lokinet reachability to quorum testing
+  * Remove obsolete (pre-HF18) code paths
+  * Don't enforce lokinet reachability yet
+  * Increase minimum versions for SS/lokinet
+  * Version bump
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Thu, 10 Jun 2021 16:30:43 -0300
+
 oxen (9.1.2-1~ubuntu1804) bionic; urgency=medium
 
   * 9.1.2 hotfix -- fix proofs for older nodes with both pubkeys
