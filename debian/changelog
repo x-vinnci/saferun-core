@@ -1,3 +1,24 @@
+oxen (9.2.0-1~ubuntu1804) bionic; urgency=medium
+
+  * bump lokinet & ss required versions
+  * Add snode revision soft forks & drop hard fork voting code
+  * Fix compiler warning in debug builds
+  * Minor code simplification
+  * lokinet/SS minimum proof versions; 9.2.0 version bump
+  * Fix copyright statement
+  * Fix compilation under g++-11
+  * Test suite fixes
+  * Bump required lokinet version to 0.9.5
+  * Finalize mainnet soft fork for July 13.
+  * Remove useless option
+  * Remove obsolete embedded copy of gtest
+  * Update gtest
+  * Fix segfault triggered in test suite on macos
+  * Add patch for hidapi + autoconf 2.70+
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Tue, 06 Jul 2021 20:51:38 -0300
+
 oxen (9.1.3-1~ubuntu1804) bionic; urgency=medium
 
   [ Chris Buccella ]
