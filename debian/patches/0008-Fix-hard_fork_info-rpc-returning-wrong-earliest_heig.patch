@@ -1,0 +1,23 @@
+From: Jason Rhinelander <jason@imaginary.ca>
+Date: Fri, 9 Jul 2021 02:55:47 -0300
+Subject: Fix hard_fork_info rpc returning wrong earliest_height
+
+With multiple forks on the same major version `get_hard_fork_heights`
+was returning the last one instead of the first one.
+---
+ src/cryptonote_basic/hardfork.cpp | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/src/cryptonote_basic/hardfork.cpp b/src/cryptonote_basic/hardfork.cpp
+index 3cf89cd..a85df9b 100644
+--- a/src/cryptonote_basic/hardfork.cpp
++++ b/src/cryptonote_basic/hardfork.cpp
+@@ -121,7 +121,7 @@ get_hard_fork_heights(network_type nettype, uint8_t version) {
+       if (found.first) // Found something suitable in the previous iteration, so one before this hf is the max
+         found.second = it->height - 1;
+       break;
+-    } else if (it->version == version) {
++    } else if (it->version == version && !found.first) {
+       found.first = it->height;
+     }
+   }
