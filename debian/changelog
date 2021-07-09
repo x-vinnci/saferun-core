@@ -1,3 +1,9 @@
+oxen (9.2.0-2~ubuntu2104) hirsute; urgency=medium
+
+  * Add patches for hard_fork_info fix (to fix blink txes).
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Fri, 09 Jul 2021 03:02:35 -0300
+
 oxen (9.2.0-1~ubuntu2104) hirsute; urgency=medium
 
   * bump lokinet & ss required versions
