@@ -177,7 +177,7 @@ bool BlockchainSQLite::add_sn_payments(std::vector<cryptonote::batch_sn_payment>
     std::string address_str = cryptonote::get_account_address_as_str(m_nettype, 0, payment.address_info.address);
     MTRACE("Adding record for SN reward contributor " << address_str << "to database with amount " << static_cast<int64_t>(payment.amount));
 
-    db::exec_query(insert_payment, address_str, static_cast<int64_t>(payment.amount));
+    db::exec_query(insert_payment, address_str, static_cast<int64_t>(payment.amount * 1000));
     insert_payment.reset();
   };
 
@@ -192,7 +192,7 @@ bool BlockchainSQLite::subtract_sn_payments(std::vector<cryptonote::batch_sn_pay
 
 	for (auto& payment: payments) {
 		std::string address_str = cryptonote::get_account_address_as_str(m_nettype, 0, payment.address_info.address);
-		auto result = db::exec_query(update_payment, static_cast<int64_t>(payment.amount), address_str);
+		auto result = db::exec_query(update_payment, static_cast<int64_t>(payment.amount * 1000), address_str);
     if (!result) {
       MERROR("tried to subtract payment from an address that doesnt exist: " << address_str);
       return false;
@@ -224,7 +224,7 @@ std::optional<std::vector<cryptonote::batch_sn_payment>> BlockchainSQLite::get_s
   while (select_payments.executeStep())
   {
     address = select_payments.getColumn(0).getString();
-    amount = static_cast<uint64_t>(select_payments.getColumn(1).getInt64());
+    amount = static_cast<uint64_t>(select_payments.getColumn(1).getInt64() / 1000);
     if (cryptonote::is_valid_address(address, m_nettype)) {
       cryptonote::address_parse_info addr_info{};
       cryptonote::get_account_address_from_str(addr_info, m_nettype, address);
@@ -539,7 +539,7 @@ bool BlockchainSQLite::save_payments(uint64_t block_height, std::vector<batch_sn
     select_sum.bind(1, payment.address);
     while (select_sum.executeStep()) {
       uint64_t amount = static_cast<uint64_t>(select_sum.getColumn(0).getInt64());
-      if (amount != payment.amount)
+      if (amount != payment.amount * 1000)
       {
         MERROR("Invalid amounts passed in to save payments for address: " << payment.address << " received " << payment.amount << " expected " << amount);
         return false;
