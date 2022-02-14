@@ -133,8 +133,8 @@ namespace service_nodes
     return sort_and_filter(service_nodes_infos, [](const service_node_info &info) { return info.is_decommissioned() && info.is_fully_funded(); }, /*reserve=*/ false);
   }
 
-  std::vector<pubkey_and_sninfo> service_node_list::state_t::payable_service_nodes_infos(uint64_t height) const {
-    return sort_and_filter(service_nodes_infos, [height](const service_node_info &info) { return info.is_payable(height); }, /*reserve=*/ true);
+  std::vector<pubkey_and_sninfo> service_node_list::state_t::payable_service_nodes_infos(uint64_t height, cryptonote::network_type nettype) const {
+    return sort_and_filter(service_nodes_infos, [height, nettype](const service_node_info &info) { return info.is_payable(height, nettype); }, /*reserve=*/ true);
   }
 
   std::shared_ptr<const quorum> service_node_list::get_quorum(quorum_type type, uint64_t height, bool include_old, std::vector<std::shared_ptr<const quorum>> *alt_quorums) const

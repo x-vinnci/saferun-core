@@ -349,7 +349,7 @@ bool BlockchainSQLite::add_block(const cryptonote::block& block, const service_n
     }
 
     // Step 2: Iterate over the whole service node list and pay each node 1/service_node_list fraction
-    const auto payable_service_nodes = service_nodes_state.payable_service_nodes_infos(block_height);
+    const auto payable_service_nodes = service_nodes_state.payable_service_nodes_infos(block_height, m_nettype);
     size_t total_service_nodes_payable = payable_service_nodes.size();
     for (const auto& [node_pubkey, node_info]: payable_service_nodes)
     {
@@ -434,7 +434,7 @@ bool BlockchainSQLite::pop_block(const cryptonote::block& block, const service_n
     }
 
     // Step 2: Iterate over the whole service node list and subtract each node 1/service_node_list fraction
-    const auto payable_service_nodes = service_nodes_state.payable_service_nodes_infos(block_height);
+    const auto payable_service_nodes = service_nodes_state.payable_service_nodes_infos(block_height, m_nettype);
     size_t total_service_nodes_payable = payable_service_nodes.size();
     for (const auto& [node_pubkey, node_info]: payable_service_nodes)
     {
