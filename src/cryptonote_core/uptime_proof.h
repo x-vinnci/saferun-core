@@ -2,6 +2,7 @@
 
 #include "cryptonote_protocol/cryptonote_protocol_defs.h"
 #include <oxenmq/bt_serialize.h>
+#include <oxenmq/bt_value.h>
 
 namespace service_nodes {
 
