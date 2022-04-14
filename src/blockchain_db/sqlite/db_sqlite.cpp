@@ -38,6 +38,7 @@
 #include "cryptonote_core/blockchain.h"
 #include "cryptonote_core/service_node_list.h"
 #include "common/string_util.h"
+#include "cryptonote_basic/hardfork.h"
 
 #undef OXEN_DEFAULT_LOG_CATEGORY
 #define OXEN_DEFAULT_LOG_CATEGORY "blockchain.db.sqlite"
@@ -302,6 +303,10 @@ bool BlockchainSQLite::add_block(const cryptonote::block& block, const service_n
       clear_database();
     return update_height(block_height);
   }
+  auto fork_height = cryptonote::get_hard_fork_heights(m_nettype, cryptonote::network_version_19);
+  if (block_height == *fork_height.second)
+    clear_database();
+
 
   if (block_height != height + 1)
   {
