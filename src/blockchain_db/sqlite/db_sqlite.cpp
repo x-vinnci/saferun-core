@@ -285,9 +285,9 @@ std::vector<cryptonote::batch_sn_payment> BlockchainSQLite::calculate_rewards(ui
 
 bool BlockchainSQLite::add_block(const cryptonote::block& block, const service_nodes::service_node_list::state_t& service_nodes_state)
 {
-  LOG_PRINT_L3("BlockchainDB_SQLITE::" << __func__);
 
   auto block_height = get_block_height(block);
+  MDEBUG(__FILE__ << ":" << __LINE__ << " (" << __func__ << ") TODO sean remove this - Add block called with block " << block_height << " - debug");
 
   // If we receive an add_block() for the genesis block assume we are clearing the database 
   if (block_height == 0) 
@@ -296,16 +296,25 @@ bool BlockchainSQLite::add_block(const cryptonote::block& block, const service_n
     return true;
   }
 
+  print_database();
+
   auto hf_version = block.major_version;
   if (hf_version < cryptonote::network_version_19)
   {
     if (height > block_height)
+    {
+      MDEBUG(__FILE__ << ":" << __LINE__ << " (" << __func__ << ") TODO sean remove this - " << "Clearing database because db height is above block height and pre hardfork" << " - debug");
       clear_database();
+    }
     return update_height(block_height);
   }
   auto fork_height = cryptonote::get_hard_fork_heights(m_nettype, cryptonote::network_version_19);
-  if (block_height == *fork_height.second)
-    clear_database();
+  MDEBUG(__FILE__ << ":" << __LINE__ << " (" << __func__ << ") TODO sean remove this - fork height " << (int64_t)fork_height.first.value_or(0) << " - debug");
+  if (block_height == fork_height.first.value_or(0))
+    {
+      MDEBUG(__FILE__ << ":" << __LINE__ << " (" << __func__ << ") TODO sean remove this - " << "Clearing database because block height is on hardfork" << " - debug");
+      clear_database();
+    }
 
 
   if (block_height != height + 1)
@@ -578,6 +587,16 @@ bool BlockchainSQLite::delete_block_payments(uint64_t block_height)
     "DELETE FROM batched_payments_paid WHERE height_paid >= ?"};
   db::exec_query(delete_payments, static_cast<int64_t>(block_height));
   return true;
+}
+
+void BlockchainSQLite::print_database()
+{
+  LOG_PRINT_L3("BlockchainDB_SQLITE::" << __func__ << " Called with height: " << height);
+  MDEBUG(__FILE__ << ":" << __LINE__ << " (" << __func__ << ") TODO sean remove this - Print Database called with height: " << height << " - debug");
+  SQLite::Statement st{db, "SELECT address, amount FROM batched_payments_accrued ORDER BY address ASC"};
+  while (st.executeStep()) {
+    MDEBUG(__FILE__ << ":" << __LINE__ << " (" << __func__ << ") TODO sean remove this - Address: " << st.getColumn(0).getString() << " has amount: " << st.getColumn(1).getString() << " in the databased");
+  }
 }
 
 fs::path check_if_copy_filename(std::string_view db_path)

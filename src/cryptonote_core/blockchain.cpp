@@ -4439,6 +4439,7 @@ bool Blockchain::handle_block_to_main_chain(const block& bl, const crypto::hash&
   TIME_MEASURE_FINISH(block_processing_time);
   if(miner.blk_pow.precomputed)
     block_processing_time += m_fake_pow_calc_time;
+  MDEBUG(__FILE__ << ":" << __LINE__ << " (" << __func__ << ") TODO sean remove this - handle block to main chain on height: " << get_block_height(bl) << " - debug");
 
   rtxn_guard.stop();
   TIME_MEASURE_START(addblock);

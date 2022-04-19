@@ -52,6 +52,7 @@ public:
   // Database management functions. Should be called on creation of BlockchainSQLite
   void create_schema();
   void clear_database();
+  void print_database();
 
   // The batching database maintains a height variable to know if it gets out of sync with the mainchain. Calling increment and decrement is the primary method of interacting with this height variable
   bool update_height(uint64_t new_height);
