@@ -31,7 +31,7 @@
 #include "cryptonote_basic/cryptonote_basic_impl.h"
 #include "cryptonote_basic/account.h"
 #include "cryptonote_core/cryptonote_tx_utils.h"
-#include "epee/misc_language.h"
+#include "common/median.h"
 
 using namespace cryptonote;
 
@@ -142,7 +142,7 @@ bool test_block_creation()
   block b;
   std::optional<std::vector<cryptonote::batch_sn_payment>> sn_rwds;
   uint64_t block_rewards = 0;
-  std::tie(r, block_rewards) = construct_miner_tx(90, epee::misc_utils::median(szs), 3553616528562147, 33094, 10000000, b.miner_tx, cryptonote::oxen_miner_tx_context::miner_block(cryptonote::FAKECHAIN, info.address), sn_rwds, blobdata());
+  std::tie(r, block_rewards) = construct_miner_tx(90, tools::median(std::move(szs)), 3553616528562147, 33094, 10000000, b.miner_tx, cryptonote::oxen_miner_tx_context::miner_block(cryptonote::FAKECHAIN, info.address), sn_rwds, blobdata());
   return r;
 }
 

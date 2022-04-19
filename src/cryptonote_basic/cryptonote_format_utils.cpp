@@ -32,7 +32,7 @@
 #include <atomic>
 #include <boost/algorithm/string.hpp>
 #include <limits>
-#include <oxenmq/hex.h>
+#include <oxenc/hex.h>
 #include <variant>
 #include "common/hex.h"
 #include "epee/wipeable_string.h"
@@ -353,69 +353,54 @@ namespace cryptonote
     return true;
   }
   //---------------------------------------------------------------
-  uint64_t power_integral(uint64_t a, uint64_t b)
+  std::optional<uint64_t> parse_amount(std::string_view str_amount)
   {
-    if(b == 0)
-      return 1;
-    uint64_t total = a;
-    for(uint64_t i = 1; i != b; i++)
-      total *= a;
-    return total;
-  }
-  //---------------------------------------------------------------
-  bool parse_amount(uint64_t& amount, std::string_view str_amount)
-  {
+    uint64_t amount;
     tools::trim(str_amount);
 
     auto parts = tools::split(str_amount, "."sv);
     if (parts.size() > 2)
-      return false; // 123.456.789 no thanks.
+      return std::nullopt; // 123.456.789 no thanks.
 
     if (parts.size() == 2 && parts[1].empty())
       parts.pop_back(); // allow "123." (treat it as as "123")
 
     if (parts[0].find_first_not_of("0123456789"sv) != std::string::npos)
-      return false; // whole part contains non-digit
+      return std::nullopt; // whole part contains non-digit
 
     if (parts[0].empty()) {
       // Only allow an empty whole number part if there is a fractional part.
       if (parts.size() == 1)
-        return false;
+        return std::nullopt;
       amount = 0;
     }
     else
     {
       if (!tools::parse_int(parts[0], amount))
-        return false;
+        return std::nullopt;
 
       // Scale up the number (e.g. 12 from "12.45") to atomic units.
-      //
-      // TODO: get rid of the user-configurable default_decimal_point nonsense and just multiply
-      // this value by the `COIN` constant.
-      for (size_t i = 0; i < CRYPTONOTE_DISPLAY_DECIMAL_POINT; i++)
-      {
-        if (amount > std::numeric_limits<uint64_t>::max() / 10)
-          return false; // would overflow
-        amount *= 10;
-      }
+      if (amount > std::numeric_limits<uint64_t>::max() / COIN)
+        return std::nullopt; // would overflow
+      amount *= COIN;
     }
 
     if (parts.size() == 1)
-      return true;
+      return amount;
 
     if (parts[1].find_first_not_of("0123456789"sv) != std::string::npos)
-      return false; // fractional part contains non-digit
+      return std::nullopt; // fractional part contains non-digit
 
     // If too long, but with insignificant 0's, trim them off
     while (parts[1].size() > CRYPTONOTE_DISPLAY_DECIMAL_POINT && parts[1].back() == '0')
       parts[1].remove_suffix(1);
 
     if (parts[1].size() > CRYPTONOTE_DISPLAY_DECIMAL_POINT)
-      return false; // fractional part has too many significant digits
+      return std::nullopt; // fractional part has too many significant digits
 
     uint64_t fractional;
     if (!tools::parse_int(parts[1], fractional))
-      return false;
+      return std::nullopt;
 
     // Scale up the value if it wasn't a full fractional value, e.g. if we have "10.45" then we
     // need to convert the 45 we just parsed to 450'000'000.
@@ -423,10 +408,10 @@ namespace cryptonote
       fractional *= 10;
 
     if (fractional > std::numeric_limits<uint64_t>::max() - amount)
-      return false; // would overflow
+      return std::nullopt; // would overflow
 
     amount += fractional;
-    return true;
+    return amount;
   }
   //---------------------------------------------------------------
   uint64_t get_transaction_weight(const transaction &tx, size_t blob_size)
@@ -541,7 +526,7 @@ namespace cryptonote
     try {
       serialization::deserialize_all(ar, tx_extra_fields);
     } catch (const std::exception& e) {
-      MWARNING(__func__ << ": failed to deserialize extra field: " << e.what() << "; extra = " << oxenmq::to_hex(tx_extra.begin(), tx_extra.end()));
+      MWARNING(__func__ << ": failed to deserialize extra field: " << e.what() << "; extra = " << oxenc::to_hex(tx_extra.begin(), tx_extra.end()));
       return false;
     }
 
@@ -807,7 +792,7 @@ namespace cryptonote
           value(newar, field);
       } while (ar.remaining_bytes() > 0);
     } catch (const std::exception& e) {
-      LOG_PRINT_L1(__func__ << ": failed to deserialize extra field: " << e.what() << "; extra = " << oxenmq::to_hex(tx_extra.begin(), tx_extra.end()));
+      LOG_PRINT_L1(__func__ << ": failed to deserialize extra field: " << e.what() << "; extra = " << oxenc::to_hex(tx_extra.begin(), tx_extra.end()));
       return false;
     }
 
@@ -978,7 +963,7 @@ namespace cryptonote
   //---------------------------------------------------------------
   std::string short_hash_str(const crypto::hash& h)
   {
-    return oxenmq::to_hex(tools::view_guts(h).substr(0, 4)) + "....";
+    return oxenc::to_hex(tools::view_guts(h).substr(0, 4)) + "....";
   }
   //---------------------------------------------------------------
   bool is_out_to_acc(const account_keys& acc, const txout_to_key& out_key, const crypto::public_key& tx_pub_key, const std::vector<crypto::public_key>& additional_tx_pub_keys, size_t output_index)
@@ -1056,37 +1041,31 @@ namespace cryptonote
     cn_fast_hash(blob.data(), blob.size(), res);
   }
   //---------------------------------------------------------------
-  std::string get_unit(unsigned int decimal_point)
+  std::string print_money(uint64_t amount, bool strip_zeros)
   {
-    if (decimal_point == (unsigned int)-1)
-      decimal_point = CRYPTONOTE_DISPLAY_DECIMAL_POINT;
-    switch (decimal_point)
-    {
-      case 9:
-        return "oxen";
-      case 6:
-        return "megarok";
-      case 3:
-        return "kilorok";
-      case 0:
-        return "rok";
-      default:
-        ASSERT_MES_AND_THROW("Invalid decimal point specification: " << decimal_point);
-    }
-  }
-  //---------------------------------------------------------------
-  std::string print_money(uint64_t amount, unsigned int decimal_point)
-  {
-    if (decimal_point == (unsigned int)-1)
-      decimal_point = CRYPTONOTE_DISPLAY_DECIMAL_POINT;
+    constexpr unsigned int decimal_point = CRYPTONOTE_DISPLAY_DECIMAL_POINT;
     std::string s = std::to_string(amount);
     if(s.size() < decimal_point+1)
     {
       s.insert(0, decimal_point+1 - s.size(), '0');
     }
-    if (decimal_point > 0)
-      s.insert(s.size() - decimal_point, ".");
+    s.insert(s.size() - decimal_point, ".");
+    if (strip_zeros)
+    {
+      while (s.back() == '0')
+        s.pop_back();
+      if (s.back() == '.')
+        s.pop_back();
+    }
     return s;
+  }
+  //---------------------------------------------------------------
+  std::string format_money(uint64_t amount, bool strip_zeros)
+  {
+    auto value = print_money(amount, strip_zeros);
+    value += ' ';
+    value += get_unit();
+    return value;
   }
   //---------------------------------------------------------------
   std::string print_tx_verification_context(tx_verification_context const &tvc, transaction const *tx)

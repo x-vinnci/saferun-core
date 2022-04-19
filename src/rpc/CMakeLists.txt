@@ -76,7 +76,6 @@ target_link_libraries(rpc
     Boost::thread
     Boost::program_options
     SQLiteCpp
-    OpenSSL::SSL
     extra)
 
 target_link_libraries(daemon_rpc_server

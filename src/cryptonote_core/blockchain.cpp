@@ -37,6 +37,7 @@
 
 #include "common/rules.h"
 #include "common/hex.h"
+#include "common/median.h"
 #include "cryptonote_basic/cryptonote_basic.h"
 #include "cryptonote_basic/cryptonote_basic_impl.h"
 #include "cryptonote_basic/hardfork.h"
@@ -48,7 +49,6 @@
 #include "cryptonote_basic/cryptonote_boost_serialization.h"
 #include "cryptonote_config.h"
 #include "cryptonote_basic/miner.h"
-#include "epee/misc_language.h"
 #include "epee/profile_tools.h"
 #include "epee/int-util.h"
 #include "common/threadpool.h"
@@ -1333,7 +1333,7 @@ bool Blockchain::validate_miner_transaction(const block& b, size_t cumulative_bl
   {
     std::vector<uint64_t> last_blocks_weights;
     get_last_n_blocks_weights(last_blocks_weights, CRYPTONOTE_REWARD_BLOCKS_WINDOW);
-    median_weight = epee::misc_utils::median(last_blocks_weights);
+    median_weight = tools::median(std::move(last_blocks_weights));
   }
 
   uint64_t height                                = cryptonote::get_block_height(b);
@@ -1927,7 +1927,7 @@ bool Blockchain::handle_alternative_block(const block& b, const crypto::hash& id
 
   // NOTE: verify that the block's timestamp is within the acceptable range
   // (not earlier than the median of the last X blocks in the built alt chain)
-  if(!check_block_timestamp(timestamps, b))
+  if(!check_block_timestamp(std::move(timestamps), b))
   {
     MERROR_VER("Block with id: " << id << std::endl << " for alternative chain, has invalid timestamp: " << b.timestamp);
     bvc.m_verifivation_failed = true;
@@ -3855,7 +3855,7 @@ byte_and_output_fees Blockchain::get_dynamic_base_fee_estimate(uint64_t grace_bl
   for (size_t i = 0; i < grace_blocks; ++i)
     weights.push_back(min_block_weight);
 
-  uint64_t median = epee::misc_utils::median(weights);
+  uint64_t median = tools::median(std::move(weights));
   if(median <= min_block_weight)
     median = min_block_weight;
 
@@ -3950,10 +3950,10 @@ uint64_t Blockchain::get_adjusted_time() const
 }
 //------------------------------------------------------------------
 //TODO: revisit, has changed a bit on upstream
-bool Blockchain::check_block_timestamp(std::vector<uint64_t>& timestamps, const block& b, uint64_t& median_ts) const
+bool Blockchain::check_block_timestamp(std::vector<uint64_t> timestamps, const block& b, uint64_t& median_ts) const
 {
   LOG_PRINT_L3("Blockchain::" << __func__);
-  median_ts = epee::misc_utils::median(timestamps);
+  median_ts = tools::median(std::move(timestamps));
 
   if(b.timestamp < median_ts)
   {
@@ -3999,7 +3999,7 @@ bool Blockchain::check_block_timestamp(const block& b, uint64_t& median_ts) cons
     timestamps.push_back(m_db->get_block_timestamp(offset));
   }
 
-  return check_block_timestamp(timestamps, b, median_ts);
+  return check_block_timestamp(std::move(timestamps), b, median_ts);
 }
 //------------------------------------------------------------------
 void Blockchain::return_tx_to_pool(std::vector<std::pair<transaction, blobdata>> &txs)
@@ -4642,7 +4642,7 @@ bool Blockchain::update_next_cumulative_weight_limit(uint64_t *long_term_effecti
   {
     std::vector<uint64_t> weights;
     get_last_n_blocks_weights(weights, CRYPTONOTE_REWARD_BLOCKS_WINDOW);
-    m_current_block_cumul_weight_median = epee::misc_utils::median(weights);
+    m_current_block_cumul_weight_median = tools::median(std::move(weights));
   }
   else
   {
@@ -4681,7 +4681,7 @@ bool Blockchain::update_next_cumulative_weight_limit(uint64_t *long_term_effecti
     std::vector<uint64_t> weights;
     get_last_n_blocks_weights(weights, CRYPTONOTE_REWARD_BLOCKS_WINDOW);
 
-    uint64_t short_term_median = epee::misc_utils::median(weights);
+    uint64_t short_term_median = tools::median(std::move(weights));
     uint64_t effective_median_block_weight = std::min<uint64_t>(std::max<uint64_t>(CRYPTONOTE_BLOCK_GRANTED_FULL_REWARD_ZONE_V5, short_term_median), CRYPTONOTE_SHORT_TERM_BLOCK_WEIGHT_SURGE_FACTOR * m_long_term_effective_median_block_weight);
 
     m_current_block_cumul_weight_median = effective_median_block_weight;
@@ -5144,7 +5144,7 @@ bool Blockchain::prepare_handle_incoming_blocks(const std::vector<block_complete
   while (!m_db->batch_start(blocks_entry.size(), bytes)) {
     unlock();
     m_tx_pool.unlock();
-    epee::misc_utils::sleep_no_w(100);
+    std::this_thread::sleep_for(100ms);
     std::lock(m_tx_pool, *this);
   }
   m_batch_success = true;
