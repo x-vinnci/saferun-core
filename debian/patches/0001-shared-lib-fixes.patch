@@ -6,12 +6,12 @@ Patch the oxen cmake files to properly build and install shared libs.
 ---
  CMakeLists.txt              | 17 +++++++++++++++--
  contrib/epee/CMakeLists.txt |  6 ++++++
- external/CMakeLists.txt     | 10 ++++++++--
- src/CMakeLists.txt          |  6 +++++-
- 4 files changed, 34 insertions(+), 5 deletions(-)
+ external/CMakeLists.txt     |  6 ++++++
+ src/CMakeLists.txt          |  5 +++++
+ 4 files changed, 32 insertions(+), 2 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f8f36f5..4530cf2 100644
+index a6f5afd..3e45fc7 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -44,7 +44,7 @@ if(CCACHE_PROGRAM)
@@ -34,13 +34,13 @@ index f8f36f5..4530cf2 100644
  
  if(APPLE)
    include_directories(SYSTEM /usr/include/malloc)
-@@ -917,6 +919,17 @@ if(BUILD_DOCUMENTATION)
+@@ -885,6 +887,17 @@ if(BUILD_DOCUMENTATION)
    endif()
  endif()
  
 +set(oxenlibs epee blockchain_db checkpoints common cncrypto cryptonote_basic
-+        cryptonote_core cryptonote_protocol device device_trezor lmdb_lib mnemonics
-+        multisig net p2p ringct_basic ringct
++        cryptonote_core cryptonote_protocol device lmdb_lib mnemonics
++        multisig net p2p ringct_basic ringct sqlitedb
 +        rpc_server_base rpc rpc_http_client rpc_commands daemon_rpc_server
 +        wallet easylogging lmdb randomx blocks version)
 +install(TARGETS ${oxenlibs}
@@ -67,28 +67,10 @@ index 2af962a..d52baa5 100644
 +    COMPONENT development
 +    FILES_MATCHING PATTERN "*.h" PATTERN "*.inl")
 diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
-index ea98271..e75dfb3 100644
+index 5770045..aa263d2 100644
 --- a/external/CMakeLists.txt
 +++ b/external/CMakeLists.txt
-@@ -55,7 +55,7 @@ elseif(MINIUPNPC_FOUND)
-   message(STATUS "Found miniupnpc")
-   target_link_libraries(miniupnpc INTERFACE PkgConfig::MINIUPNPC)
- else()
--  message(STATUS "Using in-tree miniupnpc")
-+  message(FATAL_ERROR "Using in-tree miniupnpc")
-   add_subdirectory(miniupnp/miniupnpc)
-   if(MSVC)
-     target_compile_options(libminiupnpc-static PRIVATE -wd4244 -wd4267)
-@@ -71,7 +71,7 @@ endif()
- 
- 
- if(NOT OXENMQ_FOUND)
--  message(STATUS "Using in-tree oxenmq")
-+  message(FATAL_ERROR "Refusing to use in-tree oxenmq in a deb build")
-   add_subdirectory(loki-mq)
- else()
-   add_library(oxenmq INTERFACE)
-@@ -84,6 +84,12 @@ add_subdirectory(db_drivers)
+@@ -67,6 +67,12 @@ add_subdirectory(db_drivers)
  add_subdirectory(easylogging++ easyloggingpp)
  add_subdirectory(randomx EXCLUDE_FROM_ALL)
  
@@ -102,21 +84,13 @@ index ea98271..e75dfb3 100644
  # ourselves.
  if (NOT CMAKE_VERSION VERSION_LESS 3.12)
 diff --git a/src/CMakeLists.txt b/src/CMakeLists.txt
-index e6a4d97..82d047d 100644
+index c0a0c21..d222e98 100644
 --- a/src/CMakeLists.txt
 +++ b/src/CMakeLists.txt
-@@ -47,7 +47,6 @@ function (oxen_add_executable target binary)
-   set_property(GLOBAL PROPERTY oxen_executable_targets "${exec_tgt}")
- endfunction ()
+@@ -123,3 +123,8 @@ else()
+ endif()
  
--include(Version)
- add_library(version ${CMAKE_BINARY_DIR}/version.cpp)
- add_dependencies(version genversion)
- 
-@@ -93,3 +92,8 @@ endif()
- 
- add_subdirectory(device)
- add_subdirectory(device_trezor)
+ add_library(version "${CMAKE_CURRENT_BINARY_DIR}/version.cpp")
 +
 +install(
 +    DIRECTORY   "${CMAKE_CURRENT_SOURCE_DIR}/"
