@@ -1,3 +1,239 @@
+oxen (10.1.0-1~deb11) bullseye; urgency=medium
+
+  [ Jason Rhinelander ]
+  * Add locks around the refresh thread
+  * Make pointer const
+  * Add non-blocking isRefreshing(); make height retrieval non-blocking
+
+  [ Sean Darcy ]
+  * Allow HF18 to be used earlier
+
+  [ Jason Rhinelander ]
+  * Fix hard_fork_info rpc returning wrong earliest_height
+
+  [ Sean Darcy ]
+  * Explanatory message for workaround
+
+  [ Sean ]
+  * Update README.md
+
+  [ Kee Jefferys ]
+  * Remove CI indicator and update Loki to Oxen
+
+  [ Jason Rhinelander ]
+  * Fix some missing LOKI -> OXEN logger defines
+  * Drop integration test code.
+
+  [ Kee Jefferys ]
+  * Update README.md
+
+  [ Sean Darcy ]
+  * Uninitialised variables
+  * more uptime proof initialisations
+
+  [ Jason Rhinelander ]
+  * Disable MMS and light wallet support by default
+  * Add fmtlib::fmt backport of C++20 std::format
+  * Rearrange proof/service node forward declarations to help gcc-8
+  * Move operator== into namespace
+  * Disable GUI wallet CI builds for now
+
+  [ Thomas Winget ]
+  * sqlitecpp
+
+  [ Jeff ]
+  * Update CMakeLists.txt
+
+  [ Thomas Winget ]
+  * require sqlite foreign_key ON
+  * sqlitecpp cmake nonsense
+  * bump SQLiteCpp submodule version -- should fix mac
+  * fix missing include in sqlitedb
+
+  [ Jason Rhinelander ]
+  * Remove useless atomic calculations
+  * Split up turtle arch branches
+  * Fix x86 arch detection
+
+  [ Thomas Winget ]
+  * fix some bugs in sqlitedb abstraction.
+
+  [ Jason Rhinelander ]
+  * Remove useless functions
+  * Disable LTO for cncrypto on gcc-11
+  * Disable broken intel-optimized build on i386
+  * And no optimization for apple, too.
+
+  [ Thomas Winget ]
+  * minor fixups in sqlitedb wrapper
+
+  [ Jason Rhinelander ]
+  * CI: use lokinet prebuilt image caches
+  * git submodules in parallel
+  * Set up aes flags properly for cn-turtle compilation
+  * Use fs::path instead of std::filesystem
+  * use prebuilt builder ci; reformat
+  * Add short_duration for single-unit time printing
+  * device: C++ cleanups and modernization
+  * Add LedgerTCP hardware wallet support
+  * Stop using legacy ledger usb product id
+
+  [ Sean Darcy ]
+  * Add entire range of udev rules
+  * Removes macro and goto code in wallet2::import_outputs function
+  * some lingering references to Loki
+
+  [ Jason Rhinelander ]
+  * Only return own contributions in listCurrentStakes()
+  * Replace openssl sha256 implementation with libsodium
+  * Update oxenmq to latest oxen-mq+oxen-encoding
+  * Update static build deps to latest versions
+  * Update submodules to latest stable versions
+  * cpr header build fix
+  * Downgrade cpr to 1.7.2
+  * Remove UPnP support
+  * Remove unused variable
+  * Replace epee hex with oxen-encoding
+  * Replace epee base64 with oxen-encoding
+  * De-static epee headers
+  * Silence clang warning
+  * Make sure WARNINGS_AS_ERRORS is really off
+  * Windows build fixes
+  * Android fixes
+  * hidapi macos fix
+
+  [ majestrate ]
+  * Update README.md
+
+  [ Jason Rhinelander ]
+  * Remove openssl, unbound, expat, OpenAlias
+  * Replace stale seed node with new ones
+  * Remove now-unused ascii output magic
+  * More epee purging
+  * Remove redundant size checks
+  * Silence false maybe-unused warning
+  * Fix apple static libs check
+  * Fix cursor line overwriting in prepare_registration
+  * Make cryptonote::parse_amount return an optional
+  * Remove unused decimal point arg; add format_money()
+  * Overhaul prepare_registration page
+  * Add ed25519_pubkey field to SS & lokinet pings
+  * Delay checkpoints by a block
+  * Add is-stake to wallet api
+  * Fix StakeUnlockResult non-virtual destructor
+  * Fix prepare_registration dust
+  * Include SN status info info list_current_stakes()
+
+  [ Sean Darcy ]
+  * Batching of service node rewards
+  * bump iOS deployment target to iOS 13
+  * hardfork 19.1
+  * Increase max number of contributors to 10
+
+  [ Sean ]
+  * Update src/cryptonote_core/service_node_list.cpp
+
+  [ Sean Darcy ]
+  * review notes
+
+  [ Jason Rhinelander ]
+  * Fix min operator amount, rejigger math
+  * Add pubkey to prepare_registration summary
+  * Reword registration command to include the operator wallet
+  * Undo 19.1 version for Session testing
+  * Remove unused macros
+  * Remove cryptonote_config macros
+  * Remove stupid typedef
+
+  [ Sean Darcy ]
+  * Adds RPC endpoint for accrued batching balances
+  * Enforce a minimum time period before small contributors can unlock stake
+
+  [ Jason Rhinelander ]
+  * Remove minor >= major block requirement for HF19+
+  * Remove use of deprecated ftime
+  * Skip most stupidly test_variant2_int_sqrt values
+  * Avoid integer truncation in decoy selection
+  * Replace boost::endian conversion with oxenc 1.0.3
+  * Split up sqlitedb into a compiled unit
+  * Atomic staking amounts
+  * prepare_registration fixes for multi contributors
+  * Fix debug compilation
+  * Remove debugging
+  * Add static_assert for hf numeric values
+  * Rename hf19 -> hf19_reward_batching
+  * Bump version
+  * SQLite: use prepared statements
+  * Remove debugging
+  * Make sure we error if given a non-existant payment address
+
+  [ Sean Darcy ]
+  * Add a grace period to deregistrations after a hardfork
+
+  [ Jason Rhinelander ]
+  * Move test subclass into tests/
+  * Add hard_fork to get_info rpc request
+
+  [ Sean Darcy ]
+  * Rename miner_reward to coinbase_payouts and fix minor bug
+
+  [ Jason Rhinelander ]
+  * Improve prepared interface; fix test suite bug
+  * Add iterable `prepared_results<T...>`
+  * Rename a_b_over_c to mul128_div64
+  * const lvalue refs
+  * Refactor/DRY reward calculation code
+  * Do more calculations in thousanths
+  * Reformatting
+  * Fix thousandths tx verification in service_node_list.cpp
+  * Fix bugs in thousandths calculations
+  * DEVNET storage port fixes
+  * Reset devnet
+  * Fix is-service-node detection
+  * Ensure we don't produce a HF block with garbage from the db
+  * Use an empty vector instead of optional<vector>
+  * This is not C.
+  * Remove assertion breaking wallet2 on a debug build
+  * Add hard_fork to get_info rpc request
+
+  [ Sean Darcy ]
+  * test cases for batching
+  * segfault in block_weight due to nullptr sqlite_db
+  * change in name between branchs
+  * change from portions to atomic amounts
+  * enforce atomic registrations in HF19
+  * reset testnet
+  * bump uptime proof checks on version
+
+  [ Jason Rhinelander ]
+  * Tweak error message wording for HF19 regs
+  * Revert devnet change
+  * wallet2 code simplifications and cleanups
+  * CSV export-related code and output cleanups
+  * Fix invalid balance in view wallet csv export with imported key images
+  * Fix wrong change value in outputs sent to self
+  * Merge compilation fix
+  * Reset testnet governance wallet
+  * Add ifdef'd code to scan the genesis block
+  * Remove testnet hack
+  * Fix governance fee calculation
+  * Make version.cpp depend on .git/index
+
+  [ Sean Darcy ]
+  * bump version to 10.1.0
+  * add mainnet hardfork details for HF19
+
+  [ Jason Rhinelander ]
+  * Better version tag generation (from oxenss/lokinet)
+  * Clean up sys-or-submodule code, support system fmt, rename loki-mq
+  * Update release codename
+  * gbp pq compat fix
+  * Remove check for unbound
+  * Refresh deps
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 30 May 2022 19:38:11 -0300
+
 oxen (9.2.0-2~deb11) bullseye; urgency=medium
 
   * Add patches for hard_fork_info fix (to fix blink txes).
