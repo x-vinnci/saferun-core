@@ -4,15 +4,15 @@ Priority: optional
 Maintainer: Jason Rhinelander <jason@loki.network>
 Build-Depends: debhelper (>= 11), cmake (>= 3.10), ninja-build, g++, qttools5-dev,
     libboost-dev (>= 1.65), libboost-thread-dev, libboost-serialization-dev, libboost-program-options-dev,
-    libunbound-dev (>= 1.4.16), nettle-dev, libevent-dev, libminiupnpc-dev (>= 2.1), libunwind8-dev, libsodium-dev,
-    libssl-dev, libreadline-dev, libhidapi-dev, libusb-1.0-0-dev, libprotobuf-dev, protobuf-compiler, python3, pkg-config,
+    nettle-dev, libevent-dev, libunwind8-dev, libsodium-dev,
+    libreadline-dev, libhidapi-dev, libusb-1.0-0-dev, libprotobuf-dev, protobuf-compiler, python3, pkg-config,
     libsystemd-dev, libsqlite3-dev, liboxenmq-dev (>= 1.2.3~), libcurl4-dev
 Standards-Version: 4.1.3
 Homepage: https://oxen.io
 
 Package: liboxen9.2.0
 Architecture: any
-Depends: libminiupnpc17 (>= 2.1), ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}
 Description: Oxen shared libraries
  This package contains the common Oxen library code used by the various Oxen
  binaries.
@@ -125,7 +125,7 @@ Multi-Arch: same
 Section: libdevel
 Depends: liboxen-wallet9.2.0 (= ${binary:Version}), liboxen9.2.0 (= ${binary:Version}),
  libboost-dev (>= 1.58), libboost-thread-dev, libboost-serialization-dev, libboost-program-options-dev,
- libunbound-dev (>= 1.4.16), libminiupnpc-dev, libssl-dev, libsodium-dev, libreadline-dev, libhidapi-dev, liboxenmq-dev (>= 1.2.3~),
+ libsodium-dev, libreadline-dev, libhidapi-dev, liboxenmq-dev (>= 1.2.3~),
  libsqlite3-dev, libcurl4-dev, ${misc:Depends}
 Replaces: libloki-core-dev (<< 8.1.5-1~)
 Breaks: libloki-core-dev (<< 8.1.5-1~)
