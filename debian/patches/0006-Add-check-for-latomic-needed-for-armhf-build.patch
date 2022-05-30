@@ -9,10 +9,10 @@ Subject: Add check for -latomic (needed for armhf build)
  create mode 100644 cmake/check_atomic.cmake
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index f96f040..7da70c0 100644
+index 0def877..f948f5a 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
-@@ -741,6 +741,9 @@ else()
+@@ -735,6 +735,9 @@ else()
    # At least some CLANGs default to not enough for monero
    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftemplate-depth=900")
  
