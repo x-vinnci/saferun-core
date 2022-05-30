@@ -4,14 +4,14 @@ Subject: Make oxen build and install shared libs
 
 Patch the oxen cmake files to properly build and install shared libs.
 ---
- CMakeLists.txt              | 17 +++++++++++++++--
+ CMakeLists.txt              | 13 ++++++++++++-
  contrib/epee/CMakeLists.txt |  6 ++++++
  external/CMakeLists.txt     |  6 ++++++
  src/CMakeLists.txt          |  5 +++++
- 4 files changed, 32 insertions(+), 2 deletions(-)
+ 4 files changed, 29 insertions(+), 1 deletion(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index a6f5afd..3e45fc7 100644
+index 72d93fb..a91f666 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -44,7 +44,7 @@ if(CCACHE_PROGRAM)
@@ -23,18 +23,7 @@ index a6f5afd..3e45fc7 100644
  message(STATUS "CMake version ${CMAKE_VERSION}")
  
  # Has to be set before `project()`, and ignored on non-macos:
-@@ -347,7 +347,9 @@ endif()
- 
- include(cmake/check_for_std_filesystem.cmake)
- 
--include_directories(external/rapidjson/include src external)
-+include(Version)
-+
-+include_directories(external/rapidjson/include src contrib/epee/include external)
- 
- if(APPLE)
-   include_directories(SYSTEM /usr/include/malloc)
-@@ -885,6 +887,17 @@ if(BUILD_DOCUMENTATION)
+@@ -879,6 +879,17 @@ if(BUILD_DOCUMENTATION)
    endif()
  endif()
  
