@@ -1,6 +1,6 @@
-oxen (10.1.0-1~ubuntu2204) jammy; urgency=medium
+oxen (10.1.0-1~ubuntu2210) kinetic; urgency=medium
 
-  * jammy deb
+  * kinetic deb
 
  -- Jason Rhinelander <jason@imaginary.ca>  Mon, 30 May 2022 19:54:14 -0300
 
