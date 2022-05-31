@@ -1,0 +1,49 @@
+From: Jason Rhinelander <jason@imaginary.ca>
+Date: Mon, 30 May 2022 21:44:19 -0300
+Subject: Use fmt in header-only mode for bionic
+
+Bionic's fmt is too old to get picked up properly; use the embedded one
+in header-only mode instead.
+---
+ src/common/CMakeLists.txt     | 2 +-
+ src/sqlitedb/CMakeLists.txt   | 2 +-
+ src/wallet/api/CMakeLists.txt | 2 +-
+ 3 files changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/common/CMakeLists.txt b/src/common/CMakeLists.txt
+index 9cf808a..f202759 100644
+--- a/src/common/CMakeLists.txt
++++ b/src/common/CMakeLists.txt
+@@ -65,7 +65,7 @@ target_link_libraries(common
+     cncrypto
+     oxenmq::oxenmq
+     filesystem
+-    fmt::fmt
++    fmt::fmt-header-only
+   PRIVATE
+     sodium
+     extra)
+diff --git a/src/sqlitedb/CMakeLists.txt b/src/sqlitedb/CMakeLists.txt
+index f674d7e..3917066 100644
+--- a/src/sqlitedb/CMakeLists.txt
++++ b/src/sqlitedb/CMakeLists.txt
+@@ -9,5 +9,5 @@ target_link_libraries(sqlitedb
+     common
+   PRIVATE
+     SQLite::SQLite3
+-    fmt::fmt
++    fmt::fmt-header-only
+     extra)
+diff --git a/src/wallet/api/CMakeLists.txt b/src/wallet/api/CMakeLists.txt
+index 9b6db68..50f6dd5 100644
+--- a/src/wallet/api/CMakeLists.txt
++++ b/src/wallet/api/CMakeLists.txt
+@@ -141,7 +141,7 @@ if (STATIC AND BUILD_STATIC_DEPS)
+             randomx
+             uSockets
+             cpr
+-            fmt
++            fmt::fmt-header-only
+             )
+ 
+     if(IOS)
