@@ -1,4 +1,4 @@
-oxen (10.1.0-1) unstable; urgency=medium
+oxen (10.1.0-1~deb12) bookworm; urgency=medium
 
   [ Jason Rhinelander ]
   * Add locks around the refresh thread
