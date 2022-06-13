@@ -1,3 +1,32 @@
+oxen (10.1.1-1~deb11) bullseye; urgency=medium
+
+  [ Jason Rhinelander ]
+  * Remove check for unbound
+  * Fix OXEN_VERSION_TAG
+  * libdevice_trezor is not built anymore
+  * Build SQLiteCpp statically
+  * Add fmt dep
+  * Rediff patches
+  * Allow older fmt
+  * Fail if tx blob is empty
+  * Detect on_transaction_relayed failure
+  * Detect and don't try to parse empty txes
+
+  [ Sean Darcy ]
+  * Adds batched amounts to wallet2 rpc and simplewallet
+
+  [ Jason Rhinelander ]
+  * Make accruedBalance address parameter optional
+  * Expose next payout height via wallet2
+  * Only request needed fields from SN info
+  * Simplify; add check for mismatched vector lengths
+  * Make epee okay with an std::array not being filled in
+  * Show total staked and unlocking amounts in cli balance
+  * Version bump
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 13 Jun 2022 12:00:49 -0300
+
 oxen (10.1.0-1~deb11) bullseye; urgency=medium
 
   [ Jason Rhinelander ]
