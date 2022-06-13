@@ -1,3 +1,10 @@
+oxen (10.1.1-1~ubuntu1804+1) bionic; urgency=medium
+
+  * Remove extra - from deb version
+  * Build newer sqlite3 for bionic
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 13 Jun 2022 20:50:59 -0300
+
 oxen (10.1.1-1~ubuntu1804) bionic; urgency=medium
 
   [ Jason Rhinelander ]

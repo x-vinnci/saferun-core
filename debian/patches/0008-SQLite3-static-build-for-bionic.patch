@@ -1,19 +1,24 @@
 From: Jason Rhinelander <jason@imaginary.ca>
-Date: Mon, 13 Jun 2022 20:50:18 -0300
-Subject: Build newer sqlite3 for bionic
+Date: Mon, 13 Jun 2022 20:58:40 -0300
+Subject: SQLite3 static build for bionic
 
 ---
- external/CMakeLists.txt | 47 +++++++++++++++++++++++++++++++++++++++++++++++
- 1 file changed, 47 insertions(+)
+ CMakeLists.txt | 51 ++++++++++++++++++++++++++++++++++++++++++++++-----
+ 1 file changed, 46 insertions(+), 5 deletions(-)
 
-diff --git a/external/CMakeLists.txt b/external/CMakeLists.txt
-index c7efd13..7c6e609 100644
---- a/external/CMakeLists.txt
-+++ b/external/CMakeLists.txt
-@@ -152,6 +152,53 @@ else()
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index 7a95b29..20526dd 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -480,12 +480,53 @@ if (WITH_SYSTEMD AND NOT BUILD_STATIC_DEPS)
  endif()
  
  
+-if(NOT BUILD_STATIC_DEPS)
+-  find_package(PkgConfig REQUIRED)
+-  pkg_check_modules(SQLITE3 REQUIRED sqlite3 IMPORTED_TARGET GLOBAL)
+-  message(STATUS "Found sqlite3 ${SQLITE3_VERSION}")
+-  add_library(SQLite::SQLite3 ALIAS PkgConfig::SQLITE3)
 +# Bionic's sqlite3 is too old for the INSERT ... ON CONFLICT ... query that we use, so build a more
 +# recent static version.
 +include(ExternalProject)
@@ -41,7 +46,7 @@ index c7efd13..7c6e609 100644
 +set(deps_cc "${CMAKE_C_COMPILER}")
 +if(CMAKE_C_COMPILER_LAUNCHER)
 +  set(deps_cc "${CMAKE_C_COMPILER_LAUNCHER} ${deps_cc}")
-+endif()
+ endif()
 +set(deps_CFLAGS "-O2 -flto")
 +
 +file(MAKE_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}/sqlite3/include ${CMAKE_CURRENT_BINARY_DIR}/sqlite3/lib)
@@ -61,6 +66,6 @@ index c7efd13..7c6e609 100644
 +set_target_properties(SQLite::SQLite3 PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_BINARY_DIR}/sqlite3/lib/libsqlite3.a)
 +target_include_directories(SQLite::SQLite3 INTERFACE ${CMAKE_CURRENT_BINARY_DIR}/sqlite3/include)
 +
- # Hack around SQLiteCpp's attempts to locate sqlite3 because we *don't* want to link against the
- # system one, but don't download and build the embedded one until build time.  Thankfully it
- # actually links against the SQLite::SQLite3 cmake target if it already exists, so all we have to do
+ 
+ add_subdirectory(external)
+ 
