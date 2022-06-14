@@ -1,3 +1,9 @@
+oxen (10.1.1-1~ubuntu1804+2) bionic; urgency=medium
+
+  * Disable lto in bionic sqlite3 build
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 13 Jun 2022 21:56:09 -0300
+
 oxen (10.1.1-1~ubuntu1804+1) bionic; urgency=medium
 
   * Remove extra - from deb version
