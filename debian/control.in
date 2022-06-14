@@ -13,7 +13,7 @@ Homepage: https://oxen.io
 
 Package: liboxen@LIBOXEN_VERSION@
 Architecture: any
-Depends: ${shlibs:Depends}, ${misc:Depends}
+Depends: ${shlibs:Depends}, ${misc:Depends}, libsqlite3-0 (>=3.24.0)
 Description: Oxen shared libraries
  This package contains the common Oxen library code used by the various Oxen
  binaries.
