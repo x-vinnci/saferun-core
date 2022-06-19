@@ -1,3 +1,30 @@
+oxen (10.1.2-1~deb10) buster; urgency=medium
+
+  [ Jason Rhinelander ]
+  * Remove extra - from deb version
+  * Remove wallet debugging errors
+  * Rewrite logic to avoid unsigned int overflow
+  * Make next_payout_height return the next height >= current_height
+  * Optimizations
+  * Don't include sub-atomic rows in get_all_accrued_earnings
+  * Make sure we have sqlite 3.24.0+
+
+  [ Sean Darcy ]
+  * Keep SNL state correct during resyncing of sqlite submodule
+
+  [ Jason Rhinelander ]
+  * Fix batch timing reporting; reduce block processing size
+  * Store payment_offset in batched_payments_accrued
+  * Batching address string optimizations
+  * Downgrade upgrade info message
+  * 128 bit optimizations
+  * Optimization: reuse reward vector
+  * Bump release version
+  * Updated required versions in oxen-service-node metapackage
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Sun, 19 Jun 2022 14:40:11 -0300
+
 oxen (10.1.1-1~deb10) buster; urgency=medium
 
   [ Jason Rhinelander ]
