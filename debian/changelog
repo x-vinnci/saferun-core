@@ -1,3 +1,9 @@
+oxen (10.1.3-2) unstable; urgency=medium
+
+  * Avoid failure if the trigger doesn't exist
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Thu, 21 Jul 2022 12:36:22 -0300
+
 oxen (10.1.3-1) unstable; urgency=medium
 
   [ Sean Darcy ]
