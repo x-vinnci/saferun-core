@@ -1,3 +1,13 @@
+oxen (10.2.0-2~ubuntu2210) kinetic; urgency=medium
+
+  * Don't install kinetic's broken base system recommends
+  * Dependency/submodule updates
+  * Bump required oxenmq package
+  * Add kitware cmake to bionic build
+  * downgrade boost
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Wed, 31 Aug 2022 15:05:00 -0300
+
 oxen (10.2.0-1~ubuntu2210) kinetic; urgency=medium
 
   [ Jason Rhinelander ]
