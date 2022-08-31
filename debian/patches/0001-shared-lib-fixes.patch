@@ -11,7 +11,7 @@ Patch the oxen cmake files to properly build and install shared libs.
  4 files changed, 29 insertions(+), 2 deletions(-)
 
 diff --git a/CMakeLists.txt b/CMakeLists.txt
-index 8ac7bbd..731bb89 100644
+index ed3557a..00f1713 100644
 --- a/CMakeLists.txt
 +++ b/CMakeLists.txt
 @@ -44,7 +44,7 @@ if(CCACHE_PROGRAM)
@@ -23,7 +23,7 @@ index 8ac7bbd..731bb89 100644
  message(STATUS "CMake version ${CMAKE_VERSION}")
  
  # Has to be set before `project()`, and ignored on non-macos:
-@@ -879,6 +879,17 @@ if(BUILD_DOCUMENTATION)
+@@ -883,6 +883,17 @@ if(BUILD_DOCUMENTATION)
    endif()
  endif()
  
