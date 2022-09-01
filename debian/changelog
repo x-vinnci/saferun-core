@@ -1,3 +1,9 @@
+oxen (10.2.0-3~ubuntu2004) focal; urgency=medium
+
+  * Bump oxen-service-node storage server required version
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Wed, 31 Aug 2022 22:11:16 -0300
+
 oxen (10.2.0-2~ubuntu2004) focal; urgency=medium
 
   * Dependency/submodule updates
