@@ -27,10 +27,19 @@ ss_active=
 if systemctl -q is-active oxen-node.service; then node_active=y; fi
 if systemctl -q is-active oxen-storage-server.service; then ss_active=y; fi
 
-echo "Ready to download lmdb from $1."
+url_lmdb="$1"
+url_ons="${url_lmdb%/*}/ons.db"
+url_sqlite="${url_lmdb%/*}/sqlite.db"
+echo "Ready to download blockchain data from $1, …/ons.db, …/sqlite.db"
 if [ -e /var/lib/oxen/lmdb/data.mdb ]; then
-    echo "Will overwrite existing data.mdb:"
+    echo -e "\nWill overwrite existing blockchain files:\n"
     ls -l --si /var/lib/oxen/lmdb/data.mdb
+    for f in /var/lib/oxen/{ons,sqlite}.db; do
+        if [ -e "$f" ]; then
+            ls -l --si "$f"
+        fi
+    done
+    echo ""
 fi
 if [ -n "$node_active" ]; then
     echo -n "oxen-node.service"
@@ -42,7 +51,7 @@ fi
 
 echo
 
-read -p "Press enter to continue, ^C to abort"
+read -p "Press enter to continue, Ctrl-C to abort"
 
 if [ -n "$node_active" ]; then
     if [ -n "$ss_active" ]; then
@@ -52,11 +61,36 @@ if [ -n "$node_active" ]; then
     fi
 fi
 
-curl "$1" >/var/lib/oxen/lmdb/data.mdb
-
+curl "$url_lmdb" >/var/lib/oxen/lmdb/data.mdb
 chown _loki:_loki /var/lib/oxen/lmdb/data.mdb
-echo "Downloaded data.mdb:"
-ls -l --si /var/lib/oxen/lmdb/data.mdb
+
+downloads=(/var/lib/oxen/lmdb/data.mdb)
+
+
+if [ -e /var/lib/oxen/ons.db ]; then
+    rm -f /var/lib/oxen/ons.db*
+fi
+if curl "$url_ons" >/var/lib/oxen/ons.db; then
+    chown _loki:_loki /var/lib/oxen/ons.db
+    downloads+=(/var/lib/oxen/ons.db)
+else
+    echo "Failed to download ons.db; perhaps it is not available alongside data.mdb at the given URL?" >&2
+    echo "oxend startup will have to rescan the ONS database which will take a few minutes" >&2
+fi
+
+if [ -e /var/lib/oxen/sqlite.db ]; then
+    rm -f /var/lib/oxen/sqlite.db*
+fi
+if curl "$url_sqlite" >/var/lib/oxen/sqlite.db; then
+    chown _loki:_loki /var/lib/oxen/sqlite.db
+    downloads+=(/var/lib/oxen/sqlite.db)
+else
+    echo "Failed to download sqlite.db; perhaps it is not available alongside data.mdb at the given URL?" >&2
+    echo "oxend startup will have to recompute batching rewards which will take a few minutes" >&2
+fi
+
+echo "Downloaded blockchain files:"
+ls -l --si "${downloads[@]}"
 
 if [ -n "$node_active" ]; then
     if [ -n "$ss_active" ]; then
