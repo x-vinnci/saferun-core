@@ -1,3 +1,9 @@
+oxen (10.2.0-4~deb12) bookworm; urgency=medium
+
+  * Add ons, batching snapshot download to oxend-download-lmdb
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Wed, 07 Sep 2022 13:34:08 -0300
+
 oxen (10.2.0-3~deb12) bookworm; urgency=medium
 
   * Bump oxen-service-node storage server required version
