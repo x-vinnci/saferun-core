@@ -3115,22 +3115,41 @@ namespace cryptonote { namespace rpc {
     entry.last_decommission_reason_consensus_all      = info.last_decommission_reason_consensus_all;
     entry.last_decommission_reason_consensus_any      = info.last_decommission_reason_consensus_any;
 
-    auto& netconf = m_core.get_net_config();
-    m_core.get_service_node_list().access_proof(sn_info.pubkey, [&entry, &netconf](const auto &proof) {
-        entry.service_node_version     = proof.proof->version;
-        entry.lokinet_version          = proof.proof->lokinet_version;
-        entry.storage_server_version   = proof.proof->storage_server_version;
-        entry.public_ip                = epee::string_tools::get_ip_string_from_int32(proof.proof->public_ip);
-        entry.storage_port             = proof.proof->storage_https_port;
-        entry.storage_lmq_port         = proof.proof->storage_omq_port;
-        entry.pubkey_ed25519           = proof.proof->pubkey_ed25519 ? tools::type_to_hex(proof.proof->pubkey_ed25519) : "";
-        entry.pubkey_x25519            = proof.pubkey_x25519 ? tools::type_to_hex(proof.pubkey_x25519) : "";
-        entry.quorumnet_port           = proof.proof->qnet_port;
+    m_core.get_service_node_list().access_proof(sn_info.pubkey, [
+            this, &entry, is_me = (m_core.service_node() && m_core.get_service_keys().pub == sn_info.pubkey)
+    ](const auto &proof) {
+        if (is_me) {
+            // When returning our own info we always want to return the most current data because
+            // the data from the SN list could be stale (it only gets updated when we get
+            // verification of acceptance of our proof from the network).  The rest of the network
+            // might not get the updated data until the next proof, but local callers like SS and
+            // Lokinet want it updated immediately.
+            entry.service_node_version = OXEN_VERSION;
+            entry.lokinet_version = m_core.lokinet_version;
+            entry.storage_server_version = m_core.ss_version;
+            entry.public_ip = epee::string_tools::get_ip_string_from_int32(m_core.sn_public_ip());
+            entry.storage_port = m_core.storage_https_port();
+            entry.storage_lmq_port = m_core.storage_omq_port();
+            entry.quorumnet_port = m_core.quorumnet_port();
+            entry.pubkey_ed25519 = tools::type_to_hex(m_core.get_service_keys().pub_ed25519);
+            entry.pubkey_x25519 = tools::type_to_hex(m_core.get_service_keys().pub_x25519);
+        } else {
+            entry.service_node_version = proof.proof->version;
+            entry.lokinet_version = proof.proof->lokinet_version;
+            entry.storage_server_version = proof.proof->storage_server_version;
+            entry.public_ip = epee::string_tools::get_ip_string_from_int32(proof.proof->public_ip);
+            entry.storage_port = proof.proof->storage_https_port;
+            entry.storage_lmq_port = proof.proof->storage_omq_port;
+            entry.pubkey_ed25519 = proof.proof->pubkey_ed25519 ? tools::type_to_hex(proof.proof->pubkey_ed25519) : "";
+            entry.pubkey_x25519 = proof.pubkey_x25519 ? tools::type_to_hex(proof.pubkey_x25519) : "";
+            entry.quorumnet_port = proof.proof->qnet_port;
+        }
 
         // NOTE: Service Node Testing
         entry.last_uptime_proof                  = proof.timestamp;
         auto system_now = std::chrono::system_clock::now();
         auto steady_now = std::chrono::steady_clock::now();
+        auto& netconf = m_core.get_net_config();
         entry.storage_server_reachable = !proof.ss_reachable.unreachable_for(netconf.UPTIME_PROOF_VALIDITY - netconf.UPTIME_PROOF_FREQUENCY, steady_now);
         entry.storage_server_first_unreachable = reachable_to_time_t(proof.ss_reachable.first_unreachable, system_now, steady_now);
         entry.storage_server_last_unreachable = reachable_to_time_t(proof.ss_reachable.last_unreachable, system_now, steady_now);
@@ -3278,6 +3297,7 @@ namespace cryptonote { namespace rpc {
             std::array<uint16_t, 3> cur_version,
             std::array<uint16_t, 3> required,
             std::string_view ed25519_pubkey,
+            std::string_view error,
             std::string_view name,
             std::atomic<std::time_t>& update,
             std::chrono::seconds lifetime,
@@ -3285,7 +3305,13 @@ namespace cryptonote { namespace rpc {
     {
       std::string our_ed25519_pubkey = tools::type_to_hex(core.get_service_keys().pub_ed25519);
       typename RPC::response res{};
-      if (cur_version < required) {
+      if (!error.empty()) {
+        res.status = fmt::format("Error: {}", error);
+        MERROR(fmt::format("{0} reported an error: {1}. Check {0} logs for more details.", name, error));
+        update = 0; // Reset our last ping time to 0 so that we won't send a ping until we get
+                    // success back again (even if we had an earlier acceptable ping within the
+                    // cutoff time).
+      } else if (cur_version < required) {
         res.status = fmt::format("Outdated {}. Current: {}.{}.{}, Required: {}.{}.{}",
             name, cur_version[0], cur_version[1], cur_version[2], required[0], required[1], required[2]);
         MERROR(res.status);
@@ -3315,7 +3341,7 @@ namespace cryptonote { namespace rpc {
     m_core.ss_version = req.version;
     return handle_ping<STORAGE_SERVER_PING>(m_core,
       req.version, service_nodes::MIN_STORAGE_SERVER_VERSION,
-      req.ed25519_pubkey,
+      req.ed25519_pubkey, req.error,
       "Storage Server", m_core.m_last_storage_server_ping, m_core.get_net_config().UPTIME_PROOF_FREQUENCY,
       [this, &req](bool significant) {
         m_core.m_storage_https_port = req.https_port;
@@ -3330,7 +3356,7 @@ namespace cryptonote { namespace rpc {
     m_core.lokinet_version = req.version;
     return handle_ping<LOKINET_PING>(m_core,
         req.version, service_nodes::MIN_LOKINET_VERSION,
-        req.ed25519_pubkey,
+        req.ed25519_pubkey, req.error,
         "Lokinet", m_core.m_last_lokinet_ping, m_core.get_net_config().UPTIME_PROOF_FREQUENCY,
         [this](bool significant) { if (significant) m_core.reset_proof_interval(); });
   }
