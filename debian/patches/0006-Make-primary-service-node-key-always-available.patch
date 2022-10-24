@@ -12,10 +12,10 @@ simplify that greatly.
  1 file changed, 1 insertion(+), 1 deletion(-)
 
 diff --git a/src/cryptonote_core/cryptonote_core.cpp b/src/cryptonote_core/cryptonote_core.cpp
-index 3fa60d0..1c6c1c1 100644
+index cafe8b8..85f1da5 100644
 --- a/src/cryptonote_core/cryptonote_core.cpp
 +++ b/src/cryptonote_core/cryptonote_core.cpp
-@@ -903,7 +903,7 @@ namespace cryptonote
+@@ -905,7 +905,7 @@ namespace cryptonote
      // backwards compatibility with existing active service nodes.)  The legacy key consists of
      // *just* the private point, but not the seed, and so cannot be used for full Ed25519 signatures
      // (which rely on the seed for signing).
