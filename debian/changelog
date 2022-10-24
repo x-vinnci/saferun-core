@@ -1,3 +1,20 @@
+oxen (10.2.1~rc1-1~ubuntu1804) bionic; urgency=medium
+
+  [ Jason Rhinelander ]
+  * Update variant header from oxenmq to oxenc
+  * Put current info for ourself in service node list
+  * Allow lokinet/ss to send an error ping
+  * zlib security update
+
+  [ Sean Darcy ]
+  * change naked throws to throw exceptions
+  * Creates archiving for reward batching
+
+  [ Jason Rhinelander ]
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 24 Oct 2022 20:08:33 -0300
+
 oxen (10.2.0-4~ubuntu1804) bionic; urgency=medium
 
   * Add ons, batching snapshot download to oxend-download-lmdb
