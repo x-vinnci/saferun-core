@@ -1,5 +1,12 @@
 oxen (10.2.1~rc1-1) unstable; urgency=medium
 
+  * Bump version, required (local) lokinet version
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 24 Oct 2022 21:39:25 -0300
+
+oxen (10.2.1~rc1-1) unstable; urgency=medium
+
   [ Jason Rhinelander ]
   * Update variant header from oxenmq to oxenc
   * Put current info for ourself in service node list
