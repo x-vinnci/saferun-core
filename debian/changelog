@@ -11,6 +11,24 @@ oxen (10.2.1~rc1-1~ubuntu2210) kinetic; urgency=medium
   * Creates archiving for reward batching
 
   [ Jason Rhinelander ]
+  * Bump version, required (local) lokinet version
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 24 Oct 2022 21:40:34 -0300
+
+oxen (10.2.1~rc1-1~ubuntu2210) kinetic; urgency=medium
+
+  [ Jason Rhinelander ]
+  * Update variant header from oxenmq to oxenc
+  * Put current info for ourself in service node list
+  * Allow lokinet/ss to send an error ping
+  * zlib security update
+
+  [ Sean Darcy ]
+  * change naked throws to throw exceptions
+  * Creates archiving for reward batching
+
+  [ Jason Rhinelander ]
   * Rediff patches
 
  -- Jason Rhinelander <jason@imaginary.ca>  Mon, 24 Oct 2022 20:08:49 -0300
