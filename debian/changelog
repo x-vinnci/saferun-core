@@ -1,3 +1,16 @@
+oxen (10.3.0-1~ubuntu2210) kinetic; urgency=medium
+
+  * Don't build curl with nghttp3/quic support
+  * curl: latest version; don't attempt to use nghttp2
+  * Fix macos no-dynamic-libs check
+  * Fix pubkey parameter name in ping endpoints
+  * Fix HF19.2 timestamp
+  * Schedule 19.3 hard spoon
+  * v10.3.0
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Wed, 25 Jan 2023 14:07:18 -0400
+
 oxen (10.2.1-1~ubuntu2210) kinetic; urgency=medium
 
   * Bump lokinet-router required version
