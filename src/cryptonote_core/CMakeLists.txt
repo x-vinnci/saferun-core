@@ -53,6 +53,7 @@ target_link_libraries(cryptonote_core
     device
     checkpoints
     SQLite::SQLite3
+    ethyl
   PRIVATE
     Boost::program_options
     SQLiteCpp

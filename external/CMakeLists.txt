@@ -175,3 +175,7 @@ if(BUILD_PYBIND)
   add_subdirectory(pybind11 EXCLUDE_FROM_ALL)
 endif()
 
+
+set(ethyl_ENABLE_CRYPTO_LIBRARY FALSE CACHE BOOL "" FORCE)
+add_subdirectory(ethyl)
+
