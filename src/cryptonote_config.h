@@ -242,6 +242,7 @@ namespace feature {
     constexpr auto PULSE = hf::hf16_pulse;
     constexpr auto CLSAG = hf::hf16_pulse;
     constexpr auto PROOF_BTENC = hf::hf18;
+    constexpr auto ETH_BLS = hf::hf20;
 }  // namespace feature
 
 enum class network_type : uint8_t { MAINNET = 0, TESTNET, DEVNET, FAKECHAIN, UNDEFINED = 255 };
@@ -409,7 +410,7 @@ namespace config {
 
     // Details of the ethereum smart contract managing rewards and chain its kept on
     inline constexpr uint32_t ETHEREUM_CHAIN_ID = 11155111;
-    inline constexpr std::string_view ETHEREUM_REWARDS_CONTRACT = "0xf85468442B4904cde8D526745369C07CE8F612eA";
+    inline constexpr std::string_view ETHEREUM_REWARDS_CONTRACT = "0xfCE78c64E91aFC35CD61C3121aAb1d8984657FFa";
 
     namespace testnet {
         inline constexpr uint64_t HEIGHT_ESTIMATE_HEIGHT = 339767;
