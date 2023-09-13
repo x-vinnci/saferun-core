@@ -475,4 +475,16 @@ void parse_request(GET_SERVICE_NODE_REGISTRATION_CMD_RAW& cmd, rpc_input in) {
             "staking_requirement",
             required{cmd.request.staking_requirement});
 }
+void parse_request(GET_SERVICE_NODE_REGISTRATION_CMD& cmd, rpc_input in) {
+    get_values(
+            in,
+            "contributor_addresses",
+            required{cmd.request.contributor_addresses},
+            "contributor_amounts",
+            required{cmd.request.contributor_amounts},
+            "operator_cut",
+            required{cmd.request.operator_cut},
+            "staking_requirement",
+            required{cmd.request.staking_requirement});
+}
 }  // namespace cryptonote::rpc

@@ -2457,9 +2457,14 @@ void core_rpc_server::invoke(
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
-GET_SERVICE_NODE_REGISTRATION_CMD::response core_rpc_server::invoke(
-        GET_SERVICE_NODE_REGISTRATION_CMD::request&& req, rpc_context context) {
-    GET_SERVICE_NODE_REGISTRATION_CMD::response res{};
+void core_rpc_server::invoke(
+        GET_SERVICE_NODE_REGISTRATION_CMD& get_service_node_registration_cmd,
+        rpc_context context) {
+    if (!m_core.service_node())
+        throw rpc_error{
+                ERROR_WRONG_PARAM,
+                "Daemon has not been started in service node mode, please relaunch with "
+                "--service-node flag."};
 
     std::vector<std::string> args;
 
@@ -2470,29 +2475,40 @@ GET_SERVICE_NODE_REGISTRATION_CMD::response core_rpc_server::invoke(
     {
         try {
             args.emplace_back(
-                    std::to_string(service_nodes::percent_to_basis_points(req.operator_cut)));
+                    std::to_string(service_nodes::percent_to_basis_points(get_service_node_registration_cmd.request.operator_cut)));
         } catch (const std::exception& e) {
-            res.status = "Invalid value: "s + e.what();
-            log::error(logcat, res.status);
-            return res;
+            get_service_node_registration_cmd.response["status"] = "Invalid value: "s + e.what();
+            log::error(logcat, get_service_node_registration_cmd.response["status"]);
+            return;
         }
     }
 
-    for (const auto& [address, amount] : req.contributions) {
-        args.push_back(address);
-        args.push_back(std::to_string(amount));
+    auto& addresses = get_service_node_registration_cmd.request.contributor_addresses;
+    auto& amounts = get_service_node_registration_cmd.request.contributor_amounts;
+
+    if (addresses.size() != amounts.size()) {
+        throw std::runtime_error("Mismatch in sizes of addresses and amounts");
     }
 
-    GET_SERVICE_NODE_REGISTRATION_CMD_RAW req_old{};
+    for (size_t i = 0; i < addresses.size(); ++i) {
+        args.push_back(addresses[i]);
+        args.push_back(std::to_string(amounts[i]));
+    }
 
-    req_old.request.staking_requirement = req.staking_requirement;
-    req_old.request.args = std::move(args);
-    req_old.request.make_friendly = false;
+    std::string registration_cmd;
+    if (!service_nodes::make_registration_cmd(
+                m_core.get_nettype(),
+                hf_version,
+                staking_requirement,
+                args,
+                m_core.get_service_keys(),
+                registration_cmd,
+                false /*Make friendly*/))
+        throw rpc_error{ERROR_INTERNAL, "Failed to make registration command"};
 
-    invoke(req_old, context);
-    res.status = req_old.response["status"];
-    res.registration_cmd = req_old.response["registration_cmd"];
-    return res;
+    get_service_node_registration_cmd.response["registration_cmd"] = registration_cmd;
+    get_service_node_registration_cmd.response["status"] = STATUS_OK;
+    return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void core_rpc_server::invoke(

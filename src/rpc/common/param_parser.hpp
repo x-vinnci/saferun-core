@@ -148,6 +148,7 @@ void load_value(BTConsumer& c, T& val) {
     } else
         static_assert(std::is_same_v<T, void>, "Unsupported load_value type");
 }
+
 // Copies the next value from the json range into `val`, and advances the iterator.  Throws
 // on unconvertible values.
 template <typename T>

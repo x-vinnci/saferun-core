@@ -30,6 +30,7 @@ void parse_request(GET_OUTPUTS& get_outputs, rpc_input in);
 void parse_request(GET_OUTPUT_HISTOGRAM& get_output_histogram, rpc_input in);
 void parse_request(GET_PEER_LIST& bh, rpc_input in);
 void parse_request(GET_SERVICE_NODES& sns, rpc_input in);
+void parse_request(GET_SERVICE_NODE_REGISTRATION_CMD& cmd, rpc_input in);
 void parse_request(GET_SERVICE_NODE_REGISTRATION_CMD_RAW& cmd, rpc_input in);
 void parse_request(GET_SN_STATE_CHANGES& get_sn_state_changes, rpc_input in);
 void parse_request(GET_STAKING_REQUIREMENT& get_staking_requirement, rpc_input in);

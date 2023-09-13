@@ -1835,35 +1835,18 @@ struct GET_SERVICE_NODE_REGISTRATION_CMD_RAW : RPC_COMMAND {
     } request;
 };
 
-OXEN_RPC_DOC_INTROSPECT
 struct GET_SERVICE_NODE_REGISTRATION_CMD : RPC_COMMAND {
     static constexpr auto names() { return NAMES("get_service_node_registration_cmd"); }
-
-    struct contribution_t {
-        std::string address;  // The wallet address for the contributor
-        uint64_t amount;      // The amount that the contributor will reserve in Loki atomic units
-                              // towards the staking requirement
-
-        KV_MAP_SERIALIZABLE
-    };
 
     struct request {
         std::string operator_cut;  // The percentage of cut per reward the operator receives
                                    // expressed as a string, i.e. "1.1%"
-        std::vector<contribution_t> contributions;  // Array of contributors for this Service Node
+        std::vector<std::string> contributor_addresses;
+        std::vector<uint64_t> contributor_amounts;
         uint64_t staking_requirement;  // The staking requirement to become a Service Node the
                                        // registration command will be generated upon
 
-        KV_MAP_SERIALIZABLE
-    };
-
-    struct response {
-        std::string status;            // Generic RPC error code. "OK" is the success value.
-        std::string registration_cmd;  // The command to execute in the wallet CLI to register the
-                                       // queried daemon as a Service Node.
-
-        KV_MAP_SERIALIZABLE
-    };
+    } request;
 };
 
 /// RPC: service_node/get_service_keys
@@ -2691,6 +2674,7 @@ using core_rpc_types = tools::type_list<
         GET_SERVICE_KEYS,
         GET_SERVICE_NODES,
         GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES,
+        GET_SERVICE_NODE_REGISTRATION_CMD,
         GET_SERVICE_NODE_REGISTRATION_CMD_RAW,
         GET_SERVICE_NODE_STATUS,
         GET_SERVICE_PRIVKEYS,
@@ -2728,6 +2712,6 @@ using core_rpc_types = tools::type_list<
         ONS_NAMES_TO_OWNERS>;
 
 using FIXME_old_rpc_types =
-        tools::type_list<RELAY_TX, GET_OUTPUT_DISTRIBUTION, GET_SERVICE_NODE_REGISTRATION_CMD>;
+        tools::type_list<RELAY_TX, GET_OUTPUT_DISTRIBUTION>;
 
 }  // namespace cryptonote::rpc

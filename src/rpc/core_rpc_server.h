@@ -187,6 +187,7 @@ class core_rpc_server {
     void invoke(GET_BLOCK_HEADERS_RANGE& get_block_headers_range, rpc_context context);
     void invoke(GET_BLOCK_HEADER_BY_HEIGHT& get_block_header_by_height, rpc_context context);
     void invoke(GET_BLOCK& get_block, rpc_context context);
+    void invoke( GET_SERVICE_NODE_REGISTRATION_CMD& get_service_node_registration_cmd, rpc_context context);
     void invoke(
             GET_SERVICE_NODE_REGISTRATION_CMD_RAW& get_service_node_registration_cmd_raw,
             rpc_context context);
@@ -215,10 +216,6 @@ class core_rpc_server {
             GET_TX_GLOBAL_OUTPUTS_INDEXES_BIN::request&& req, rpc_context context);
     GET_OUTPUT_DISTRIBUTION::response invoke(
             GET_OUTPUT_DISTRIBUTION::request&& req, rpc_context context, bool binary = false);
-
-    // FIXME: unconverted JSON RPC endpoints:
-    GET_SERVICE_NODE_REGISTRATION_CMD::response invoke(
-            GET_SERVICE_NODE_REGISTRATION_CMD::request&& req, rpc_context context);
 
   private:
     bool check_core_ready();
