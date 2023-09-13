@@ -155,7 +155,7 @@ static constexpr std::array devnet_hard_forks = {
         hard_fork{hf::hf17, 0, 201, 1653500577},
         hard_fork{hf::hf18, 0, 202, 1653500577},
         hard_fork{hf::hf19_reward_batching, 0, 203, 1653500577},
-        hard_fork{hf::hf19_reward_batching, 1, 204, 1653500577},
+        hard_fork{hf::hf20, 0, 204, 1653500577},
 };
 
 template <size_t N>
