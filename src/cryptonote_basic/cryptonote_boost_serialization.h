@@ -226,6 +226,10 @@ namespace boost { namespace serialization {
         a& b.height;
         a& b.service_node_winner_key;
         a& b.reward;
+        if (ver < 20)
+            return;
+        a& b.l2_height;
+        a& b.l2_state;
     }
 
     template <class Archive>
