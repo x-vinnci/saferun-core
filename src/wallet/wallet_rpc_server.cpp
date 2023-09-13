@@ -612,8 +612,9 @@ bool wallet_rpc_server::init() {
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void wallet_rpc_server::require_open() {
-    if (!m_wallet)
+    if (!m_wallet) {
         throw wallet_rpc_error{error_code::NOT_OPEN, "No wallet file"};
+    }
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void wallet_rpc_server::close_wallet(bool save_current) {
@@ -3428,7 +3429,6 @@ ONS_HASH_NAME::response wallet_rpc_server::invoke(ONS_HASH_NAME::request&& req) 
 }
 
 ONS_KNOWN_NAMES::response wallet_rpc_server::invoke(ONS_KNOWN_NAMES::request&& req) {
-    // TODO sean this needs to fit the new request format
     require_open();
     ONS_KNOWN_NAMES::response res{};
 
