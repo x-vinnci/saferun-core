@@ -260,7 +260,7 @@ class Wallet(RPCDaemon):
             datadir=None,
             listen_ip=None,
             rpc_port=None,
-            log_level=3):
+            log_level=4):
 
         self.listen_ip = listen_ip or LISTEN_IP
         self.rpc_port = rpc_port or next_port()
@@ -363,8 +363,9 @@ class Wallet(RPCDaemon):
 
     def register_sn(self, sn):
         r = sn.json_rpc("get_service_node_registration_cmd", {
+            "contributor_addresses": [self.address()],
+            "contributor_amounts": [100000000000],
             "operator_cut": "100",
-            "contributions": [{"address": self.address(), "amount": 100000000000}],
             "staking_requirement": 100000000000
         }).json()
         if 'error' in r:
@@ -376,8 +377,9 @@ class Wallet(RPCDaemon):
 
     def register_sn_for_contributions(self, sn, cut, amount):
         r = sn.json_rpc("get_service_node_registration_cmd", {
+            "contributor_addresses": [self.address()],
+            "contributor_amounts": [amount],
             "operator_cut": str(cut),
-            "contributions": [{"address": self.address(), "amount": amount}],
             "staking_requirement": 100000000000
         }).json()
         if 'error' in r:

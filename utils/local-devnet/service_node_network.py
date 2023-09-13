@@ -139,7 +139,7 @@ class SNNetwork:
         # of 18.9, which means each registration requires 6 inputs.  Thus we need a bare minimum of
         # 6(N-5) blocks, plus the 30 lock time on coinbase TXes = 6N more blocks (after the initial
         # 5 registrations).
-        self.mine(200)
+        self.mine(204)
         vprint("Submitting first round of service node registrations: ", end="", flush=True)
         for sn in self.sns[0:5]:
             self.mike.register_sn(sn)
