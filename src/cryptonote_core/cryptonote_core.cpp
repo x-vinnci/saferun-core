@@ -251,9 +251,6 @@ core::core() :
         m_last_storage_server_ping(0),
         m_last_lokinet_ping(0),
         m_pad_transactions(false),
-        //TODO sean load this from config data
-        m_provider(std::make_shared<Provider>("Sepolia Client", std::string("https://eth-sepolia.g.alchemy.com/v2/xjUjCAfxli88pqe7UjR4Tt1Jp2GKPJvy"))),
-        m_l2_tracker(std::make_shared<L2Tracker>(get_nettype(), m_provider)),
         ss_version{0},
         lokinet_version{0} {
     m_checkpoints_updating.clear();

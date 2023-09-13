@@ -116,6 +116,8 @@ Blockchain::block_extended_info::block_extended_info(
 //------------------------------------------------------------------
 Blockchain::Blockchain(
         tx_memory_pool& tx_pool, service_nodes::service_node_list& service_node_list) :
+        //TODO sean load this from config data
+        m_provider(std::make_shared<Provider>("Sepolia Client", std::string("https://eth-sepolia.g.alchemy.com/v2/xjUjCAfxli88pqe7UjR4Tt1Jp2GKPJvy"))),
         m_db(),
         m_tx_pool(tx_pool),
         m_current_block_cumul_weight_limit(0),
@@ -530,6 +532,8 @@ bool Blockchain::init(
 
     if (!m_checkpoints.init(m_nettype, m_db))
         throw std::runtime_error("Failed to initialize checkpoints");
+
+    m_l2_tracker = std::make_shared<L2Tracker>(m_nettype, m_provider);
 
     m_offline = offline;
     m_fixed_difficulty = fixed_difficulty;
@@ -1874,6 +1878,8 @@ bool Blockchain::create_block_template_internal(
             b.service_node_winner_key = crypto::null<crypto::public_key>;
 
         b.reward = block_rewards;
+        //TODO sean
+        std::tie(b.l2_height, b.l2_state) = m_l2_tracker->latest_state();
         b.height = height;
         return true;
     }

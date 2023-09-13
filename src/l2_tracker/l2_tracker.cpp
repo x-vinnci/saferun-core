@@ -1,4 +1,5 @@
 #include "l2_tracker.h"
+#include <thread>
 
 L2Tracker::L2Tracker() {
 }
@@ -37,6 +38,16 @@ void L2Tracker::update_state() {
         state_history.emplace_back(new_state);
     }
 }
+
+std::pair<uint64_t, crypto::hash> L2Tracker::latest_state() {
+    if(state_history.empty()) {
+        throw std::runtime_error("Internal error getting latest state from l2 tracker");
+    }
+    crypto::hash return_hash;
+    tools::hex_to_type(state_history.back().state, return_hash);
+    return std::make_pair(6969, return_hash);
+}
+
 
 std::string L2Tracker::get_contract_address(const cryptonote::network_type nettype) {
     return std::string(get_config(nettype).ETHEREUM_REWARDS_CONTRACT);

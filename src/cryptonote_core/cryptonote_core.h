@@ -32,8 +32,6 @@
 
 #include <oxenmq/oxenmq.h>
 
-#include <ethyl/provider.hpp>
-
 #include <boost/program_options/options_description.hpp>
 #include <boost/program_options/variables_map.hpp>
 #include <chrono>
@@ -56,7 +54,6 @@
 #include "service_node_quorum_cop.h"
 #include "service_node_voting.h"
 #include "tx_pool.h"
-#include "l2_tracker/l2_tracker.h"
 PUSH_WARNINGS
 DISABLE_VS_WARNINGS(4355)
 
@@ -1246,9 +1243,6 @@ class core : public i_miner_handler {
     tx_memory_pool m_mempool;         //!< transaction pool instance
     Blockchain m_blockchain_storage;  //!< Blockchain instance
     
-    // Ethereum client for communicating with L2 blockchain
-    std::shared_ptr<Provider> m_provider;
-    std::shared_ptr<L2Tracker> m_l2_tracker;
 
     service_nodes::service_node_list m_service_node_list;
     service_nodes::quorum_cop m_quorum_cop;

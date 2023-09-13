@@ -2,6 +2,7 @@
 
 #include "rewards_contract.h"
 #include "l2_tracker.h"
+#include "crypto/hash.h"
 
 #include "cryptonote_config.h"
 
@@ -17,8 +18,10 @@ public:
     L2Tracker(const cryptonote::network_type nettype, const std::shared_ptr<Provider>& client);
     ~L2Tracker();
 
-    void L2Tracker::update_state_thread();
+    void update_state_thread();
     void update_state();
+
+    std::pair<uint64_t, crypto::hash> latest_state();
 
 private:
     static std::string get_contract_address(const cryptonote::network_type nettype);

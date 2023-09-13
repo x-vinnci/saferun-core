@@ -49,6 +49,7 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
+#include <ethyl/provider.hpp>
 
 #include "blockchain_db/blockchain_db.h"
 #include "blockchain_db/sqlite/db_sqlite.h"
@@ -67,6 +68,7 @@
 #include "pulse.h"
 #include "rpc/core_rpc_server_binary_commands.h"
 #include "rpc/core_rpc_server_commands_defs.h"
+#include "l2_tracker/l2_tracker.h"
 
 struct sqlite3;
 namespace service_nodes {
@@ -1279,6 +1281,10 @@ class Blockchain {
     std::vector<ValidateMinerTxHook> m_validate_miner_tx_hooks;
 
     checkpoints m_checkpoints;
+
+    // Ethereum client for communicating with L2 blockchain
+    std::shared_ptr<Provider> m_provider;
+    std::shared_ptr<L2Tracker> m_l2_tracker;
 
     network_type m_nettype;
     bool m_offline;
