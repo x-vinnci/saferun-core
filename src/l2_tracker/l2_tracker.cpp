@@ -1,5 +1,8 @@
 #include "l2_tracker.h"
 #include <thread>
+#include "logging/oxen_logger.h"
+
+static auto logcat = oxen::log::Cat("daemon");
 
 L2Tracker::L2Tracker() {
 }
@@ -24,18 +27,43 @@ void L2Tracker::update_state_thread() {
     }
 }
 
-void L2Tracker::update_state() {
-    state_history.emplace_back(rewards_contract->State());
-    StateResponse new_state = rewards_contract->State();
+void L2Tracker::insert_in_order(const StateResponse& new_state) {
     // Check if the state with the same height already exists
     auto it = std::find_if(state_history.begin(), state_history.end(),
                            [&new_state](const StateResponse& state) {
                                return state.height == new_state.height;
                            });
 
-    // If it doesn't exist, emplace it back
+    // If it doesn't exist, insert it in the appropriate location
     if (it == state_history.end()) {
-        state_history.emplace_back(new_state);
+        auto insert_loc = std::upper_bound(state_history.begin(), state_history.end(), new_state,
+                                           [](const StateResponse& a, const StateResponse& b) {
+                                               return a.height > b.height;
+                                           });
+
+        state_history.insert(insert_loc, new_state);
+    }
+}
+
+void L2Tracker::update_state() {
+    try {
+        // Get latest state
+        StateResponse new_state = rewards_contract->State();
+        insert_in_order(new_state);
+
+        // Check for missing heights between the first and second entries
+        std::vector<uint64_t> missing_heights;
+        if (state_history.size() > 1) {
+            uint64_t first_height = state_history[0].height;
+            uint64_t second_height = state_history[1].height;
+
+            for (uint64_t h = first_height - 1; h > second_height; --h) {
+                new_state = rewards_contract->State(h);
+                insert_in_order(new_state);
+            }
+        }
+    } catch (const std::exception& e) {
+        oxen::log::error(logcat, "Failed to update state: {}", e.what());
     }
 }
 
@@ -44,8 +72,9 @@ std::pair<uint64_t, crypto::hash> L2Tracker::latest_state() {
         throw std::runtime_error("Internal error getting latest state from l2 tracker");
     }
     crypto::hash return_hash;
-    tools::hex_to_type(state_history.back().state, return_hash);
-    return std::make_pair(6969, return_hash);
+    auto& latest_state = state_history.back();
+    tools::hex_to_type(latest_state.state, return_hash);
+    return std::make_pair(latest_state.height, return_hash);
 }
 
 

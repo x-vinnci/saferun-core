@@ -20,6 +20,7 @@ public:
 
     void update_state_thread();
     void update_state();
+    void insert_in_order(const StateResponse& new_state);
 
     std::pair<uint64_t, crypto::hash> latest_state();
 

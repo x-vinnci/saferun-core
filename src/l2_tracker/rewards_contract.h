@@ -16,6 +16,7 @@ public:
     RewardsContract(const std::string& _contractAddress, std::shared_ptr<Provider> _provider);
 
     StateResponse State();
+    StateResponse State(std::optional<uint64_t> height);
 
 private:
     std::string contractAddress;
