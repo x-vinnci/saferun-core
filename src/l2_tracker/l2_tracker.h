@@ -22,6 +22,9 @@ public:
     void update_state();
     void insert_in_order(const StateResponse& new_state);
 
+    bool check_state_in_history(uint64_t height, const crypto::hash& state);
+    bool check_state_in_history(uint64_t height, const std::string& state);
+
     std::pair<uint64_t, crypto::hash> latest_state();
 
 private:

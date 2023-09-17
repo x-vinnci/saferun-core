@@ -46,6 +46,7 @@ void L2Tracker::insert_in_order(const StateResponse& new_state) {
 }
 
 void L2Tracker::update_state() {
+    //TODO sean, create counter for failed state updates, if it fails too many times then throw
     try {
         // Get latest state
         StateResponse new_state = rewards_contract->State();
@@ -75,6 +76,19 @@ std::pair<uint64_t, crypto::hash> L2Tracker::latest_state() {
     auto& latest_state = state_history.back();
     tools::hex_to_type(latest_state.state, return_hash);
     return std::make_pair(latest_state.height, return_hash);
+}
+
+bool L2Tracker::check_state_in_history(uint64_t height, const crypto::hash& state) {
+    std::string state_str = tools::type_to_hex(state);
+    return check_state_in_history(height, state_str);
+}
+
+bool L2Tracker::check_state_in_history(uint64_t height, const std::string& state) {
+    auto it = std::find_if(state_history.begin(), state_history.end(),
+        [height, &state](const StateResponse& stateResponse) {
+            return stateResponse.height == height && stateResponse.state == state;
+        });
+    return it != state_history.end();
 }
 
 
