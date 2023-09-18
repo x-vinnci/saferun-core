@@ -95,7 +95,7 @@ class RPCDaemon:
                 }
         if params:
             json["params"] = params
-
+        print(json)
         return requests.post('http://{}:{}/json_rpc'.format(self.listen_ip, self.rpc_port), json=json, timeout=timeout)
 
 
