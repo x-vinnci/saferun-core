@@ -66,6 +66,9 @@ add_subdirectory(db_drivers)
 add_subdirectory(randomx EXCLUDE_FROM_ALL)
 add_subdirectory(date EXCLUDE_FROM_ALL)
 
+set(BLS_ETH ON CACHE BOOL "" FORCE)
+add_subdirectory(bls)
+
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE BOOL "") # Allows multi-header nlohmann use
 add_subdirectory(nlohmann-json EXCLUDE_FROM_ALL)

@@ -2,7 +2,7 @@
 #include <thread>
 #include "logging/oxen_logger.h"
 
-static auto logcat = oxen::log::Cat("daemon");
+static auto logcat = oxen::log::Cat("l2_tracker");
 
 L2Tracker::L2Tracker() {
 }

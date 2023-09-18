@@ -1,5 +1,4 @@
-# Copyright (c) 2018, The Loki Project
-# Copyright (c) 2014-2019, The Monero Project
+# Copyright (c) 2023, The Oxen Project
 #
 # All rights reserved.
 #
@@ -27,44 +26,15 @@
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-add_library(cryptonote_core
-  blockchain.cpp
-  cryptonote_core.cpp
-  service_node_rules.cpp
-  service_node_list.cpp
-  service_node_voting.cpp
-  service_node_quorum_cop.cpp
-  service_node_swarm.cpp
-  tx_blink.cpp
-  oxen_name_system.cpp
-  tx_pool.cpp
-  tx_sanity_check.cpp
-  cryptonote_tx_utils.cpp
-  pulse.cpp
-  uptime_proof.cpp)
+add_library(bls
+  bls_signer.cpp
+  bls_aggregator.cpp
+  bls_utils.cpp
+  )
 
-target_link_libraries(cryptonote_core
-  PUBLIC
-    version
-    common
-    blockchain_db
-    multisig
-    ringct
-    device
-    checkpoints
-    SQLite::SQLite3
-    bls
-    l2_tracker
-    ethyl
+target_link_libraries(bls
   PRIVATE
-    Boost::program_options
-    SQLiteCpp
-    systemd
+    common
+    cryptonote_basic
     logging
     extra)
-
-if(PER_BLOCK_CHECKPOINT)
-  target_compile_definitions(cryptonote_core PUBLIC PER_BLOCK_CHECKPOINT)
-  target_link_libraries(cryptonote_core PUBLIC blocks)
-endif()
-

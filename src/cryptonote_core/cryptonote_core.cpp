@@ -765,6 +765,7 @@ bool core::init(
         return false;
 
     init_oxenmq(vm);
+    m_bls_aggregator = std::make_shared<BLSAggregator>(m_service_node_list, m_omq);
 
     const difficulty_type fixed_difficulty = command_line::get_arg(vm, arg_fixed_difficulty);
     r = m_blockchain_storage.init(
@@ -1035,7 +1036,7 @@ oxenmq::AuthLevel core::omq_allow(
 void core::init_oxenmq(const boost::program_options::variables_map& vm) {
     using namespace oxenmq;
     log::info(omqlogcat, "Starting oxenmq");
-    m_omq = std::make_unique<OxenMQ>(
+    m_omq = std::make_shared<OxenMQ>(
             tools::copy_guts(m_service_keys.pub_x25519),
             tools::copy_guts(m_service_keys.key_x25519),
             m_service_node,

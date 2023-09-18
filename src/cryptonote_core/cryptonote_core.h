@@ -1247,6 +1247,8 @@ class core : public i_miner_handler {
     service_nodes::service_node_list m_service_node_list;
     service_nodes::quorum_cop m_quorum_cop;
 
+    std::unique_ptr<BLSAggregator> m_bls_aggregator;
+
     i_cryptonote_protocol* m_pprotocol;        //!< cryptonote protocol instance
     cryptonote_protocol_stub m_protocol_stub;  //!< cryptonote protocol stub instance
 
@@ -1300,7 +1302,7 @@ class core : public i_miner_handler {
     uint16_t m_quorumnet_port;
 
     /// OxenMQ main object.  Gets created during init().
-    std::unique_ptr<oxenmq::OxenMQ> m_omq;
+    std::shared_ptr<oxenmq::OxenMQ> m_omq;
 
     // Internal opaque data object managed by cryptonote_protocol/quorumnet.cpp.  void pointer to
     // avoid linking issues (protocol does not link against core).
