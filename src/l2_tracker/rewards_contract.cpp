@@ -1,7 +1,7 @@
 #include "rewards_contract.h"
 
 RewardsContract::RewardsContract(const std::string& _contractAddress, std::shared_ptr<Provider> _provider)
-        : contractAddress(_contractAddress), provider(_provider) {}
+        : contractAddress(_contractAddress), provider(std::move(_provider)) {}
 
 StateResponse RewardsContract::State() {
     return State(std::nullopt);

@@ -54,6 +54,7 @@
 #include "service_node_quorum_cop.h"
 #include "service_node_voting.h"
 #include "tx_pool.h"
+#include "bls/bls_aggregator.h"
 PUSH_WARNINGS
 DISABLE_VS_WARNINGS(4355)
 
@@ -1247,6 +1248,7 @@ class core : public i_miner_handler {
     service_nodes::service_node_list m_service_node_list;
     service_nodes::quorum_cop m_quorum_cop;
 
+    std::shared_ptr<BLSSigner> m_bls_signer;
     std::unique_ptr<BLSAggregator> m_bls_aggregator;
 
     i_cryptonote_protocol* m_pprotocol;        //!< cryptonote protocol instance

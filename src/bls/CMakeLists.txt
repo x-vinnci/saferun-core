@@ -26,14 +26,17 @@
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-add_library(bls
+add_library(oxen_bls
   bls_signer.cpp
   bls_aggregator.cpp
   bls_utils.cpp
   )
 
-target_link_libraries(bls
+target_link_libraries(oxen_bls
+  PUBLIC
+    bls::bls256
   PRIVATE
+    cncrypto
     common
     cryptonote_basic
     logging

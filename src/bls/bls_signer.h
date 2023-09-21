@@ -14,6 +14,9 @@
 #undef MCLBN_NO_AUTOLINK
 #pragma GCC diagnostic pop
 
+#include <memory>
+#include <oxenmq/oxenmq.h>
+
 class BLSSigner {
 private:
     bls::SecretKey secretKey;
@@ -24,6 +27,8 @@ public:
     BLSSigner();
     BLSSigner(bls::SecretKey _secretKey);
     ~BLSSigner();
+
+    void initOMQ(std::shared_ptr<oxenmq::OxenMQ> omq);
 
     bls::Signature signHash(const std::array<unsigned char, 32>& hash);
     std::string proofOfPossession();

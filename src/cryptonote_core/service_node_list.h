@@ -518,6 +518,10 @@ class service_node_list {
     // Returns a pubkey of a random service node in the service node list
     crypto::public_key get_random_pubkey();
 
+    service_nodes::service_nodes_infos_t::iterator get_first_pubkey_iterator();
+    service_nodes::service_nodes_infos_t::iterator get_next_pubkey_iterator(service_nodes::service_nodes_infos_t::iterator current_it);
+    service_nodes::service_nodes_infos_t::iterator get_end_pubkey_iterator();
+
     /// Initializes the x25519 map from current pubkey state; called during initialization
     void initialize_x25519_map();
 

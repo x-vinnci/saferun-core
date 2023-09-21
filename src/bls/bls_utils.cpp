@@ -1,4 +1,5 @@
-#include "eth-bls/bls_utils.h"
+#include "bls_utils.h"
+#include <oxenc/hex.h>
 
 std::string bls_utils::SignatureToHex(bls::Signature sig) {
     mclSize serializedSignatureSize = 32;
@@ -16,7 +17,7 @@ std::string bls_utils::SignatureToHex(bls::Signature sig) {
         throw std::runtime_error("size of y.a is zero");
     if (g2Point2.y.b.serialize(dst + serializedSignatureSize * 3, serializedSignatureSize, mcl::IoSerialize | mcl::IoBigEndian) == 0)
         throw std::runtime_error("size of y.b is zero");
-    return utils::toHexString(serialized_signature);
+    return oxenc::to_hex(serialized_signature.begin(), serialized_signature.end());
 }
 
 std::string bls_utils::PublicKeyToHex(bls::PublicKey publicKey) {
@@ -32,6 +33,6 @@ std::string bls_utils::PublicKeyToHex(bls::PublicKey publicKey) {
     if (g1Point2.y.serialize(dst + serializedPublicKeySize, serializedPublicKeySize, mcl::IoSerialize | mcl::IoBigEndian) == 0)
         throw std::runtime_error("size of y is zero");
 
-    return utils::toHexString(serialized_pubkey);
+    return oxenc::to_hex(serialized_pubkey.begin(), serialized_pubkey.end());
 }
 

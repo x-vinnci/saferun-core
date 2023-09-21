@@ -251,6 +251,7 @@ core::core() :
         m_last_storage_server_ping(0),
         m_last_lokinet_ping(0),
         m_pad_transactions(false),
+        m_bls_signer(std::make_shared<BLSSigner>()),
         ss_version{0},
         lokinet_version{0} {
     m_checkpoints_updating.clear();
@@ -765,7 +766,7 @@ bool core::init(
         return false;
 
     init_oxenmq(vm);
-    m_bls_aggregator = std::make_shared<BLSAggregator>(m_service_node_list, m_omq);
+    m_bls_aggregator = std::make_unique<BLSAggregator>(m_service_node_list, m_omq, m_bls_signer);
 
     const difficulty_type fixed_difficulty = command_line::get_arg(vm, arg_fixed_difficulty);
     r = m_blockchain_storage.init(
@@ -1075,6 +1076,7 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
     }
 
     quorumnet_init(*this, m_quorumnet_state);
+    m_bls_signer->initOMQ(m_omq);
 }
 
 void core::start_oxenmq() {
