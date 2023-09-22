@@ -38,17 +38,30 @@ aggregateResponse BLSAggregator::aggregateSignatures(const std::string& message)
     auto it = service_node_list.get_first_pubkey_iterator();
     auto end_it = service_node_list.get_end_pubkey_iterator();
     crypto::x25519_public_key x_pkey{0};
+    uint32_t ip;
+    uint16_t port;
     int64_t signers_index = 0;
     while (it != end_it) {
-        service_node_list.access_proof(it->first, [&x_pkey](auto& proof) {
+        service_node_list.access_proof(it->first, [&x_pkey, &ip, &port](auto& proof) {
             x_pkey = proof.pubkey_x25519;
+            ip = proof.proof->public_ip;
+            port = proof.proof->qnet_port;
         });
         std::unique_lock<std::mutex> connection_lock(connection_mutex);
         cv.wait(connection_lock, [&active_connections] { return active_connections < MAX_CONNECTIONS; });
-        ++active_connections;
-        // TODO sean this should call connect_remote instead of request, request leaves it open
+        oxenmq::address addr{"tcp://{}:{}"_format(ip, port), tools::view_guts(x_pkey)};
+        auto conn = omq->connect_remote(
+            addr,
+            [&active_connections, &connection_mutex](oxenmq::ConnectionID c) {
+                std::unique_lock<std::mutex> connection_lock(connection_mutex);
+                ++active_connections;
+            },
+            [](oxenmq::ConnectionID c, std::string_view err) {
+                //Failed to connect
+            },
+            oxenmq::AuthLevel::basic);
         omq->request(
-                tools::view_guts(x_pkey),
+                conn,
                 "bls.signature_request",
                 [this, &aggSig, &signers, &signers_mutex, &connection_mutex, signers_index, &active_connections, &cv](bool success, std::vector<std::string> data) {
                     std::unique_lock<std::mutex> connection_lock(connection_mutex);
