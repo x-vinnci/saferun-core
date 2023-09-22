@@ -2672,6 +2672,22 @@ core::get_service_node_blacklisted_key_images() const {
     return m_service_node_list.get_blacklisted_key_images();
 }
 //-----------------------------------------------------------------------------------------------
+const aggregateResponse& core::bls_request() const {
+    //TODO sean remove this, just generating random string
+    const auto length = 20;
+    srand(static_cast<unsigned int>(time(nullptr))); // Seed the random number generator
+    const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
+    const int64_t max_index = sizeof(charset) - 1;
+
+    std::string randomString;
+
+    for (size_t i = 0; i < length; ++i) {
+        randomString += charset[static_cast<uint64_t>(rand() % max_index)];
+    }
+
+    return m_bls_aggregator->aggregateSignatures(randomString);
+}
+//-----------------------------------------------------------------------------------------------
 std::vector<service_nodes::service_node_pubkey_info> core::get_service_node_list_state(
         const std::vector<crypto::public_key>& service_node_pubkeys) const {
     return m_service_node_list.get_service_node_list_state(service_node_pubkeys);

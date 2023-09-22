@@ -2523,6 +2523,14 @@ void core_rpc_server::invoke(
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke( BLS_REQUEST& bls_request, rpc_context context) {
+    auto bls_signature_response = m_core.bls_request();
+    bls_request.response["status"] = STATUS_OK;
+    bls_request.response["signature"] = bls_signature_response.signature;
+    bls_request.response["non_signers"] = bls_signature_response.non_signers;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
 void core_rpc_server::invoke(GET_SERVICE_KEYS& get_service_keys, rpc_context context) {
     const auto& keys = m_core.get_service_keys();
     if (keys.pub)

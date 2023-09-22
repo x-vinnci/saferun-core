@@ -2284,6 +2284,19 @@ struct GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES : PUBLIC, NO_ARGS {
     static constexpr auto names() { return NAMES("get_service_node_blacklisted_key_images"); }
 };
 
+
+/// RPC: bls request
+///
+/// Sends a request out for all nodes to sign a BLS signature
+///
+/// Inputs: None
+///
+/// Outputs: None
+///
+struct BLS_REQUEST : PUBLIC, NO_ARGS {
+    static constexpr auto names() { return NAMES("bls_request"); }
+};
+
 /// RPC: blockchain/get_checkpoints
 ///
 /// Query hardcoded/service node checkpoints stored for the blockchain. Omit all arguments to
@@ -2676,6 +2689,7 @@ using core_rpc_types = tools::type_list<
         GET_SERVICE_KEYS,
         GET_SERVICE_NODES,
         GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES,
+        BLS_REQUEST,
         GET_SERVICE_NODE_REGISTRATION_CMD,
         GET_SERVICE_NODE_REGISTRATION_CMD_RAW,
         GET_SERVICE_NODE_STATUS,
