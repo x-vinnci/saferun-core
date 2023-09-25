@@ -2675,7 +2675,7 @@ core::get_service_node_blacklisted_key_images() const {
     return m_service_node_list.get_blacklisted_key_images();
 }
 //-----------------------------------------------------------------------------------------------
-const aggregateResponse& core::bls_request() const {
+aggregateResponse core::bls_request() const {
     //TODO sean remove this, just generating random string
     const auto length = 20;
     srand(static_cast<unsigned int>(time(nullptr))); // Seed the random number generator
