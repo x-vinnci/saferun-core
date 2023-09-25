@@ -4,6 +4,8 @@
 
 #include "common/string_util.h"
 #include "logging/oxen_logger.h"
+#include <boost/asio.hpp>
+#include <oxenc/endian.h>
 
 static auto logcat = oxen::log::Cat("bls_aggregator");
 
@@ -47,46 +49,65 @@ aggregateResponse BLSAggregator::aggregateSignatures(const std::string& message)
             ip = proof.proof->public_ip;
             port = proof.proof->qnet_port;
         });
-        std::unique_lock<std::mutex> connection_lock(connection_mutex);
-        cv.wait(connection_lock, [&active_connections] { return active_connections < MAX_CONNECTIONS; });
-        oxenmq::address addr{"tcp://{}:{}"_format(ip, port), tools::view_guts(x_pkey)};
+        //{
+            //std::unique_lock<std::mutex> connection_lock(connection_mutex);
+            //cv.wait(connection_lock, [&active_connections] { return active_connections < MAX_CONNECTIONS; });
+        //}
+        boost::asio::ip::address_v4 address(oxenc::host_to_big(ip));
+        oxenmq::address addr{"tcp://{}:{}"_format(address.to_string(), port), tools::view_guts(x_pkey)};
+
+        {
+            std::lock_guard<std::mutex> connection_lock(connection_mutex);
+            ++active_connections;
+        }
         auto conn = omq->connect_remote(
             addr,
-            [&active_connections, &connection_mutex](oxenmq::ConnectionID c) {
-                std::unique_lock<std::mutex> connection_lock(connection_mutex);
-                ++active_connections;
+            [this, &aggSig, &signers, &signers_mutex, &connection_mutex, signers_index, &active_connections, &cv, &message](oxenmq::ConnectionID c) {
+                // Successfully connected
+                oxen::log::info(logcat, "TODO sean remove this: successuflly connected");
+                omq->request(
+                        c,
+                        "bls.signature_request",
+                        [this, &aggSig, &signers, &signers_mutex, &connection_mutex, signers_index, &active_connections, &cv, &c](bool success, std::vector<std::string> data) {
+                            oxen::log::info(logcat, "TODO sean remove this: successuflly response {}", signers_index);
+                            oxen::log::debug( logcat, "bls signature response received");
+                            if (success) {
+                                bls::Signature external_signature;
+                                external_signature.setStr(data[0]);
+                                std::lock_guard<std::mutex> lock(signers_mutex);
+                                aggSig.add(external_signature);
+                                signers.push_back(signers_index);
+                            }
+                            std::lock_guard<std::mutex> connection_lock(connection_mutex);
+                            oxen::log::info(logcat, "TODO sean remove this: decrementing active connections");
+                            --active_connections;
+                            cv.notify_all();
+                            //omq->disconnect(c);
+                        },
+                        message
+                        );
             },
-            [](oxenmq::ConnectionID c, std::string_view err) {
-                //Failed to connect
+            [&active_connections, &cv, &connection_mutex](oxenmq::ConnectionID c, std::string_view err) {
+                // Failed to connect
+                oxen::log::debug(logcat, "Failed to connect {}", err);
+                std::lock_guard<std::mutex> connection_lock(connection_mutex);
+                --active_connections;
+                cv.notify_all();
             },
             oxenmq::AuthLevel::basic);
-        omq->request(
-                conn,
-                "bls.signature_request",
-                [this, &aggSig, &signers, &signers_mutex, &connection_mutex, signers_index, &active_connections, &cv](bool success, std::vector<std::string> data) {
-                    std::unique_lock<std::mutex> connection_lock(connection_mutex);
-                    --active_connections;
-                    oxen::log::debug(
-                            logcat,
-                            "bls signature response received: {}",
-                            data[0]);
-                    if (success) {
-                        bls::Signature external_signature;
-                        external_signature.setStr(data[0]);
-                        std::lock_guard<std::mutex> lock(signers_mutex);
-                        aggSig.add(external_signature);
-                        signers.push_back(signers_index);
-                    }
-                    cv.notify_all();
-                },
-                message
-                );
         it = service_node_list.get_next_pubkey_iterator(it);
         signers_index++;
     }
     std::unique_lock<std::mutex> connection_lock(connection_mutex);
-    cv.wait(connection_lock, [&active_connections] { return active_connections == 0; });
-    return aggregateResponse{findNonSigners(signers), bls_utils::SignatureToHex(aggSig)};
+    cv.wait(connection_lock, [&active_connections] {
+        oxen::log::info(logcat, "TODO sean remove this: {}", active_connections);
+        return active_connections == 0;
+    });
+    const auto non_signers = findNonSigners(signers);
+    const auto my_signature = bls_signer->signHash(hash);
+    aggSig.add(my_signature);
+    const auto sig_str = bls_utils::SignatureToHex(aggSig);
+    return aggregateResponse{non_signers, sig_str};
 };
 
 std::vector<int64_t> BLSAggregator::findNonSigners(const std::vector<int64_t>& indices) {

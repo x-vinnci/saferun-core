@@ -36,6 +36,7 @@ void BLSSigner::initCurve() {
 }
 
 void BLSSigner::initOMQ(std::shared_ptr<oxenmq::OxenMQ> omq) {
+
     omq->add_category("bls", oxenmq::Access{oxenmq::AuthLevel::none})
         .add_request_command("signature_request", [&](oxenmq::Message& m) {
             oxen::log::debug(logcat, "Received omq signature request");

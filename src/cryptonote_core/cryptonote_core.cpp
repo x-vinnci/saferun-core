@@ -1058,7 +1058,9 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                 m.send_reply("pong");
             });
 
+
     if (m_service_node) {
+
         // Service nodes always listen for quorumnet data on the p2p IP, quorumnet port
         std::string listen_ip = vm["p2p-bind-ip"].as<std::string>();
         if (listen_ip.empty())
@@ -1073,10 +1075,11 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                 });
 
         m_quorumnet_state = quorumnet_new(*this);
+
+        m_bls_signer->initOMQ(m_omq);
     }
 
     quorumnet_init(*this, m_quorumnet_state);
-    m_bls_signer->initOMQ(m_omq);
 }
 
 void core::start_oxenmq() {
@@ -2685,7 +2688,9 @@ const aggregateResponse& core::bls_request() const {
         randomString += charset[static_cast<uint64_t>(rand() % max_index)];
     }
 
-    return m_bls_aggregator->aggregateSignatures(randomString);
+    const auto resp = m_bls_aggregator->aggregateSignatures(randomString);
+    oxen::log::info(logcat, "TODO sean remove this: {}", "aaaaaaaaa");
+    return resp;
 }
 //-----------------------------------------------------------------------------------------------
 std::vector<service_nodes::service_node_pubkey_info> core::get_service_node_list_state(
