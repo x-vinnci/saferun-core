@@ -155,7 +155,8 @@ class Daemon(RPCDaemon):
 
         self.args = [oxend] + list(self.__class__.base_args)
         self.args += (
-                '--data-dir={}/oxen-{}-{}'.format(datadir or '.', self.listen_ip, self.rpc_port),
+                # '--data-dir={}/oxen-{}-{}'.format(datadir or '.', self.listen_ip, self.rpc_port),
+                '--data-dir={}/oxen-{}'.format(datadir or '.', self.rpc_port),
                 '--log-level={}'.format(log_level),
                 '--log-file=oxen.log'.format(self.listen_ip, self.p2p_port),
                 '--p2p-bind-ip={}'.format(self.listen_ip),
@@ -269,7 +270,8 @@ class Wallet(RPCDaemon):
         self.name = name or 'wallet@{}'.format(self.rpc_port)
         super().__init__(self.name)
 
-        self.walletdir = '{}/wallet-{}-{}'.format(datadir or '.', self.listen_ip, self.rpc_port)
+        # self.walletdir = '{}/wallet-{}-{}'.format(datadir or '.', self.listen_ip, self.rpc_port)
+        self.walletdir = '{}/wallet-{}'.format(datadir or '.', self.rpc_port)
         self.args = [rpc_wallet] + list(self.__class__.base_args)
         self.args += (
                 '--rpc-bind-ip={}'.format(self.listen_ip),
