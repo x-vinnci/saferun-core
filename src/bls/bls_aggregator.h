@@ -26,6 +26,12 @@ struct aggregateResponse {
     std::string signature;
 };
 
+struct aggregateMerkleResponse {
+    std::string merkle_root;
+    std::vector<int64_t> non_signers;
+    std::string signature;
+};
+
 class BLSAggregator {
 private:
     std::shared_ptr<BLSSigner> bls_signer;
@@ -37,6 +43,7 @@ public:
 
     std::string aggregatePubkeyHex();
     aggregateResponse aggregateSignatures(const std::string& message);
+    aggregateMerkleResponse aggregateMerkleRewards(const std::string& our_merkle_root);
 
     std::vector<int64_t> findNonSigners(const std::vector<int64_t>& indices);
 

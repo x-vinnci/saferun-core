@@ -11,6 +11,7 @@ public:
     MerkleTreeCreator();
 
     void addLeaf(const std::string& input);
+    void addRewardsLeaf(const std::string& address, const uint64_t balance);
     void addLeaves(const std::map<std::string, uint64_t>& data);
 
     merkle::Tree::Hash createMerkleKeccakHash(const std::string& input);

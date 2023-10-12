@@ -55,6 +55,7 @@ target_link_libraries(cryptonote_core
     SQLite::SQLite3
     oxen_bls
     l2_tracker
+    merkle
     ethyl
   PRIVATE
     Boost::program_options

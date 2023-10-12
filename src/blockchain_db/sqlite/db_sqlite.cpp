@@ -383,8 +383,7 @@ uint64_t BlockchainSQLite::get_accrued_earnings(const std::string& address) {
     return static_cast<uint64_t>(earnings.value_or(0) / 1000);
 }
 
-std::pair<std::vector<std::string>, std::vector<uint64_t>>
-BlockchainSQLite::get_all_accrued_earnings() {
+std::pair<std::vector<std::string>, std::vector<uint64_t>> BlockchainSQLite::get_all_accrued_earnings() {
     log::trace(logcat, "BlockchainDB_SQLITE::{}", __func__);
 
     std::pair<std::vector<std::string>, std::vector<uint64_t>> result;

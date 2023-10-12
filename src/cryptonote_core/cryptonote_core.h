@@ -952,6 +952,7 @@ class core : public i_miner_handler {
     get_service_node_blacklisted_key_images() const;
 
     aggregateResponse bls_request() const;
+    aggregateMerkleResponse aggregate_merkle_rewards();
 
     /**
      * @brief get a snapshot of the service node list state at the time of the call.

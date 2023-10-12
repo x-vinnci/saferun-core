@@ -35,22 +35,6 @@ void BLSSigner::initCurve() {
     blsSetGeneratorOfPublicKey(&publicKey);
 }
 
-void BLSSigner::initOMQ(std::shared_ptr<oxenmq::OxenMQ> omq) {
-
-    omq->add_category("bls", oxenmq::Access{oxenmq::AuthLevel::none})
-        .add_request_command("signature_request", [&](oxenmq::Message& m) {
-            oxen::log::debug(logcat, "Received omq signature request");
-            if (m.data.size() != 1)
-                m.send_reply(
-                    "400",
-                    "Bad request: BLS commands must have only one data part "
-                    "(received " +
-                    std::to_string(m.data.size()) + ")");
-            const auto h = hash(std::string(m.data[0]));
-            m.send_reply(signHash(h).getStr());
-        });
-}
-
 bls::Signature BLSSigner::signHash(const std::array<unsigned char, 32>& hash) {
     bls::Signature sig;
     secretKey.signHash(sig, hash.data(), hash.size());

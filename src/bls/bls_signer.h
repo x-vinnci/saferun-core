@@ -28,8 +28,6 @@ public:
     BLSSigner(bls::SecretKey _secretKey);
     ~BLSSigner();
 
-    void initOMQ(std::shared_ptr<oxenmq::OxenMQ> omq);
-
     bls::Signature signHash(const std::array<unsigned char, 32>& hash);
     std::string proofOfPossession();
     std::string getPublicKeyHex();

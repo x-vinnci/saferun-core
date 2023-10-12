@@ -12,6 +12,10 @@ void MerkleTreeCreator::addLeaf(const std::string& input) {
     tree.insert(createMerkleKeccakHash(input));
 }
 
+void MerkleTreeCreator::addRewardsLeaf(const std::string& address, const uint64_t balance) {
+    addLeaf(abiEncode(address, balance));
+}
+
 void MerkleTreeCreator::addLeaves(const std::map<std::string, uint64_t>& data) {
     for (const auto& [address, balance] : data) {
         std::string combined = abiEncode(address, balance);

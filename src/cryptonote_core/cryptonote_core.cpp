@@ -74,6 +74,7 @@ extern "C" {
 #include "ringct/rctTypes.h"
 #include "uptime_proof.h"
 #include "version.h"
+#include "merkle/merkle_tree_creator.hpp"
 
 DISABLE_VS_WARNINGS(4355)
 
@@ -1076,7 +1077,34 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
 
         m_quorumnet_state = quorumnet_new(*this);
 
-        m_bls_signer->initOMQ(m_omq);
+        m_omq->add_category("bls", oxenmq::Access{oxenmq::AuthLevel::none})
+            .add_request_command("signature_request", [&](oxenmq::Message& m) {
+                oxen::log::debug(logcat, "Received omq signature request");
+                if (m.data.size() != 1)
+                    m.send_reply(
+                        "400",
+                        "Bad request: BLS commands must have only one data part "
+                        "(received " +
+                        std::to_string(m.data.size()) + ")");
+                const auto h = m_bls_signer->hash(std::string(m.data[0]));
+                m.send_reply(m_bls_signer->signHash(h).getStr());
+            })
+            .add_request_command("rewards_merkle", [&](oxenmq::Message& m) {
+                oxen::log::debug(logcat, "Received omq signature request");
+                if (m.data.size() != 0)
+                    m.send_reply(
+                        "400",
+                        "Bad request: BLS rewards merkle command must have no data parts "
+                        "(received " +
+                        std::to_string(m.data.size()) + ")");
+                auto [addresses, amounts] = get_blockchain_storage().sqlite_db()->get_all_accrued_earnings();
+                MerkleTreeCreator rewards_merkle_tree = {};
+                for (size_t i = 0; i < addresses.size(); i++)
+                    rewards_merkle_tree.addRewardsLeaf(addresses[i], amounts[i]);
+                const auto rewards_merkle_root = rewards_merkle_tree.getRoot();
+                const auto h = m_bls_signer->hash(rewards_merkle_root);
+                m.send_reply(rewards_merkle_root, m_bls_signer->signHash(h).getStr());
+            });
     }
 
     quorumnet_init(*this, m_quorumnet_state);
@@ -2675,6 +2703,7 @@ core::get_service_node_blacklisted_key_images() const {
     return m_service_node_list.get_blacklisted_key_images();
 }
 //-----------------------------------------------------------------------------------------------
+//TODO sean this whole function needs to disappear before release, otherwise people can sign arbitrary messages
 aggregateResponse core::bls_request() const {
     //TODO sean remove this, just generating random string
     const auto length = 20;
@@ -2689,7 +2718,15 @@ aggregateResponse core::bls_request() const {
     }
 
     const auto resp = m_bls_aggregator->aggregateSignatures(randomString);
-    oxen::log::info(logcat, "TODO sean remove this: {}", "aaaaaaaaa");
+    return resp;
+}
+//-----------------------------------------------------------------------------------------------
+aggregateMerkleResponse core::aggregate_merkle_rewards() {
+    auto [addresses, amounts] = m_blockchain_storage.sqlite_db()->get_all_accrued_earnings();
+    MerkleTreeCreator rewards_merkle_tree = {};
+    for (size_t i = 0; i < addresses.size(); i++)
+        rewards_merkle_tree.addRewardsLeaf(addresses[i], amounts[i]);
+    const auto resp = m_bls_aggregator->aggregateMerkleRewards(rewards_merkle_tree.getRoot());
     return resp;
 }
 //-----------------------------------------------------------------------------------------------
