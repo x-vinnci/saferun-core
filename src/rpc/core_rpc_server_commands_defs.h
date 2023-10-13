@@ -2291,10 +2291,30 @@ struct GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES : PUBLIC, NO_ARGS {
 ///
 /// Inputs: None
 ///
-/// Outputs: None
+/// Outputs:
 ///
+/// - `status` -- generic RPC error code; "OK" means the request was successful.
+/// - `merkle_root` -- The Root that has been signed by the network
+/// - `signature` -- BLS signature of the merkle root
+/// - `non_signers` -- array of indices of the nodes that did not sign
 struct BLS_REQUEST : PUBLIC, NO_ARGS {
     static constexpr auto names() { return NAMES("bls_request"); }
+};
+
+/// RPC: bls request
+///
+/// Sends a request out for all nodes to sign a BLS signature of the merkle root
+///
+/// Inputs: None
+///
+/// Outputs:
+///
+/// - `status` -- generic RPC error code; "OK" means the request was successful.
+/// - `merkle_root` -- The Root that has been signed by the network
+/// - `signature` -- BLS signature of the merkle root
+/// - `non_signers` -- array of indices of the nodes that did not sign
+struct BLS_MERKLE_REQUEST : PUBLIC, NO_ARGS {
+    static constexpr auto names() { return NAMES("bls_merkle_request"); }
 };
 
 /// RPC: blockchain/get_checkpoints
@@ -2690,6 +2710,7 @@ using core_rpc_types = tools::type_list<
         GET_SERVICE_NODES,
         GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES,
         BLS_REQUEST,
+        BLS_MERKLE_REQUEST,
         GET_SERVICE_NODE_REGISTRATION_CMD,
         GET_SERVICE_NODE_REGISTRATION_CMD_RAW,
         GET_SERVICE_NODE_STATUS,

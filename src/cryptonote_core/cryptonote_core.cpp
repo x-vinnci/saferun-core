@@ -2724,8 +2724,9 @@ aggregateResponse core::bls_request() const {
 aggregateMerkleResponse core::aggregate_merkle_rewards() {
     auto [addresses, amounts] = m_blockchain_storage.sqlite_db()->get_all_accrued_earnings();
     MerkleTreeCreator rewards_merkle_tree = {};
-    for (size_t i = 0; i < addresses.size(); i++)
+    for (size_t i = 0; i < addresses.size(); i++) {
         rewards_merkle_tree.addRewardsLeaf(addresses[i], amounts[i]);
+    }
     const auto resp = m_bls_aggregator->aggregateMerkleRewards(rewards_merkle_tree.getRoot());
     return resp;
 }

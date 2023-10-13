@@ -1,10 +1,13 @@
 #include "merkle_tree_creator.hpp"
 #include "iostream"
 #include <ethyl/utils.hpp>
+#include "logging/oxen_logger.h"
 
 extern "C" {
 #include "crypto/keccak.h"
 }
+
+static auto logcat = oxen::log::Cat("merkle_tree_creator");
 
 MerkleTreeCreator::MerkleTreeCreator() {}
 

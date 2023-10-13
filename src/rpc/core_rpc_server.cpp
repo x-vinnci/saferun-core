@@ -2525,13 +2525,18 @@ void core_rpc_server::invoke(
 //------------------------------------------------------------------------------------------------------------------------------
 void core_rpc_server::invoke( BLS_REQUEST& bls_request, rpc_context context) {
     const aggregateResponse bls_signature_response = m_core.bls_request();
-    oxen::log::info(logcat, "TODO sean remove this: {}", "ddddddddd");
-    oxen::log::info(logcat, "TODO sean remove this: {}", bls_signature_response.signature);
-    for (auto& x: bls_signature_response.non_signers)
-        oxen::log::info(logcat, "TODO sean remove this: {}", x);
     bls_request.response["status"] = STATUS_OK;
     bls_request.response["signature"] = bls_signature_response.signature;
     bls_request.response["non_signers"] = bls_signature_response.non_signers;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke(BLS_MERKLE_REQUEST& bls_merkle_request, rpc_context context) {
+    const aggregateMerkleResponse bls_merkle_signature_response = m_core.aggregate_merkle_rewards();
+    bls_merkle_request.response["status"] = STATUS_OK;
+    bls_merkle_request.response["merkle_root"] = bls_merkle_signature_response.merkle_root;
+    bls_merkle_request.response["signature"] = bls_merkle_signature_response.signature;
+    bls_merkle_request.response["non_signers"] = bls_merkle_signature_response.non_signers;
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------

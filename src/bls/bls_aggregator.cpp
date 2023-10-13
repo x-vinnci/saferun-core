@@ -77,7 +77,6 @@ aggregateResponse BLSAggregator::aggregateSignatures(const std::string& message)
                     conn,
                     "bls.signature_request",
                     [this, &logcat, &aggSig, &signers, &signers_mutex, &connection_mutex, signers_index, &active_connections, &cv, &conn](bool success, std::vector<std::string> data) {
-                        oxen::log::info(logcat, "TODO sean remove this: successuflly response {}", signers_index);
                         oxen::log::debug( logcat, "bls signature response received");
                         if (success) {
                             bls::Signature external_signature;
@@ -87,7 +86,6 @@ aggregateResponse BLSAggregator::aggregateSignatures(const std::string& message)
                             signers.push_back(signers_index);
                         }
                         std::lock_guard<std::mutex> connection_lock(connection_mutex);
-                        oxen::log::info(logcat, "TODO sean remove this: decrementing active connections");
                         --active_connections;
                         cv.notify_all();
                         //omq->disconnect(c);
@@ -99,7 +97,6 @@ aggregateResponse BLSAggregator::aggregateSignatures(const std::string& message)
     }
     std::unique_lock<std::mutex> connection_lock(connection_mutex);
     cv.wait(connection_lock, [&active_connections] {
-        oxen::log::info(logcat, "TODO sean remove this: {}", active_connections);
         return active_connections == 0;
     });
     const auto non_signers = findNonSigners(signers);
@@ -156,31 +153,28 @@ aggregateMerkleResponse BLSAggregator::aggregateMerkleRewards(const std::string&
                 //oxen::log::debug(logcat, "Failed to connect {}", err);
             },
             oxenmq::AuthLevel::basic);
-            omq->request(
-                    conn,
-                    "bls.rewards_merkle",
-                    [this, &logcat, &aggSig, &signers, &signers_mutex, &connection_mutex, signers_index, &active_connections, &cv, &conn, &our_merkle_root](bool success, std::vector<std::string> data) {
-                        oxen::log::info(logcat, "TODO sean remove this: successuflly response {}", signers_index);
-                        oxen::log::debug( logcat, "bls signature response received");
-                        if (success && data[0] == our_merkle_root) {
-                            bls::Signature external_signature;
-                            external_signature.setStr(data[1]);
-                            std::lock_guard<std::mutex> lock(signers_mutex);
-                            aggSig.add(external_signature);
-                            signers.push_back(signers_index);
-                        }
-                        std::lock_guard<std::mutex> connection_lock(connection_mutex);
-                        oxen::log::info(logcat, "TODO sean remove this: decrementing active connections");
-                        --active_connections;
-                        cv.notify_all();
-                        //omq->disconnect(c);
-                    });
+        omq->request(
+                conn,
+                "bls.rewards_merkle",
+                [this, &logcat, &aggSig, &signers, &signers_mutex, &connection_mutex, signers_index, &active_connections, &cv, &conn, &our_merkle_root](bool success, std::vector<std::string> data) {
+                    oxen::log::debug( logcat, "bls signature response received");
+                    if (success && data[0] == our_merkle_root) {
+                        bls::Signature external_signature;
+                        external_signature.setStr(data[1]);
+                        std::lock_guard<std::mutex> lock(signers_mutex);
+                        aggSig.add(external_signature);
+                        signers.push_back(signers_index);
+                    }
+                    std::lock_guard<std::mutex> connection_lock(connection_mutex);
+                    --active_connections;
+                    cv.notify_all();
+                    //omq->disconnect(c);
+                });
         it = service_node_list.get_next_pubkey_iterator(it);
         signers_index++;
     }
     std::unique_lock<std::mutex> connection_lock(connection_mutex);
     cv.wait(connection_lock, [&active_connections] {
-        oxen::log::info(logcat, "TODO sean remove this: {}", active_connections);
         return active_connections == 0;
     });
     const auto non_signers = findNonSigners(signers);
