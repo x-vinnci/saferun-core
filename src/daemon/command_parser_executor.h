@@ -142,6 +142,8 @@ class command_parser_executor final {
 
     bool flush_cache(const std::vector<std::string>& args);
 
+    bool claim_rewards(const std::vector<std::string>& args);
+
     void test_trigger_uptime_proof() { m_executor.test_trigger_uptime_proof(); }
 };
 

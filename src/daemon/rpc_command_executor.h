@@ -276,6 +276,8 @@ class rpc_command_executor final {
 
     bool flush_cache(bool bad_txs, bool invalid_blocks);
 
+    bool claim_rewards();
+
     bool version();
 
     bool test_trigger_uptime_proof();

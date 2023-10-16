@@ -2127,6 +2127,30 @@ bool rpc_command_executor::flush_cache(bool bad_txs, bool bad_blocks) {
     return true;
 }
 
+bool rpc_command_executor::claim_rewards() {
+    auto maybe_merkle_response = try_running( [this] { return invoke<BLS_MERKLE_REQUEST>(); },
+            "Failed to get merkle root");
+    if (!maybe_merkle_response)
+        return false;
+    auto& merkle_root_response = *maybe_merkle_response;
+
+    std::ostringstream link;
+    link << "https://oxen-eth-webpage.vercel.app";
+    link << "/?merkleRoot=" << merkle_root_response["merkle_root"];
+    link << "&sig=" << merkle_root_response["signature"];
+    for (const auto& non_signer : merkle_root_response["non_signers"]) {
+        link << "&indices=" << non_signer;
+    }
+
+    tools::msg_writer(
+                  "Merkle Root: {}\n Signature: {}\n Link to claim rewards: {}\n",
+                  merkle_root_response["merkle_root"],
+                  merkle_root_response["signature"],
+                  link.str()
+              );
+    return true;
+}
+
 bool rpc_command_executor::print_sn_status(std::vector<std::string> args) {
     return print_sn(std::move(args), true);
 }
