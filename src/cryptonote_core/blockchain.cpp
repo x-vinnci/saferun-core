@@ -1453,7 +1453,8 @@ bool Blockchain::validate_miner_transaction(
 
     std::vector<cryptonote::batch_sn_payment> batched_sn_payments;
     if (m_sqlite_db) {
-        batched_sn_payments = m_sqlite_db->get_sn_payments(height);
+        if (version < cryptonote::feature::ETH_BLS)
+            batched_sn_payments = m_sqlite_db->get_sn_payments(height);
     } else {
         if (m_nettype != network_type::FAKECHAIN)
             throw std::logic_error("Blockchain missing SQLite Database");
@@ -1790,7 +1791,7 @@ bool Blockchain::create_block_template_internal(
 
     // This will check the batching database for who is due to be paid out in this block
     std::vector<cryptonote::batch_sn_payment> sn_rwds;
-    if (hf_version >= hf::hf19_reward_batching) {
+    if (hf_version < cryptonote::feature::ETH_BLS && hf_version >= hf::hf19_reward_batching) {
         sn_rwds = m_sqlite_db->get_sn_payments(height);  // Rewards to pay out
     }
 

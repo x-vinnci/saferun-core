@@ -554,8 +554,11 @@ bool BlockchainSQLite::add_block(
 
     // We query our own database as a source of truth to verify the blocks payments against. The
     // calculated_rewards variable contains a known good list of who should have been paid in this
-    // block
-    auto calculated_rewards = get_sn_payments(block_height);
+    // block this only applies before the ETH BLS hard fork. After that the rewards are claimed by the users when they wish
+    std::vector<cryptonote::batch_sn_payment> calculated_rewards;
+    if (hf_version < cryptonote::feature::ETH_BLS) {
+        calculated_rewards = get_sn_payments(block_height);
+    }
 
     // We iterate through the block's coinbase payments and build a copy of our own list of the
     // payments miner_tx_vouts this will be compared against calculated_rewards and if they match we
