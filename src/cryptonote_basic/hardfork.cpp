@@ -151,11 +151,11 @@ static constexpr std::array devnet_hard_forks = {
         hard_fork{hf::hf13_enforce_checkpoints, 0, 4, 1653500577},
         hard_fork{hf::hf14_blink, 0, 5, 1653500577},
         hard_fork{hf::hf15_ons, 0, 6, 1653500577},
-        hard_fork{hf::hf16_pulse, 0, 200, 1653500577},
-        hard_fork{hf::hf17, 0, 201, 1653500577},
-        hard_fork{hf::hf18, 0, 202, 1653500577},
-        hard_fork{hf::hf19_reward_batching, 0, 203, 1653500577},
-        hard_fork{hf::hf20, 0, 204, 1653500577},
+        hard_fork{hf::hf16_pulse, 0, 250, 1653500577},
+        hard_fork{hf::hf17, 0, 251, 1653500577},
+        hard_fork{hf::hf18, 0, 252, 1653500577},
+        hard_fork{hf::hf19_reward_batching, 0, 253, 1653500577},
+        hard_fork{hf::hf20, 0, 254, 1653500577},
 };
 
 template <size_t N>
