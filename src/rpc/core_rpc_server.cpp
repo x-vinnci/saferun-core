@@ -2540,6 +2540,13 @@ void core_rpc_server::invoke(BLS_MERKLE_REQUEST& bls_merkle_request, rpc_context
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke(BLS_PUBKEYS& bls_pubkey_request, rpc_context context) {
+    const std::vector<std::string> bls_pubkeys = m_core.get_bls_pubkeys();
+    bls_pubkey_request.response["status"] = STATUS_OK;
+    bls_pubkey_request.response["pubkeys"] = bls_pubkeys;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
 void core_rpc_server::invoke(GET_SERVICE_KEYS& get_service_keys, rpc_context context) {
     const auto& keys = m_core.get_service_keys();
     if (keys.pub)

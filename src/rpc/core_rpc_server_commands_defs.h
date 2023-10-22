@@ -2317,6 +2317,20 @@ struct BLS_MERKLE_REQUEST : PUBLIC, NO_ARGS {
     static constexpr auto names() { return NAMES("bls_merkle_request"); }
 };
 
+/// RPC: bls pubkey request
+///
+/// Sends a request out to get all the bls pubkeys from the network
+///
+/// Inputs: None
+///
+/// Outputs:
+///
+/// - `status` -- generic RPC error code; "OK" means the request was successful.
+/// - `pubkeys` -- The pubkeys for the whole network
+struct BLS_PUBKEYS: PUBLIC, NO_ARGS {
+    static constexpr auto names() { return NAMES("bls_pubkey_request"); }
+};
+
 /// RPC: blockchain/get_checkpoints
 ///
 /// Query hardcoded/service node checkpoints stored for the blockchain. Omit all arguments to
@@ -2711,6 +2725,7 @@ using core_rpc_types = tools::type_list<
         GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES,
         BLS_REQUEST,
         BLS_MERKLE_REQUEST,
+        BLS_PUBKEYS,
         GET_SERVICE_NODE_REGISTRATION_CMD,
         GET_SERVICE_NODE_REGISTRATION_CMD_RAW,
         GET_SERVICE_NODE_STATUS,

@@ -1104,6 +1104,17 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                 const auto rewards_merkle_root = rewards_merkle_tree.getRoot();
                 const auto h = m_bls_signer->hash(rewards_merkle_root);
                 m.send_reply(rewards_merkle_root, m_bls_signer->signHash(h).getStr());
+            })
+            .add_request_command("pubkey_request", [&](oxenmq::Message& m) {
+                oxen::log::debug(logcat, "Received omq bls pubkey request");
+                if (m.data.size() != 0)
+                    m.send_reply(
+                        "400",
+                        "Bad request: BLS pubkey request must have no data parts"
+                        "(received " +
+                        std::to_string(m.data.size()) + ")");
+                const auto h = m_bls_signer->hash(std::string(m.data[0]));
+                m.send_reply(m_bls_signer->getPublicKeyHex());
             });
     }
 
@@ -2729,6 +2740,10 @@ aggregateMerkleResponse core::aggregate_merkle_rewards() {
     }
     const auto resp = m_bls_aggregator->aggregateMerkleRewards(rewards_merkle_tree.getRoot());
     return resp;
+}
+//-----------------------------------------------------------------------------------------------
+std::vector<std::string> core::get_bls_pubkeys() const {
+    return m_bls_aggregator->getPubkeys();
 }
 //-----------------------------------------------------------------------------------------------
 std::vector<service_nodes::service_node_pubkey_info> core::get_service_node_list_state(

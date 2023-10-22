@@ -953,6 +953,7 @@ class core : public i_miner_handler {
 
     aggregateResponse bls_request() const;
     aggregateMerkleResponse aggregate_merkle_rewards();
+    std::vector<std::string> get_bls_pubkeys() const;
 
     /**
      * @brief get a snapshot of the service node list state at the time of the call.

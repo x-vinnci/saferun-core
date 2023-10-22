@@ -26,6 +26,72 @@ std::string BLSAggregator::aggregatePubkeyHex() {
     return "";
 }
 
+std::vector<std::string> BLSAggregator::getPubkeys() {
+    std::mutex pubkeys_mutex, connection_mutex;
+    std::condition_variable cv;
+    size_t active_connections = 0;
+    const size_t MAX_CONNECTIONS = 900;
+
+    std::vector<std::string> pubkeys;
+
+    // TODO sean, change this so instead of using an iterator do a for_each_service_node_info_and proof and pass a lambda
+    auto it = service_node_list.get_first_pubkey_iterator();
+    auto end_it = service_node_list.get_end_pubkey_iterator();
+    crypto::x25519_public_key x_pkey{0};
+    uint32_t ip;
+    uint16_t port;
+    while (it != end_it) {
+        service_node_list.access_proof(it->first, [&x_pkey, &ip, &port](auto& proof) {
+            x_pkey = proof.pubkey_x25519;
+            ip = proof.proof->public_ip;
+            port = proof.proof->qnet_port;
+        });
+        //{
+            //std::unique_lock<std::mutex> connection_lock(connection_mutex);
+            //cv.wait(connection_lock, [&active_connections] { return active_connections < MAX_CONNECTIONS; });
+        //}
+        // TODO sean epee is alway little, this will not work on big endian host
+        boost::asio::ip::address_v4 address(oxenc::host_to_big(ip));
+        oxenmq::address addr{"tcp://{}:{}"_format(address.to_string(), port), tools::view_guts(x_pkey)};
+
+        {
+            std::lock_guard<std::mutex> connection_lock(connection_mutex);
+            ++active_connections;
+        }
+        auto conn = omq->connect_remote(
+            addr,
+            [](oxenmq::ConnectionID c) {
+                // Successfully connected
+                //oxen::log::info(logcat, "TODO sean remove this: successuflly connected");
+            },
+            [](oxenmq::ConnectionID c, std::string_view err) {
+                // Failed to connect
+                //oxen::log::debug(logcat, "Failed to connect {}", err);
+            },
+            oxenmq::AuthLevel::basic);
+            omq->request(
+                    conn,
+                    "bls.pubkey_request",
+                    [this, &logcat, &pubkeys, &pubkeys_mutex, &connection_mutex, &active_connections, &cv, &conn](bool success, std::vector<std::string> data) {
+                        oxen::log::debug( logcat, "bls pubkey response received");
+                        if (success) {
+                            std::lock_guard<std::mutex> lock(pubkeys_mutex);
+                            pubkeys.emplace_back(data[0]);
+                        }
+                        std::lock_guard<std::mutex> connection_lock(connection_mutex);
+                        --active_connections;
+                        cv.notify_all();
+                        //omq->disconnect(c);
+                    });
+        it = service_node_list.get_next_pubkey_iterator(it);
+    }
+    std::unique_lock<std::mutex> connection_lock(connection_mutex);
+    cv.wait(connection_lock, [&active_connections] {
+        return active_connections == 0;
+    });
+    return pubkeys;
+}
+
 aggregateResponse BLSAggregator::aggregateSignatures(const std::string& message) {
     const std::array<unsigned char, 32> hash = BLSSigner::hash(message);
     std::mutex signers_mutex, connection_mutex;

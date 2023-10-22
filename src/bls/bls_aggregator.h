@@ -42,6 +42,7 @@ public:
     ~BLSAggregator();
 
     std::string aggregatePubkeyHex();
+    std::vector<std::string> getPubkeys();
     aggregateResponse aggregateSignatures(const std::string& message);
     aggregateMerkleResponse aggregateMerkleRewards(const std::string& our_merkle_root);
 
