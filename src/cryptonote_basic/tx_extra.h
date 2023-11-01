@@ -53,6 +53,7 @@ constexpr uint8_t TX_EXTRA_TAG_PADDING = 0x00, TX_EXTRA_TAG_PUBKEY = 0x01, TX_EX
                   TX_EXTRA_TAG_TX_KEY_IMAGE_PROOFS = 0x76, TX_EXTRA_TAG_TX_KEY_IMAGE_UNLOCK = 0x77,
                   TX_EXTRA_TAG_SERVICE_NODE_STATE_CHANGE = 0x78, TX_EXTRA_TAG_BURN = 0x79,
                   TX_EXTRA_TAG_OXEN_NAME_SYSTEM = 0x7A,
+                  TX_EXTRA_TAG_ETHEREUM = 0x7B,
 
                   TX_EXTRA_MYSTERIOUS_MINERGATE_TAG = 0xDE;
 
@@ -619,6 +620,20 @@ struct tx_extra_oxen_name_system {
     END_SERIALIZE()
 };
 
+struct tx_extra_ethereum {
+    uint8_t version = 0;
+    std::string eth_address;
+    std::string oxen_address;
+    std::string signature;
+
+    BEGIN_SERIALIZE()
+    FIELD(version)
+    FIELD(eth_address);
+    FIELD(oxen_address);
+    FIELD(signature);
+    END_SERIALIZE()
+};
+
 // tx_extra_field format, except tx_extra_padding and tx_extra_pub_key:
 //   varint tag;
 //   varint size;
@@ -644,6 +659,7 @@ using tx_extra_field = std::variant<
         tx_extra_burn,
         tx_extra_merge_mining_tag,
         tx_extra_mysterious_minergate,
+        tx_extra_ethereum,
         tx_extra_padding>;
 }  // namespace cryptonote
 
@@ -681,3 +697,5 @@ BINARY_VARIANT_TAG(
 BINARY_VARIANT_TAG(cryptonote::tx_extra_burn, cryptonote::TX_EXTRA_TAG_BURN);
 BINARY_VARIANT_TAG(
         cryptonote::tx_extra_oxen_name_system, cryptonote::TX_EXTRA_TAG_OXEN_NAME_SYSTEM);
+BINARY_VARIANT_TAG(
+        cryptonote::tx_extra_ethereum, cryptonote::TX_EXTRA_TAG_ETHEREUM);

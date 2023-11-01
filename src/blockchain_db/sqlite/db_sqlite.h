@@ -65,6 +65,7 @@ class BlockchainSQLite : public db::Database {
     // exist it will be created.
     bool add_sn_rewards(const std::vector<cryptonote::batch_sn_payment>& payments);
     bool subtract_sn_rewards(const std::vector<cryptonote::batch_sn_payment>& payments);
+    bool update_sn_rewards_address(const std::string& oxen_address, const std::string& eth_address);
 
   private:
     bool reward_handler(
@@ -74,7 +75,7 @@ class BlockchainSQLite : public db::Database {
 
     std::unordered_map<account_public_address, std::string> address_str_cache;
     std::pair<hf, cryptonote::address_parse_info> parsed_governance_addr = {hf::none, {}};
-    const std::string& get_address_str(const account_public_address& addr);
+    const std::string& get_address_str(const cryptonote::batch_sn_payment& addr);
     std::mutex address_str_cache_mutex;
 
   public:

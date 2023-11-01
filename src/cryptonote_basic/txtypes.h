@@ -24,6 +24,7 @@ enum class txtype : uint16_t {
     key_image_unlock,
     stake,
     oxen_name_system,
+    ethereum,
     _count
 };
 
@@ -44,6 +45,7 @@ inline constexpr std::string_view to_string(txtype type) {
         case txtype::key_image_unlock: return "key_image_unlock"sv;
         case txtype::stake: return "stake"sv;
         case txtype::oxen_name_system: return "oxen_name_system"sv;
+        case txtype::ethereum: return "ethereum"sv;
         default: assert(false); return "xx_unhandled_type"sv;
     }
 }

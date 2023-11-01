@@ -71,6 +71,7 @@
 #include "service_node_list.h"
 #include "service_node_voting.h"
 #include "tx_pool.h"
+#include "ethereum_transactions.h"
 
 #ifdef ENABLE_SYSTEMD
 extern "C" {
@@ -1538,6 +1539,8 @@ bool Blockchain::validate_miner_transaction(
         base_reward = money_in_use - reward_parts.miner_fee;
     }
 
+    //TODO sean check here that L2 height is reasonable (doesnt go backwards, isn't in future assuming eth blocks issued once every 6 seconds)
+
     if (b.reward >
         reward_parts.base_miner + reward_parts.miner_fee + reward_parts.service_node_total) {
         log::error(
@@ -1550,6 +1553,7 @@ bool Blockchain::validate_miner_transaction(
                 print_money(reward_parts.miner_fee));
         return false;
     }
+
 
     return true;
 }
@@ -3997,6 +4001,16 @@ bool Blockchain::check_tx_inputs(
                 return false;
             }
         }
+
+        if (tx.type == txtype::ethereum) {
+            cryptonote::tx_extra_ethereum entry = {};
+            std::string fail_reason;
+            if (!ethereum::validate_ethereum_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason)) {
+                log::error(log::Cat("verify"), "Failed to validate Ethereum TX reason: {}", fail_reason);
+                tvc.m_verbose_error = std::move(fail_reason);
+                return false;
+            }
+        }
     } else {
         CHECK_AND_ASSERT_MES(
                 tx.vin.size() == 0,
@@ -5026,7 +5040,7 @@ bool Blockchain::handle_block_to_main_chain(
             uint64_t long_term_block_weight = get_next_long_term_block_weight(block_weight);
             std::string bd = cryptonote::block_to_blob(bl);
             new_height = m_db->add_block(
-                    std::make_pair(std::move(bl), std::move(bd)),
+                    std::make_pair(bl, std::move(bd)),
                     block_weight,
                     long_term_block_weight,
                     cumulative_difficulty,
@@ -5113,10 +5127,16 @@ bool Blockchain::handle_block_to_main_chain(
             bvc.m_verifivation_failed = true;
             return false;
         }
+        if (!m_service_node_list.process_ethereum_transactions(m_nettype, bl, only_txs)) {
+            log::info(logcat, fg(fmt::terminal_color::red), "Failed to add ethereum transactions");
+            bvc.m_verifivation_failed = true;
+            return false;
+        }
     } else {
         if (m_nettype != network_type::FAKECHAIN)
             throw std::logic_error("Blockchain missing SQLite Database");
     }
+
 
     block_add_info hook_data{bl, only_txs, checkpoint};
     for (const auto& hook : m_block_add_hooks) {

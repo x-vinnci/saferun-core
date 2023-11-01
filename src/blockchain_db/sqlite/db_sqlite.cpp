@@ -176,6 +176,27 @@ void BlockchainSQLite::upgrade_schema() {
         }
 
         transaction.commit();
+    } 
+
+    const auto eth_mapping_table_count = prepared_get<int64_t>(
+            "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND "
+            "name='eth_mapping';");
+    if (!eth_mapping_table_count == 0) {
+        log::info(logcat, "Adding eth mapping table to batching db");
+        auto& netconf = get_config(m_nettype);
+        SQLite::Transaction transaction{db, SQLite::TransactionBehavior::IMMEDIATE};
+        db.exec(fmt::format(
+                R"(
+        CREATE TABLE eth_mapping(
+          oxen_address VARCHAR NOT NULL,
+          eth_address VARCHAR NOT NULL,
+          height BIGINT NOT NULL,
+          PRIMARY KEY (oxen_address, height)
+          CHECK(height >= 0)
+        );
+
+        CREATE INDEX eth_mapping_eth_address_idx ON eth_mapping(eth_address);
+        )"));
     }
 
     const auto archive_table_count = prepared_get<int64_t>(
@@ -288,11 +309,22 @@ void BlockchainSQLite::blockchain_detached(uint64_t new_height) {
 }
 
 // Must be called with the address_str_cache_mutex held!
-const std::string& BlockchainSQLite::get_address_str(const account_public_address& addr) {
-    auto& address_str = address_str_cache[addr];
+const std::string& BlockchainSQLite::get_address_str(const cryptonote::batch_sn_payment& addr) {
+    if (addr.eth_address.has_value())
+        return *addr.eth_address;
+    auto& address_str = address_str_cache[addr.address_info.address];
     if (address_str.empty())
-        address_str = cryptonote::get_account_address_as_str(m_nettype, 0, addr);
+        address_str = cryptonote::get_account_address_as_str(m_nettype, 0, addr.address_info.address);
     return address_str;
+}
+
+bool BlockchainSQLite::update_sn_rewards_address(const std::string& oxen_address, const std::string& eth_address) {
+    auto update_address = prepared_st(
+            "UPDATE batched_payments_accrued SET address = ? WHERE address = ?"
+            " ON CONFLICT (address) DO UPDATE SET amount = amount + excluded.amount"
+            );
+    db::exec_query(update_address, eth_address, oxen_address);
+    return true;
 }
 
 bool BlockchainSQLite::add_sn_rewards(const std::vector<cryptonote::batch_sn_payment>& payments) {
@@ -307,7 +339,7 @@ bool BlockchainSQLite::add_sn_rewards(const std::vector<cryptonote::batch_sn_pay
         auto offset =
                 static_cast<int>(payment.address_info.address.modulus(netconf.BATCHING_INTERVAL));
         auto amt = static_cast<int64_t>(payment.amount);
-        const auto& address_str = get_address_str(payment.address_info.address);
+        const auto& address_str = get_address_str(payment);
         log::trace(
                 logcat,
                 "Adding record for SN reward contributor {} to database with amount {}",
@@ -327,7 +359,7 @@ bool BlockchainSQLite::subtract_sn_rewards(
             "UPDATE batched_payments_accrued SET amount = (amount - ?) WHERE address = ?");
 
     for (auto& payment : payments) {
-        const auto& address_str = get_address_str(payment.address_info.address);
+        const auto& address_str = get_address_str(payment);
         auto result =
                 db::exec_query(update_payment, static_cast<int64_t>(payment.amount), address_str);
         if (!result) {
@@ -377,9 +409,21 @@ std::vector<cryptonote::batch_sn_payment> BlockchainSQLite::get_sn_payments(uint
 
 uint64_t BlockchainSQLite::get_accrued_earnings(const std::string& address) {
     log::trace(logcat, "BlockchainDB_SQLITE::{}", __func__);
-
-    auto earnings = prepared_maybe_get<int64_t>(
-            "SELECT amount FROM batched_payments_accrued WHERE address = ?", address);
+    auto earnings = prepared_maybe_get<int64_t>(R"(
+        WITH RelevantOxenAddress AS (
+            SELECT oxen_address
+            FROM eth_mapping
+            WHERE eth_address = ?
+            HAVING height = MAX(height)
+        )
+        SELECT amount
+        FROM batched_payments_accrued
+        WHERE address = ?
+        UNION
+        SELECT bpa.amount
+        FROM batched_payments_accrued bpa
+        JOIN RelevantOxenAddress roa ON bpa.address = roa.oxen_address;
+    )", address, address);
     return static_cast<uint64_t>(earnings.value_or(0) / 1000);
 }
 
@@ -433,7 +477,7 @@ void BlockchainSQLite::calculate_rewards(
         uint64_t c_reward = mul128_div64(
                 contributor.amount, distribution_amount - operator_fee, total_contributed_to_sn);
         if (c_reward > 0)
-            payments.emplace_back(contributor.address, c_reward);
+            payments.emplace_back(*contributor.address, c_reward);
     }
 }
 
@@ -706,7 +750,7 @@ bool BlockchainSQLite::save_payments(
     std::lock_guard a_s_lock{address_str_cache_mutex};
 
     for (const auto& payment : paid_amounts) {
-        const auto& address_str = get_address_str(payment.address_info.address);
+        const auto& address_str = get_address_str(payment);
         if (auto maybe_amount = db::exec_and_maybe_get<int64_t>(select_sum, address_str)) {
             // Truncate the thousanths amount to an atomic OXEN:
             auto amount = static_cast<uint64_t>(*maybe_amount) / BATCH_REWARD_FACTOR *

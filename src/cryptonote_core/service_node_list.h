@@ -242,10 +242,11 @@ struct service_node_info  // registration information
     };
 
     struct contributor_t {
-        uint8_t version = 0;
+        uint8_t version = 1;
         uint64_t amount = 0;
         uint64_t reserved = 0;
-        cryptonote::account_public_address address{};
+        std::optional<cryptonote::account_public_address> address{};
+        std::optional<std::string> ethereum_address{};
         std::vector<contribution_t> locked_contributions;
 
         contributor_t() = default;
@@ -260,8 +261,11 @@ struct service_node_info  // registration information
         VARINT_FIELD(version)
         VARINT_FIELD(amount)
         VARINT_FIELD(reserved)
-        FIELD(address)
+        FIELD(*address)
         FIELD(locked_contributions)
+        //TODO sean serialize this
+        //if (version >= 1)
+            //FIELD(*ethereum_address);
         END_SERIALIZE()
     };
 
@@ -459,6 +463,7 @@ class service_node_list {
     bool state_history_exists(uint64_t height);
     bool process_batching_rewards(const cryptonote::block& block);
     bool pop_batching_rewards_block(const cryptonote::block& block);
+    bool process_ethereum_transactions(const cryptonote::network_type nettype, const cryptonote::block& block, const std::vector<cryptonote::transaction>& txs);
     void blockchain_detached(uint64_t height);
     void init();
     void validate_miner_tx(const cryptonote::miner_tx_info& info) const;

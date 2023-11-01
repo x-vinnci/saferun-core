@@ -745,6 +745,10 @@ namespace {
             _load_owner(ons, "owner", x.owner);
             _load_owner(ons, "backup_owner", x.backup_owner);
         }
+        void operator()(const tx_extra_ethereum& x) {
+            set("eth_address", x.eth_address);
+            set("signature", x.signature);
+        }
 
         // Ignore these fields:
         void operator()(const tx_extra_padding&) {}
@@ -2817,7 +2821,7 @@ void core_rpc_server::fill_sn_response_entry(
                     {"amount", contributor.amount},
                     {"address",
                      cryptonote::get_account_address_as_str(
-                             m_core.get_nettype(), false /*subaddress*/, contributor.address)}});
+                             m_core.get_nettype(), false /*subaddress*/, *contributor.address)}});
             if (contributor.reserved != contributor.amount)
                 c["reserved"] = contributor.reserved;
             if (want_locked_c) {
