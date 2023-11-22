@@ -533,7 +533,6 @@ namespace rpc {
     {
       std::string tx_as_hex; // Full transaction information as hexidecimal string.
       bool do_not_relay;     // (Optional: Default false) Stop relaying transaction to other nodes.  Ignored if `blink` is true.
-      bool do_sanity_checks; // (Optional: Default true) Verify TX params have sane values.
       bool blink;            // (Optional: Default false) Submit this as a blink tx rather than into the mempool.
 
       KV_MAP_SERIALIZABLE
