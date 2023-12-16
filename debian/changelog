@@ -1,3 +1,9 @@
+oxen (10.3.0-1~deb12+1) bookworm; urgency=medium
+
+  * Disable broken tx sanity check
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Sat, 16 Dec 2023 11:03:08 -0400
+
 oxen (10.3.0-1~deb12) bookworm; urgency=medium
 
   * Don't build curl with nghttp3/quic support
