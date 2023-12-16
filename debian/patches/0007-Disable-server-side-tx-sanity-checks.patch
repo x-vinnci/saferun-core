@@ -1,0 +1,66 @@
+From: Jason Rhinelander <jason@imaginary.ca>
+Date: Wed, 22 Nov 2023 17:31:07 -0400
+Subject: Disable server-side tx "sanity checks"
+
+The checks here break wallets sometimes (see issue #1639).  They aren't
+really "sanity checks" anyway because there are lots of legitimate ways
+a wallet could end up producing such a transaction, especially with
+Oxen's relatively low output creation rate.
+---
+ src/rpc/core_rpc_server.cpp               | 10 ----------
+ src/rpc/core_rpc_server_commands_defs.cpp |  1 -
+ src/rpc/core_rpc_server_commands_defs.h   |  1 -
+ 3 files changed, 12 deletions(-)
+
+diff --git a/src/rpc/core_rpc_server.cpp b/src/rpc/core_rpc_server.cpp
+index 12406ed..9818d9e 100644
+--- a/src/rpc/core_rpc_server.cpp
++++ b/src/rpc/core_rpc_server.cpp
+@@ -56,7 +56,6 @@
+ #include "cryptonote_basic/cryptonote_format_utils.h"
+ #include "cryptonote_basic/account.h"
+ #include "cryptonote_basic/cryptonote_basic_impl.h"
+-#include "cryptonote_core/tx_sanity_check.h"
+ #include "cryptonote_core/uptime_proof.h"
+ #include "net/parse.h"
+ #include "crypto/hash.h"
+@@ -1158,15 +1157,6 @@ namespace cryptonote { namespace rpc {
+     }
+     auto tx_blob = oxenc::from_hex(req.tx_as_hex);
+ 
+-    if (req.do_sanity_checks && !cryptonote::tx_sanity_check(tx_blob, m_core.get_blockchain_storage().get_num_mature_outputs(0)))
+-    {
+-      res.status = "Failed";
+-      res.reason = "Sanity check failed";
+-      res.sanity_check_failed = true;
+-      return res;
+-    }
+-    res.sanity_check_failed = false;
+-
+     if (req.blink)
+     {
+       auto future = m_core.handle_blink_tx(tx_blob);
+diff --git a/src/rpc/core_rpc_server_commands_defs.cpp b/src/rpc/core_rpc_server_commands_defs.cpp
+index 7113370..eb961cc 100644
+--- a/src/rpc/core_rpc_server_commands_defs.cpp
++++ b/src/rpc/core_rpc_server_commands_defs.cpp
+@@ -264,7 +264,6 @@ KV_SERIALIZE_MAP_CODE_END()
+ KV_SERIALIZE_MAP_CODE_BEGIN(SEND_RAW_TX::request)
+   KV_SERIALIZE(tx_as_hex)
+   KV_SERIALIZE_OPT(do_not_relay, false)
+-  KV_SERIALIZE_OPT(do_sanity_checks, true)
+   KV_SERIALIZE_OPT(blink, false)
+ KV_SERIALIZE_MAP_CODE_END()
+ 
+diff --git a/src/rpc/core_rpc_server_commands_defs.h b/src/rpc/core_rpc_server_commands_defs.h
+index 788e6f8..ed529dd 100644
+--- a/src/rpc/core_rpc_server_commands_defs.h
++++ b/src/rpc/core_rpc_server_commands_defs.h
+@@ -533,7 +533,6 @@ namespace rpc {
+     {
+       std::string tx_as_hex; // Full transaction information as hexidecimal string.
+       bool do_not_relay;     // (Optional: Default false) Stop relaying transaction to other nodes.  Ignored if `blink` is true.
+-      bool do_sanity_checks; // (Optional: Default true) Verify TX params have sane values.
+       bool blink;            // (Optional: Default false) Submit this as a blink tx rather than into the mempool.
+ 
+       KV_MAP_SERIALIZABLE
