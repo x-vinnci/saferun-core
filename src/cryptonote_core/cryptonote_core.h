@@ -952,7 +952,7 @@ class core : public i_miner_handler {
     get_service_node_blacklisted_key_images() const;
 
     aggregateResponse bls_request() const;
-    aggregateMerkleResponse aggregate_merkle_rewards();
+    aggregateWithdrawalResponse aggregate_withdrawal_request(const std::string& ethereum_address);
     std::vector<std::string> get_bls_pubkeys() const;
 
     /**

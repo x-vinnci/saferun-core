@@ -4002,11 +4002,11 @@ bool Blockchain::check_tx_inputs(
             }
         }
 
-        if (tx.type == txtype::ethereum) {
-            cryptonote::tx_extra_ethereum entry = {};
+        if (tx.type == txtype::ethereum_address_notification) {
+            cryptonote::tx_extra_ethereum_address_notification entry = {};
             std::string fail_reason;
-            if (!ethereum::validate_ethereum_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason)) {
-                log::error(log::Cat("verify"), "Failed to validate Ethereum TX reason: {}", fail_reason);
+            if (!ethereum::validate_ethereum_address_notification_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason)) {
+                log::error(log::Cat("verify"), "Failed to validate Ethereum Address Notification TX reason: {}", fail_reason);
                 tvc.m_verbose_error = std::move(fail_reason);
                 return false;
             }
@@ -4025,6 +4025,37 @@ bool Blockchain::check_tx_inputs(
             log::error(log::Cat("verify"), "TX type: {} should have 0 fee!", tx.type);
             return false;
         }
+
+		if (tx.type == txtype::ethereum_new_service_node) {
+			cryptonote::tx_extra_ethereum_new_service_node entry = {};
+			std::string fail_reason;
+			if (!ethereum::validate_ethereum_new_service_node_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason) ||
+                !m_l2_tracker->processNewServiceNodeTx(entry.bls_key, entry.eth_address, entry.service_node_pubkey, fail_reason)) {
+				log::error(log::Cat("verify"), "Failed to validate Ethereum New Service Node TX reason: {}", fail_reason);
+				tvc.m_verbose_error = std::move(fail_reason);
+				return false;
+			}
+		}
+		if (tx.type == txtype::ethereum_service_node_leave_request) {
+			cryptonote::tx_extra_ethereum_service_node_leave_request entry = {};
+			std::string fail_reason;
+			if (!ethereum::validate_ethereum_service_node_leave_request_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason) ||
+                !m_l2_tracker->processServiceNodeLeaveRequestTx(entry.bls_key, fail_reason)) {
+				log::error(log::Cat("verify"), "Failed to validate Ethereum Service Node Leave Request TX reason: {}", fail_reason);
+				tvc.m_verbose_error = std::move(fail_reason);
+				return false;
+			}
+		}
+		if (tx.type == txtype::ethereum_service_node_decommission) {
+			cryptonote::tx_extra_ethereum_service_node_decommission entry = {};
+			std::string fail_reason;
+			if (!ethereum::validate_ethereum_service_node_decommission_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason) ||
+                !m_l2_tracker->processServiceNodeDecommissionTx(entry.bls_key, entry.refund_stake, fail_reason)) {
+				log::error(log::Cat("verify"), "Failed to validate Ethereum Service Node Decommission TX reason: {}", fail_reason);
+				tvc.m_verbose_error = std::move(fail_reason);
+				return false;
+			}
+		}
 
         if (tx.type == txtype::state_change) {
             tx_extra_service_node_state_change state_change;
@@ -4855,6 +4886,9 @@ bool Blockchain::handle_block_to_main_chain(
     // from the tx_pool and validating them.  Each is then added
     // to txs.  Keys spent in each are added to <keys> by the double spend check.
     txs.reserve(bl.tx_hashes.size());
+
+    m_l2_tracker->initialize_transaction_review(bl.l2_height);
+
     for (const crypto::hash& tx_id : bl.tx_hashes) {
         transaction tx_tmp;
         std::string txblob;
@@ -4986,6 +5020,17 @@ bool Blockchain::handle_block_to_main_chain(
         t_checktx += std::chrono::steady_clock::now() - cc;
         fee_summary += fee;
         cumulative_block_weight += tx_weight;
+    }
+    if (!m_l2_tracker->finalize_transaction_review()) {
+        log::info(
+                logcat,
+                fg(fmt::terminal_color::red),
+                "Block {} with id: {} has missing ethereum transactions",
+                (chain_height - 1),
+                id);
+        bvc.m_verifivation_failed = true;
+        return_tx_to_pool(txs);
+        return false;
     }
 
     m_blocks_txs_check.clear();
@@ -5122,6 +5167,7 @@ bool Blockchain::handle_block_to_main_chain(
     }
 
     if (m_sqlite_db) {
+        // This takes the block that is already validated and records the rewards that should be paid to the service nodes into the batching database
         if (!m_service_node_list.process_batching_rewards(bl)) {
             log::error(logcat, "Failed to add block to batch rewards DB.");
             bvc.m_verifivation_failed = true;

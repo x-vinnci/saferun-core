@@ -71,8 +71,9 @@ aggregateResponse BLSAggregator::aggregateSignatures(const std::string& message)
     return aggregateResponse{non_signers, sig_str};
 }
 
-aggregateMerkleResponse BLSAggregator::aggregateMerkleRewards(const std::string& our_merkle_root) {
-    const std::array<unsigned char, 32> hash = BLSSigner::hash(our_merkle_root);
+aggregateWithdrawalResponse BLSAggregator::aggregateRewards(const std::string& address) {
+    //TODO sean hash something different
+    const std::array<unsigned char, 32> hash = BLSSigner::hash(address);
     bls::Signature aggSig;
     aggSig.clear();
     std::vector<int64_t> signers;
@@ -80,9 +81,9 @@ aggregateMerkleResponse BLSAggregator::aggregateMerkleRewards(const std::string&
     int64_t signers_index = 0;
 
     processNodes(
-        "bls.rewards_merkle",
-        [this, &aggSig, &signers, &signers_mutex, &our_merkle_root, &signers_index](bool success, std::vector<std::string> data) {
-            if (success && data[0] == our_merkle_root) {
+        "bls.get_reward_balance",
+        [this, &aggSig, &signers, &signers_mutex, &signers_index](bool success, std::vector<std::string> data) {
+            if (success) {
                 bls::Signature external_signature;
                 external_signature.setStr(data[1]);
                 std::lock_guard<std::mutex> lock(signers_mutex);
@@ -91,15 +92,17 @@ aggregateMerkleResponse BLSAggregator::aggregateMerkleRewards(const std::string&
             }
             signers_index++;
         },
-        [this, &aggSig, &hash] {
-            const auto my_signature = bls_signer->signHash(hash);
-            aggSig.add(my_signature);
+        [] {
+        // TODO sean does this need to happen? if we are making the request to all nodes then ive made a request to myself already?
+            //const auto my_signature = bls_signer->signHash(hash);
+            //aggSig.add(my_signature);
         }
     );
 
     const auto non_signers = findNonSigners(signers);
     const auto sig_str = bls_utils::SignatureToHex(aggSig);
-    return aggregateMerkleResponse{our_merkle_root, non_signers, sig_str};
+    // TODO sean fill this properly
+    return aggregateWithdrawalResponse{address, 0, 0, "", non_signers, sig_str};
 }
 
 

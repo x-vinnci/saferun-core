@@ -2303,18 +2303,27 @@ struct BLS_REQUEST : PUBLIC, NO_ARGS {
 
 /// RPC: bls request
 ///
-/// Sends a request out for all nodes to sign a BLS signature of the merkle root
+/// Sends a request out for all nodes to sign a BLS signature of the amount that an address is allowed to withdraw
 ///
-/// Inputs: None
+/// Inputs:
+///
+/// - `address` -- this address will be looked up in the batching database at the latest height to see how much they can withdraw
 ///
 /// Outputs:
 ///
 /// - `status` -- generic RPC error code; "OK" means the request was successful.
-/// - `merkle_root` -- The Root that has been signed by the network
+/// - `address` -- The requested address
+/// - `amount` -- The amount that the address can claim
+/// - `height` -- The oxen blockchain height that the rewards have been calculated at
+/// - `signed_message` -- The Root that has been signed by the network
 /// - `signature` -- BLS signature of the merkle root
 /// - `non_signers` -- array of indices of the nodes that did not sign
-struct BLS_MERKLE_REQUEST : PUBLIC, NO_ARGS {
-    static constexpr auto names() { return NAMES("bls_merkle_request"); }
+struct BLS_WITHDRAWAL_REQUEST : PUBLIC {
+    static constexpr auto names() { return NAMES("bls_withdrawal_request"); }
+
+    struct request_parameters {
+        std::string address;
+    } request;
 };
 
 /// RPC: bls pubkey request
@@ -2724,7 +2733,7 @@ using core_rpc_types = tools::type_list<
         GET_SERVICE_NODES,
         GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES,
         BLS_REQUEST,
-        BLS_MERKLE_REQUEST,
+        BLS_WITHDRAWAL_REQUEST,
         BLS_PUBKEYS,
         GET_SERVICE_NODE_REGISTRATION_CMD,
         GET_SERVICE_NODE_REGISTRATION_CMD_RAW,

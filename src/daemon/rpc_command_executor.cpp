@@ -2127,25 +2127,32 @@ bool rpc_command_executor::flush_cache(bool bad_txs, bool bad_blocks) {
     return true;
 }
 
-bool rpc_command_executor::claim_rewards() {
-    auto maybe_merkle_response = try_running( [this] { return invoke<BLS_MERKLE_REQUEST>(); },
-            "Failed to get merkle root");
-    if (!maybe_merkle_response)
+bool rpc_command_executor::claim_rewards(const std::string& address) {
+    auto maybe_withdrawal_response = try_running(
+            [this, address] {
+                return invoke<BLS_WITHDRAWAL_REQUEST>(json{{"address", address}});
+            },
+            "Failed to get withdrawal rewards");
+    if (!maybe_withdrawal_response)
         return false;
-    auto& merkle_root_response = *maybe_merkle_response;
+    auto& withdrawal_response = *maybe_withdrawal_response;
 
     std::ostringstream link;
     link << "https://oxen-eth-webpage.vercel.app";
-    link << "/?merkleRoot=" << merkle_root_response["merkle_root"];
-    link << "&sig=" << merkle_root_response["signature"];
-    for (const auto& non_signer : merkle_root_response["non_signers"]) {
+    link << "/?amount=" << withdrawal_response["amount"];
+    link << "?address=" << withdrawal_response["address"];
+    link << "?height=" <<  withdrawal_response["height"];
+    link << "&sig=" <<     withdrawal_response["signature"];
+    for (const auto& non_signer : withdrawal_response["non_signers"]) {
         link << "&indices=" << non_signer;
     }
 
     tools::msg_writer(
-                  "Merkle Root: {}\n Signature: {}\n Link to claim rewards: {}\n",
-                  merkle_root_response["merkle_root"],
-                  merkle_root_response["signature"],
+                  "Address: {}\n Amount: {}\n Height: {}\n Signature: {}\n Link to claim rewards: {}\n",
+                  withdrawal_response["address"],
+                  withdrawal_response["amount"],
+                  withdrawal_response["height"],
+                  withdrawal_response["signature"],
                   link.str()
               );
     return true;

@@ -31,8 +31,11 @@ struct aggregateResponse {
     std::string signature;
 };
 
-struct aggregateMerkleResponse {
-    std::string merkle_root;
+struct aggregateWithdrawalResponse {
+    std::string address;
+    uint64_t amount;
+    uint64_t height;
+    std::string signed_message;
     std::vector<int64_t> non_signers;
     std::string signature;
 };
@@ -50,7 +53,7 @@ public:
     std::string aggregatePubkeyHex();
     std::vector<std::string> getPubkeys();
     aggregateResponse aggregateSignatures(const std::string& message);
-    aggregateMerkleResponse aggregateMerkleRewards(const std::string& our_merkle_root);
+    aggregateWithdrawalResponse aggregateRewards(const std::string& address);
 
     std::vector<int64_t> findNonSigners(const std::vector<int64_t>& indices);
 

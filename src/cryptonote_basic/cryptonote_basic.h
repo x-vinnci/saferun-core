@@ -168,7 +168,7 @@ class transaction_prefix {
 
     bool is_transfer() const {
         return type == txtype::standard || type == txtype::stake ||
-               type == txtype::oxen_name_system || type == txtype::ethereum;
+               type == txtype::oxen_name_system || type == txtype::ethereum_address_notification;
     }
 
     // not used after version 2, but remains for compatibility
@@ -539,7 +539,7 @@ inline txversion transaction_prefix::get_max_version_for_hf(hf hf_version) {
 constexpr txtype transaction_prefix::get_max_type_for_hf(hf hf_version) {
     txtype result = txtype::standard;
     if (hf_version >= cryptonote::feature::ETH_BLS)
-        result = txtype::ethereum;
+        result = txtype::ethereum_service_node_decommission;
     else if (hf_version >= hf::hf15_ons)
         result = txtype::oxen_name_system;
     else if (hf_version >= hf::hf14_blink)

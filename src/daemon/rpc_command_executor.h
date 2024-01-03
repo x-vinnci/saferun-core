@@ -276,7 +276,7 @@ class rpc_command_executor final {
 
     bool flush_cache(bool bad_txs, bool invalid_blocks);
 
-    bool claim_rewards();
+    bool claim_rewards(const std::string& address);
 
     bool version();
 

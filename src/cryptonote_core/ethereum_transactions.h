@@ -9,10 +9,32 @@
 
 namespace ethereum {
 
-bool validate_ethereum_tx(
-        cryptonote::hf hf_version,
-        uint64_t blockchain_height,
-        cryptonote::transaction const& tx,
-        cryptonote::tx_extra_ethereum& eth_extra,
-        std::string* reason);
+bool validate_ethereum_address_notification_tx(
+    cryptonote::hf hf_version,
+    uint64_t blockchain_height,
+    cryptonote::transaction const& tx,
+    cryptonote::tx_extra_ethereum_address_notification& eth_extra,
+    std::string* reason);
+
+bool validate_ethereum_new_service_node_tx(
+    cryptonote::hf hf_version,
+    uint64_t blockchain_height,
+    cryptonote::transaction const& tx,
+    cryptonote::tx_extra_ethereum_new_service_node& eth_extra,
+    std::string* reason);
+
+bool validate_ethereum_service_node_leave_request_tx(
+    cryptonote::hf hf_version,
+    uint64_t blockchain_height,
+    cryptonote::transaction const& tx,
+    cryptonote::tx_extra_ethereum_service_node_leave_request& eth_extra,
+    std::string* reason);
+
+bool validate_ethereum_service_node_decommission_tx(
+    cryptonote::hf hf_version,
+    uint64_t blockchain_height,
+    cryptonote::transaction const& tx,
+    cryptonote::tx_extra_ethereum_service_node_decommission& eth_extra,
+    std::string* reason);
+
 } // ethereum

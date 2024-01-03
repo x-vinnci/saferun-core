@@ -487,4 +487,9 @@ void parse_request(GET_SERVICE_NODE_REGISTRATION_CMD& cmd, rpc_input in) {
             "staking_requirement",
             required{cmd.request.staking_requirement});
 }
+
+void parse_request(BLS_WITHDRAWAL_REQUEST& cmd, rpc_input in) {
+    get_values( in, "address", required{cmd.request.address});
+}
+
 }  // namespace cryptonote::rpc

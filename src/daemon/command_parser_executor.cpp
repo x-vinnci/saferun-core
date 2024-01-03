@@ -776,7 +776,7 @@ show_list:
 }
 
 bool command_parser_executor::claim_rewards(const std::vector<std::string>& args) {
-    return m_executor.claim_rewards();
+    return m_executor.claim_rewards(args[0]);
 }
 
 }  // namespace daemonize

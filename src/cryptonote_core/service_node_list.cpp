@@ -2092,12 +2092,12 @@ bool service_node_list::process_ethereum_transactions(const cryptonote::network_
         return true;
     uint64_t block_height = cryptonote::get_block_height(block);
     for (const cryptonote::transaction& tx : txs) {
-        if (tx.type != cryptonote::txtype::ethereum)
+        if (tx.type != cryptonote::txtype::ethereum_address_notification)
             continue;
 
-        cryptonote::tx_extra_ethereum entry = {};
+        cryptonote::tx_extra_ethereum_address_notification entry = {};
         std::string fail_reason;
-        if (!ethereum::validate_ethereum_tx(block.major_version, block_height, tx, entry, &fail_reason)) {
+        if (!ethereum::validate_ethereum_address_notification_tx(block.major_version, block_height, tx, entry, &fail_reason)) {
             log::error(
                     logcat,
                     "ETH TX: Failed to validate for tx={}. This should have failed validation "

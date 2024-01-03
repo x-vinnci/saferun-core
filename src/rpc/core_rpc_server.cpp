@@ -745,10 +745,23 @@ namespace {
             _load_owner(ons, "owner", x.owner);
             _load_owner(ons, "backup_owner", x.backup_owner);
         }
-        void operator()(const tx_extra_ethereum& x) {
+        void operator()(const tx_extra_ethereum_address_notification& x) {
             set("eth_address", x.eth_address);
             set("signature", x.signature);
         }
+        void operator()(const tx_extra_ethereum_new_service_node& x) {
+            set("bls_key", x.bls_key);
+            set("eth_address", x.eth_address);
+            set("service_node_pubkey", x.service_node_pubkey);
+        }
+        void operator()(const tx_extra_ethereum_service_node_leave_request& x) {
+            set("bls_key", x.bls_key);
+        }
+        void operator()(const tx_extra_ethereum_service_node_decommission& x) {
+            set("bls_key", x.bls_key);
+            set("refund_stake", x.refund_stake);
+        }
+
 
         // Ignore these fields:
         void operator()(const tx_extra_padding&) {}
@@ -2535,12 +2548,15 @@ void core_rpc_server::invoke( BLS_REQUEST& bls_request, rpc_context context) {
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
-void core_rpc_server::invoke(BLS_MERKLE_REQUEST& bls_merkle_request, rpc_context context) {
-    const aggregateMerkleResponse bls_merkle_signature_response = m_core.aggregate_merkle_rewards();
-    bls_merkle_request.response["status"] = STATUS_OK;
-    bls_merkle_request.response["merkle_root"] = bls_merkle_signature_response.merkle_root;
-    bls_merkle_request.response["signature"] = bls_merkle_signature_response.signature;
-    bls_merkle_request.response["non_signers"] = bls_merkle_signature_response.non_signers;
+void core_rpc_server::invoke(BLS_WITHDRAWAL_REQUEST& bls_withdrawal_request, rpc_context context) {
+    const aggregateWithdrawalResponse bls_withdrawal_signature_response = m_core.aggregate_withdrawal_request(bls_withdrawal_request.request.address);
+    bls_withdrawal_request.response["status"] = STATUS_OK;
+    bls_withdrawal_request.response["address"] = bls_withdrawal_signature_response.address;
+    bls_withdrawal_request.response["height"] = bls_withdrawal_signature_response.height;
+    bls_withdrawal_request.response["amount"] = bls_withdrawal_signature_response.amount;
+    bls_withdrawal_request.response["signed_message"] = bls_withdrawal_signature_response.signed_message;
+    bls_withdrawal_request.response["signature"] = bls_withdrawal_signature_response.signature;
+    bls_withdrawal_request.response["non_signers"] = bls_withdrawal_signature_response.non_signers;
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------

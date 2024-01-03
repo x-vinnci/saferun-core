@@ -74,7 +74,6 @@ extern "C" {
 #include "ringct/rctTypes.h"
 #include "uptime_proof.h"
 #include "version.h"
-#include "merkle/merkle_tree_creator.hpp"
 
 DISABLE_VS_WARNINGS(4355)
 
@@ -1089,21 +1088,19 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                 const auto h = m_bls_signer->hash(std::string(m.data[0]));
                 m.send_reply(m_bls_signer->signHash(h).getStr());
             })
-            .add_request_command("rewards_merkle", [&](oxenmq::Message& m) {
+            .add_request_command("get_reward_balance", [&](oxenmq::Message& m) {
                 oxen::log::debug(logcat, "Received omq signature request");
-                if (m.data.size() != 0)
+                if (m.data.size() != 1)
                     m.send_reply(
                         "400",
-                        "Bad request: BLS rewards merkle command must have no data parts "
+                        "Bad request: BLS rewards command have one data part containing the address"
                         "(received " +
                         std::to_string(m.data.size()) + ")");
-                auto [addresses, amounts] = get_blockchain_storage().sqlite_db()->get_all_accrued_earnings();
-                MerkleTreeCreator rewards_merkle_tree = {};
-                for (size_t i = 0; i < addresses.size(); i++)
-                    rewards_merkle_tree.addRewardsLeaf(addresses[i], amounts[i]);
-                const auto rewards_merkle_root = rewards_merkle_tree.getRoot();
-                const auto h = m_bls_signer->hash(rewards_merkle_root);
-                m.send_reply(rewards_merkle_root, m_bls_signer->signHash(h).getStr());
+                uint64_t amount = get_blockchain_storage().sqlite_db()->get_accrued_earnings(std::string(m.data[0]));
+                //TODO sean this should concat a bunch of things instead of amount
+                std::string concatenated_information_for_signing = std::to_string(amount);
+                const auto h = m_bls_signer->hash(concatenated_information_for_signing);
+                m.send_reply(concatenated_information_for_signing, m_bls_signer->signHash(h).getStr());
             })
             .add_request_command("pubkey_request", [&](oxenmq::Message& m) {
                 oxen::log::debug(logcat, "Received omq bls pubkey request");
@@ -2732,13 +2729,10 @@ aggregateResponse core::bls_request() const {
     return resp;
 }
 //-----------------------------------------------------------------------------------------------
-aggregateMerkleResponse core::aggregate_merkle_rewards() {
-    auto [addresses, amounts] = m_blockchain_storage.sqlite_db()->get_all_accrued_earnings();
-    MerkleTreeCreator rewards_merkle_tree = {};
-    for (size_t i = 0; i < addresses.size(); i++) {
-        rewards_merkle_tree.addRewardsLeaf(addresses[i], amounts[i]);
-    }
-    const auto resp = m_bls_aggregator->aggregateMerkleRewards(rewards_merkle_tree.getRoot());
+aggregateWithdrawalResponse core::aggregate_withdrawal_request(const std::string& ethereum_address) {
+    uint64_t rewards = m_blockchain_storage.sqlite_db()->get_accrued_earnings(ethereum_address);
+    //TODO sean something about combining the rewards and address, needs to be standard message format
+    const auto resp = m_bls_aggregator->aggregateRewards(std::to_string(rewards));
     return resp;
 }
 //-----------------------------------------------------------------------------------------------

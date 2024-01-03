@@ -24,7 +24,7 @@ def instruct_daemon(method, params):
 
 
 params = {}
-answer = instruct_daemon('bls_pubkey_request', params)
+answer = instruct_daemon('bls_merkle_request', params)
 
 # print(json.dumps(answer['result']['block_header']['timestamp'], indent=4, sort_keys=True))
 
