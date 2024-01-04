@@ -1,5 +1,8 @@
 #include "l2_tracker.h"
+
 #include <thread>
+#include <utility>
+
 #include "logging/oxen_logger.h"
 
 static auto logcat = oxen::log::Cat("l2_tracker");
@@ -26,40 +29,50 @@ void L2Tracker::update_state_thread() {
     }
 }
 
-void L2Tracker::insert_in_order(const StateResponse& new_state) {
+void L2Tracker::insert_in_order(State&& new_state) {
     // Check if the state with the same height already exists
     auto it = std::find_if(state_history.begin(), state_history.end(),
-                           [&new_state](const StateResponse& state) {
+                           [&new_state](const State& state) {
                                return state.height == new_state.height;
                            });
 
     // If it doesn't exist, insert it in the appropriate location
     if (it == state_history.end()) {
         auto insert_loc = std::upper_bound(state_history.begin(), state_history.end(), new_state,
-                                           [](const StateResponse& a, const StateResponse& b) {
+                                           [](const State& a, const State& b) {
                                                return a.height > b.height;
                                            });
 
-        state_history.insert(insert_loc, new_state);
+        state_history.insert(insert_loc, std::move(new_state)); // Use std::move here
+    }
+}
+
+void L2Tracker::process_logs_for_state(State& state) {
+    std::vector<RewardsLogEntry> logs = rewards_contract->Logs(state.height);
+    for (const auto& log : logs) {
+        auto transaction = log.getLogTransaction();
+        if (transaction) {
+            state.state_changes.emplace_back(*transaction);
+        }
     }
 }
 
 void L2Tracker::update_state() {
-    //TODO sean, create counter for failed state updates, if it fails too many times then throw
     try {
         // Get latest state
-        StateResponse new_state = rewards_contract->State();
-        insert_in_order(new_state);
+        State new_state(rewards_contract->State());
+        process_logs_for_state(new_state);
+        insert_in_order(std::move(new_state));
 
         // Check for missing heights between the first and second entries
-        std::vector<uint64_t> missing_heights;
         if (state_history.size() > 1) {
             uint64_t first_height = state_history[0].height;
             uint64_t second_height = state_history[1].height;
 
             for (uint64_t h = first_height - 1; h > second_height; --h) {
-                new_state = rewards_contract->State(h);
-                insert_in_order(new_state);
+                State missing_state(rewards_contract->State(h));
+                process_logs_for_state(missing_state);
+                insert_in_order(std::move(missing_state));
             }
         }
     } catch (const std::exception& e) {
@@ -77,15 +90,15 @@ std::pair<uint64_t, crypto::hash> L2Tracker::latest_state() {
     return std::make_pair(latest_state.height, return_hash);
 }
 
-bool L2Tracker::check_state_in_history(uint64_t height, const crypto::hash& state) {
-    std::string state_str = tools::type_to_hex(state);
+bool L2Tracker::check_state_in_history(uint64_t height, const crypto::hash& state_root) {
+    std::string state_str = tools::type_to_hex(state_root);
     return check_state_in_history(height, state_str);
 }
 
-bool L2Tracker::check_state_in_history(uint64_t height, const std::string& state) {
+bool L2Tracker::check_state_in_history(uint64_t height, const std::string& state_root) {
     auto it = std::find_if(state_history.begin(), state_history.end(),
-        [height, &state](const StateResponse& stateResponse) {
-            return stateResponse.height == height && stateResponse.state == state;
+        [height, &state_root](const State& state) {
+            return state.height == height && state.state == state_root;
         });
     return it != state_history.end();
 }
@@ -178,5 +191,25 @@ void L2Tracker::get_review_transactions() {
         oxen::log::warning(logcat, "get_review_transactions called with 0 block height");
         return;
     }
-    //TODO sean make this function
+    for (const auto& state : state_history) {
+        if (state.height == review_block_height) {
+            for (const auto& transactionVariant : state.state_changes) {
+                std::visit([this](auto&& arg) {
+                    using T = std::decay_t<decltype(arg)>;
+                    if constexpr (std::is_same_v<T, NewServiceNodeTx>) {
+                        new_service_nodes.push_back(arg);
+                    } else if constexpr (std::is_same_v<T, ServiceNodeLeaveRequestTx>) {
+                        leave_requests.push_back(arg);
+                    } else if constexpr (std::is_same_v<T, ServiceNodeDecommissionTx>) {
+                        decommissions.push_back(arg);
+                    }
+                }, transactionVariant);
+            }
+            break; // Exit the loop once the matching state is processed
+        }
+        if (state.height < review_block_height) {
+            // State history should be ordered, if we go below our desired height then its not there so throw
+            throw std::runtime_error("Did not find review height in state history");
+        }
+    }
 }

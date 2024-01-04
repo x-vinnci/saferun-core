@@ -6,42 +6,30 @@
 
 #include "cryptonote_config.h"
 
-class NewServiceNodeTx {
-public:
-    std::string bls_key;
-    std::string eth_address;
-    std::string service_node_pubkey;
 
-    NewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey)
-        : bls_key(bls_key), eth_address(eth_address), service_node_pubkey(service_node_pubkey) {}
-};
+struct State {
+    uint64_t height;
+    std::string state;
+    std::vector<TransactionStateChangeVariant> state_changes; // List of transactions that changed the state this block
 
-class ServiceNodeLeaveRequestTx {
-public:
-    uint8_t version;
-    std::string bls_key;
-
-    ServiceNodeLeaveRequestTx(uint8_t version, const std::string& bls_key)
-        : version(version), bls_key(bls_key) {}
-};
-
-class ServiceNodeDecommissionTx {
-public:
-    uint8_t version;
-    std::string bls_key;
-    bool refund_stake;
-
-    ServiceNodeDecommissionTx(uint8_t version, const std::string& bls_key, bool refund_stake)
-        : version(version), bls_key(bls_key), refund_stake(refund_stake) {}
+    State(uint64_t _height, const std::string& _state, const std::vector<TransactionStateChangeVariant >& _state_changes)
+        : height(_height), state(_state), state_changes(_state_changes) {}
+    State(const StateResponse& _state_response)
+        : height(_state_response.height), state(_state_response.state) {}
 };
 
 
 class L2Tracker {
 private:
     std::shared_ptr<RewardsContract> rewards_contract;
-    std::vector<StateResponse> state_history;
+    std::vector<State> state_history;
     std::atomic<bool> stop_thread;
     std::thread update_thread;
+
+    uint64_t review_block_height;
+    std::vector<NewServiceNodeTx> new_service_nodes;
+    std::vector<ServiceNodeLeaveRequestTx> leave_requests;
+    std::vector<ServiceNodeDecommissionTx> decommissions;
 
 public:
     L2Tracker();
@@ -50,10 +38,12 @@ public:
 
     void update_state_thread();
     void update_state();
-    void insert_in_order(const StateResponse& new_state);
+    void insert_in_order(State&& new_state);
 
-    bool check_state_in_history(uint64_t height, const crypto::hash& state);
-    bool check_state_in_history(uint64_t height, const std::string& state);
+    void process_logs_for_state(State& state);
+
+    bool check_state_in_history(uint64_t height, const crypto::hash& state_root);
+    bool check_state_in_history(uint64_t height, const std::string& state_root);
 
     // These functions check whether transactions on the oxen chain should be there.
     // Call initialize before we loop, then for each transaction call processTransactionType
@@ -72,11 +62,5 @@ public:
 private:
     static std::string get_contract_address(const cryptonote::network_type nettype);
     void get_review_transactions();
-
-    uint64_t review_block_height;
-    std::vector<NewServiceNodeTx> new_service_nodes;
-    std::vector<ServiceNodeLeaveRequestTx> leave_requests;
-    std::vector<ServiceNodeDecommissionTx> decommissions;
-
 // END
 };
