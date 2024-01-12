@@ -806,6 +806,24 @@ class service_node_list {
                 cryptonote::hf hf_version,
                 uint64_t block_height,
                 const cryptonote::transaction& tx) const;
+        // Returns true if there was a registration:
+        bool process_ethereum_registration_tx(
+                cryptonote::network_type nettype,
+                cryptonote::block const& block,
+                const cryptonote::transaction& tx,
+                uint32_t index,
+                const service_node_keys* my_keys);
+        bool process_ethereum_unlock_tx(
+                cryptonote::network_type nettype,
+                cryptonote::hf hf_version,
+                uint64_t block_height,
+                const cryptonote::transaction& tx);
+        bool process_ethereum_deregister_tx(
+                cryptonote::network_type nettype,
+                cryptonote::hf hf_version,
+                uint64_t block_height,
+                const cryptonote::transaction& tx,
+                const service_node_keys* my_keys);
         payout get_block_leader() const;
         payout get_block_producer(uint8_t pulse_round) const;
     };
@@ -920,7 +938,18 @@ bool is_registration_tx(
         uint32_t index,
         crypto::public_key& key,
         service_node_info& info);
+    
+std::pair<crypto::public_key, std::shared_ptr<service_node_info>> validate_and_get_ethereum_registration(
+        cryptonote::network_type nettype,
+        cryptonote::hf hf_version,
+        const cryptonote::transaction& tx,
+        uint64_t block_timestamp,
+        uint64_t block_height,
+        uint32_t index);
+
 std::optional<registration_details> reg_tx_extract_fields(const cryptonote::transaction& tx);
+std::optional<registration_details> eth_reg_tx_extract_fields(const cryptonote::transaction& tx);
+
 uint64_t offset_testing_quorum_height(quorum_type type, uint64_t height);
 
 // Converts string input values into a partially filled `registration_details`; pubkey and

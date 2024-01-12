@@ -747,19 +747,19 @@ namespace {
         }
         void operator()(const tx_extra_ethereum_address_notification& x) {
             set("eth_address", x.eth_address);
-            set("signature", x.signature);
+            set("signature", tools::view_guts(x.signature));
         }
         void operator()(const tx_extra_ethereum_new_service_node& x) {
             set("bls_key", x.bls_key);
             set("eth_address", x.eth_address);
-            set("service_node_pubkey", x.service_node_pubkey);
+            set("service_node_pubkey", tools::view_guts(x.service_node_pubkey));
+            set("signature", tools::view_guts(x.signature));
         }
         void operator()(const tx_extra_ethereum_service_node_leave_request& x) {
             set("bls_key", x.bls_key);
         }
-        void operator()(const tx_extra_ethereum_service_node_decommission& x) {
+        void operator()(const tx_extra_ethereum_service_node_deregister& x) {
             set("bls_key", x.bls_key);
-            set("refund_stake", x.refund_stake);
         }
 
 

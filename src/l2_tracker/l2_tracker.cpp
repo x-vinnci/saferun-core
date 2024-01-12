@@ -113,7 +113,7 @@ void L2Tracker::initialize_transaction_review(uint64_t ethereum_height) {
         );
     }
     review_block_height = ethereum_height;
-    get_review_transactions();  // Fills new_service_nodes, leave_requests, decommissions
+    get_review_transactions();  // Fills new_service_nodes, leave_requests, deregs
 }
 
 bool L2Tracker::processNewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey, std::string& fail_reason) {
@@ -152,26 +152,26 @@ bool L2Tracker::processServiceNodeLeaveRequestTx(const std::string& bls_key, std
     return false;
 }
 
-bool L2Tracker::processServiceNodeDecommissionTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason) {
+bool L2Tracker::processServiceNodeDeregisterTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason) {
     if (review_block_height == 0) {
         fail_reason = "Review not initialized";
-        oxen::log::error(logcat, "Failed to process decommission tx height {}", review_block_height);
+        oxen::log::error(logcat, "Failed to process deregister tx height {}", review_block_height);
         return false;
     }
 
-    for (auto it = decommissions.begin(); it != decommissions.end(); ++it) {
-        if (it->bls_key == bls_key && it->refund_stake == refund_stake) {
-            decommissions.erase(it);
+    for (auto it = deregs.begin(); it != deregs.end(); ++it) {
+        if (it->bls_key == bls_key) {
+            deregs.erase(it);
             return true;
         }
     }
 
-    fail_reason = "Decommission Transaction not found bls_key: " + bls_key;
+    fail_reason = "Deregister Transaction not found bls_key: " + bls_key;
     return false;
 }
 
 bool L2Tracker::finalize_transaction_review() {
-    if (new_service_nodes.empty() && leave_requests.empty() && decommissions.empty()) {
+    if (new_service_nodes.empty() && leave_requests.empty() && deregs.empty()) {
         review_block_height = 0;
         return true;
     }
@@ -186,7 +186,7 @@ std::string L2Tracker::get_contract_address(const cryptonote::network_type netty
 void L2Tracker::get_review_transactions() {
     new_service_nodes.clear();
     leave_requests.clear();
-    decommissions.clear();
+    deregs.clear();
     if (review_block_height == 0) {
         oxen::log::warning(logcat, "get_review_transactions called with 0 block height");
         return;
@@ -200,8 +200,8 @@ void L2Tracker::get_review_transactions() {
                         new_service_nodes.push_back(arg);
                     } else if constexpr (std::is_same_v<T, ServiceNodeLeaveRequestTx>) {
                         leave_requests.push_back(arg);
-                    } else if constexpr (std::is_same_v<T, ServiceNodeDecommissionTx>) {
-                        decommissions.push_back(arg);
+                    } else if constexpr (std::is_same_v<T, ServiceNodeDeregisterTx>) {
+                        deregs.push_back(arg);
                     }
                 }, transactionVariant);
             }
@@ -213,3 +213,20 @@ void L2Tracker::get_review_transactions() {
         }
     }
 }
+
+std::vector<TransactionStateChangeVariant> L2Tracker::get_block_transactions(uint64_t begin_height, uint64_t end_height) {
+    std::vector<TransactionStateChangeVariant> all_transactions;
+    for (const auto& state : state_history) {
+        if (state.height >= begin_height && state.height <= end_height) {
+            for (const auto& transactionVariant : state.state_changes) {
+                all_transactions.push_back(transactionVariant);
+            }
+        }
+        if (state.height < begin_height) {
+            // If we go below our desired begin height then throw, as state history should be ordered
+            throw std::runtime_error("Begin height not found in state history");
+        }
+    }
+    return all_transactions;
+}
+

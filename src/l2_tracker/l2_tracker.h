@@ -29,7 +29,7 @@ private:
     uint64_t review_block_height;
     std::vector<NewServiceNodeTx> new_service_nodes;
     std::vector<ServiceNodeLeaveRequestTx> leave_requests;
-    std::vector<ServiceNodeDecommissionTx> decommissions;
+    std::vector<ServiceNodeDeregisterTx> deregs;
 
 public:
     L2Tracker();
@@ -53,11 +53,12 @@ public:
     void initialize_transaction_review(uint64_t ethereum_height);
     bool processNewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey, std::string& fail_reason);
     bool processServiceNodeLeaveRequestTx(const std::string& bls_key, std::string& fail_reason);
-    bool processServiceNodeDecommissionTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason);
+    bool processServiceNodeDeregisterTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason);
 
     bool finalize_transaction_review();
 
     std::pair<uint64_t, crypto::hash> latest_state();
+    std::vector<TransactionStateChangeVariant> get_block_transactions(uint64_t begin_height, uint64_t end_height);
 
 private:
     static std::string get_contract_address(const cryptonote::network_type nettype);

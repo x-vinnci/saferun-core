@@ -131,26 +131,26 @@ bool validate_ethereum_service_node_leave_request_tx(
     return true;
 }
 
-bool validate_ethereum_service_node_decommission_tx(
+bool validate_ethereum_service_node_deregister_tx(
     hf hf_version,
     uint64_t blockchain_height,
     cryptonote::transaction const& tx,
-    cryptonote::tx_extra_ethereum_service_node_decommission& eth_extra,
+    cryptonote::tx_extra_ethereum_service_node_deregister& eth_extra,
     std::string* reason) {
 
     {
         if (check_condition(
-                tx.type != cryptonote::txtype::ethereum_service_node_decommission,
+                tx.type != cryptonote::txtype::ethereum_service_node_deregister,
                 reason,
                 "{} uses wrong tx type, expected={}",
                 tx,
-                cryptonote::txtype::ethereum_service_node_decommission))
+                cryptonote::txtype::ethereum_service_node_deregister))
             return false;
 
         if (check_condition(
                 !cryptonote::get_field_from_tx_extra(tx.extra, eth_extra),
                 reason,
-                "{} didn't have ethereum service node decommission data in the tx_extra",
+                "{} didn't have ethereum service node deregister data in the tx_extra",
                 tx))
             return false;
     }

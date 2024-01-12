@@ -9,7 +9,7 @@
 enum class TransactionType {
     NewServiceNode,
     ServiceNodeLeaveRequest,
-    ServiceNodeDecommission,
+    ServiceNodeDeregister,
     Other
 };
 
@@ -18,9 +18,10 @@ public:
     std::string bls_key;
     std::string eth_address;
     std::string service_node_pubkey;
+    std::string signature;
 
-    NewServiceNodeTx(const std::string& _bls_key, const std::string& _eth_address, const std::string& _service_node_pubkey)
-        : bls_key(_bls_key), eth_address(_eth_address), service_node_pubkey(_service_node_pubkey) {}
+    NewServiceNodeTx(const std::string& _bls_key, const std::string& _eth_address, const std::string& _service_node_pubkey, const std::string& _signature)
+        : bls_key(_bls_key), eth_address(_eth_address), service_node_pubkey(_service_node_pubkey), signature(_signature) {}
 };
 
 class ServiceNodeLeaveRequestTx {
@@ -31,16 +32,15 @@ public:
         : bls_key(_bls_key) {}
 };
 
-class ServiceNodeDecommissionTx {
+class ServiceNodeDeregisterTx {
 public:
     std::string bls_key;
-    bool refund_stake;
 
-    ServiceNodeDecommissionTx(const std::string& _bls_key, bool _refund_stake)
-        : bls_key(_bls_key), refund_stake(_refund_stake) {}
+    ServiceNodeDeregisterTx(const std::string& _bls_key)
+        : bls_key(_bls_key) {}
 };
 
-using TransactionStateChangeVariant = std::variant<NewServiceNodeTx, ServiceNodeLeaveRequestTx, ServiceNodeDecommissionTx>;
+using TransactionStateChangeVariant = std::variant<NewServiceNodeTx, ServiceNodeLeaveRequestTx, ServiceNodeDeregisterTx>;
 
 
 class RewardsLogEntry : public LogEntry {

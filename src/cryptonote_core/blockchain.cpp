@@ -1646,6 +1646,13 @@ bool Blockchain::create_block_template_internal(
     uint64_t already_generated_coins;
     uint64_t pool_cookie;
 
+    //TODO sean
+    std::tie(b.l2_height, b.l2_state) = m_l2_tracker->latest_state();
+    // Fill tx_pool with ethereum transactions before we build the block
+    // TODO sean get the previous height from somewhere
+    std::vector<TransactionStateChangeVariant> eth_transactions = m_l2_tracker->get_block_transactions(b.l2_height -1, b.l2_height);
+    process_ethereum_transactions(eth_transactions);
+
     auto lock = tools::unique_locks(m_tx_pool, *this);
     if (m_btc_valid && !from_block) {
         // The pool cookie is atomic. The lack of locking is OK, as if it changes
@@ -1675,6 +1682,7 @@ bool Blockchain::create_block_template_internal(
                 (!!from_block));
         invalidate_block_template_cache();
     }
+
 
     // from_block is usually nullptr, used to build altchains
     if (from_block) {
@@ -1883,8 +1891,6 @@ bool Blockchain::create_block_template_internal(
             b.service_node_winner_key = crypto::null<crypto::public_key>;
 
         b.reward = block_rewards;
-        //TODO sean
-        std::tie(b.l2_height, b.l2_state) = m_l2_tracker->latest_state();
         b.height = height;
         return true;
     }
@@ -1935,6 +1941,32 @@ bool Blockchain::create_next_pulse_block_template(
     b.pulse.round = round;
     b.pulse.validator_bitset = validator_bitset;
     return result;
+}
+
+void Blockchain::process_ethereum_transactions(const std::vector<TransactionStateChangeVariant>& transactions) {
+    auto hf_version = get_network_version();
+    for (const auto& tx_variant : transactions) {
+        transaction tx;
+        tx.version = transaction_prefix::get_max_version_for_hf(hf_version);
+
+        std::visit([&](auto&& arg) {
+            using T = std::decay_t<decltype(arg)>;
+            if constexpr (std::is_same_v<T, NewServiceNodeTx>) {
+                tx.type = txtype::ethereum_new_service_node;
+            } else if constexpr (std::is_same_v<T, ServiceNodeLeaveRequestTx>) {
+                tx.type = txtype::ethereum_service_node_leave_request;
+            } else if constexpr (std::is_same_v<T, ServiceNodeDeregisterTx>) {
+                tx.type = txtype::ethereum_service_node_deregister;
+            }
+        }, tx_variant);
+        const size_t tx_weight = get_transaction_weight(tx);
+        const crypto::hash tx_hash = get_transaction_hash(tx);
+        tx_verification_context tvc = {};
+        std::string blob;
+
+        // Add transaction to memory pool
+        m_tx_pool.add_tx(tx, tx_hash, blob, tx_weight, tvc, tx_pool_options::from_block(), hf_version);
+    }
 }
 //------------------------------------------------------------------
 // for an alternate chain, get the timestamps from the main chain to complete
@@ -4030,7 +4062,7 @@ bool Blockchain::check_tx_inputs(
 			cryptonote::tx_extra_ethereum_new_service_node entry = {};
 			std::string fail_reason;
 			if (!ethereum::validate_ethereum_new_service_node_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason) ||
-                !m_l2_tracker->processNewServiceNodeTx(entry.bls_key, entry.eth_address, entry.service_node_pubkey, fail_reason)) {
+                !m_l2_tracker->processNewServiceNodeTx(entry.bls_key, entry.eth_address, tools::type_to_hex(entry.service_node_pubkey), fail_reason)) {
 				log::error(log::Cat("verify"), "Failed to validate Ethereum New Service Node TX reason: {}", fail_reason);
 				tvc.m_verbose_error = std::move(fail_reason);
 				return false;
@@ -4046,12 +4078,12 @@ bool Blockchain::check_tx_inputs(
 				return false;
 			}
 		}
-		if (tx.type == txtype::ethereum_service_node_decommission) {
-			cryptonote::tx_extra_ethereum_service_node_decommission entry = {};
+		if (tx.type == txtype::ethereum_service_node_deregister) {
+			cryptonote::tx_extra_ethereum_service_node_deregister entry = {};
 			std::string fail_reason;
-			if (!ethereum::validate_ethereum_service_node_decommission_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason) ||
-                !m_l2_tracker->processServiceNodeDecommissionTx(entry.bls_key, entry.refund_stake, fail_reason)) {
-				log::error(log::Cat("verify"), "Failed to validate Ethereum Service Node Decommission TX reason: {}", fail_reason);
+			if (!ethereum::validate_ethereum_service_node_deregister_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason) ||
+                !m_l2_tracker->processServiceNodeDeregisterTx(entry.bls_key, entry.refund_stake, fail_reason)) {
+				log::error(log::Cat("verify"), "Failed to validate Ethereum Service Node Deregister TX reason: {}", fail_reason);
 				tvc.m_verbose_error = std::move(fail_reason);
 				return false;
 			}

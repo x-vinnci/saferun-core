@@ -17,7 +17,7 @@ TransactionType RewardsLogEntry::getLogType() const {
         return TransactionType::ServiceNodeLeaveRequest;
     // keccak256('ServiceNodeLiquidated(uint64,address,BN256G1.G1Point)')
     } else if (topics[0] == "5d7e17cd2edcc6334f540934c0f7150c32f6655120e51ab941b585014b28679a") {
-        return TransactionType::ServiceNodeDecommission;
+        return TransactionType::ServiceNodeDeregister;
     }
     return TransactionType::Other;
 }
@@ -35,8 +35,10 @@ std::optional<TransactionStateChangeVariant> RewardsLogEntry::getLogTransaction(
             // from position 64 (32 bytes -> 64 characters) + 2 for '0x' pull 64 bytes (128 characters)
             std::string bls_key = data.substr(64 + 2, 128);
             // pull 32 bytes (64 characters)
-            std::string service_node_pubkey =data.substr(128 + 64 + 2, 64);
-            return NewServiceNodeTx(bls_key, eth_address, service_node_pubkey);
+            std::string service_node_pubkey = data.substr(128 + 64 + 2, 64);
+            // pull 32 bytes (64 characters)
+            std::string signature = data.substr(128 + 64 + 64 + 2, 64);
+            return NewServiceNodeTx(bls_key, eth_address, service_node_pubkey, signature);
         }
         case TransactionType::ServiceNodeLeaveRequest: {
             // event ServiceNodeRemovalRequest(uint64 indexed serviceNodeID, address recipient, BN256G1.G1Point pubkey);
@@ -47,15 +49,14 @@ std::optional<TransactionStateChangeVariant> RewardsLogEntry::getLogTransaction(
             std::string bls_key = data.substr(64 + 2, 128);
             return ServiceNodeLeaveRequestTx(bls_key);
         }
-        case TransactionType::ServiceNodeDecommission: {
+        case TransactionType::ServiceNodeDeregister: {
             // event ServiceNodeLiquidated(uint64 indexed serviceNodeID, address recipient, BN256G1.G1Point pubkey);
             // service node id is a topic so only address and pubkey are in data
             // address is 32 bytes and pubkey is 64 bytes,
             //
             // from position 64 (32 bytes -> 64 characters) + 2 for '0x' pull 64 bytes (128 characters)
             std::string bls_key = data.substr(64 + 2, 128);
-            bool refund_stake = true;
-            return ServiceNodeDecommissionTx(bls_key, refund_stake);
+            return ServiceNodeDeregisterTx(bls_key);
         }
         default:
             return std::nullopt;

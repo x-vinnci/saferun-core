@@ -1635,6 +1635,8 @@ class Blockchain {
      */
     uint64_t get_adjusted_time() const;
 
+    void process_ethereum_transactions(const std::vector<TransactionStateChangeVariant>& transactions);
+
     /**
      * @brief finish an alternate chain's timestamp window from the main chain
      *

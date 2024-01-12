@@ -30,11 +30,11 @@ bool validate_ethereum_service_node_leave_request_tx(
     cryptonote::tx_extra_ethereum_service_node_leave_request& eth_extra,
     std::string* reason);
 
-bool validate_ethereum_service_node_decommission_tx(
+bool validate_ethereum_service_node_deregister_tx(
     cryptonote::hf hf_version,
     uint64_t blockchain_height,
     cryptonote::transaction const& tx,
-    cryptonote::tx_extra_ethereum_service_node_decommission& eth_extra,
+    cryptonote::tx_extra_ethereum_service_node_deregister& eth_extra,
     std::string* reason);
 
 } // ethereum
