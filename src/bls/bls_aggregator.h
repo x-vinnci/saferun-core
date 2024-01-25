@@ -40,6 +40,14 @@ struct aggregateWithdrawalResponse {
     std::string signature;
 };
 
+struct blsRegistrationResponse  {
+    std::string bls_pubkey;
+    std::string proof_of_possession;
+    std::string address;
+    std::string service_node_pubkey;
+    std::string service_node_signature;
+};
+
 class BLSAggregator {
 private:
     std::shared_ptr<BLSSigner> bls_signer;
@@ -54,6 +62,7 @@ public:
     std::vector<std::string> getPubkeys();
     aggregateResponse aggregateSignatures(const std::string& message);
     aggregateWithdrawalResponse aggregateRewards(const std::string& address);
+    blsRegistrationResponse registration() const;
 
     std::vector<int64_t> findNonSigners(const std::vector<int64_t>& indices);
 

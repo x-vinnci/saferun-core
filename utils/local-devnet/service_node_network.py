@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 
 from daemons import Daemon, Wallet
+from ethereum import ServiceNodeRewardContract
 
 import random
 import time
@@ -51,16 +52,18 @@ class SNNetwork:
         if not os.path.exists(self.datadir):
             os.makedirs(self.datadir)
         self.binpath = binpath
+        self.servicenodecontract = ServiceNodeRewardContract()
 
 
         vprint("Using '{}' for data files and logs".format(datadir))
 
         nodeopts = dict(oxend=self.binpath+'/oxend', datadir=datadir)
 
+        self.ethsns = [Daemon(service_node=True, **nodeopts) for _ in range(1)]
         self.sns = [Daemon(service_node=True, **nodeopts) for _ in range(sns)]
         self.nodes = [Daemon(**nodeopts) for _ in range(nodes)]
 
-        self.all_nodes = self.sns + self.nodes
+        self.all_nodes = self.sns + self.nodes + self.ethsns
 
         self.wallets = []
         for name in ('Alice', 'Bob', 'Mike'):
@@ -90,6 +93,9 @@ class SNNetwork:
 
         vprint("Starting new oxend service nodes with RPC on {} ports".format(self.sns[0].listen_ip), end="")
         for sn in self.sns:
+            vprint(" {}".format(sn.rpc_port), end="", flush=True, timestamp=False)
+            sn.start()
+        for sn in self.ethsns:
             vprint(" {}".format(sn.rpc_port), end="", flush=True, timestamp=False)
             sn.start()
         vprint(timestamp=False)
@@ -204,6 +210,10 @@ class SNNetwork:
         time.sleep(10)
         for sn in self.sns:
             sn.send_uptime_proof()
+
+        ethereum_add_bls_args = self.ethsns[0].get_ethereum_registration_args(self.servicenodecontract.hardhatAccountAddress())
+        result = self.servicenodecontract.addBLSPublicKey(ethereum_add_bls_args)
+        print(result)
         vprint("Done.")
 
         vprint("Local Devnet SN network setup complete!")

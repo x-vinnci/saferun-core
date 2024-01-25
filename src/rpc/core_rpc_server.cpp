@@ -2567,6 +2567,17 @@ void core_rpc_server::invoke(BLS_PUBKEYS& bls_pubkey_request, rpc_context contex
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke(BLS_REGISTRATION& bls_registration_request, rpc_context context) {
+    const blsRegistrationResponse bls_registration = m_core.bls_registration(bls_registration_request.request.address);
+    bls_registration_request.response["status"] = STATUS_OK;
+    bls_registration_request.response["address"] = bls_registration.address;
+    bls_registration_request.response["bls_pubkey"] = bls_registration.bls_pubkey;
+    bls_registration_request.response["proof_of_possession"] = bls_registration.proof_of_possession;
+    bls_registration_request.response["service_node_pubkey"] = bls_registration.service_node_pubkey;
+    bls_registration_request.response["service_node_signature"] = bls_registration.service_node_signature;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
 void core_rpc_server::invoke(GET_SERVICE_KEYS& get_service_keys, rpc_context context) {
     const auto& keys = m_core.get_service_keys();
     if (keys.pub)

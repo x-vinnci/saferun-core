@@ -71,6 +71,10 @@ aggregateResponse BLSAggregator::aggregateSignatures(const std::string& message)
     return aggregateResponse{non_signers, sig_str};
 }
 
+blsRegistrationResponse BLSAggregator::registration() const {
+    return blsRegistrationResponse{bls_signer->getPublicKeyHex(), bls_signer->proofOfPossession(), "","",""};
+}
+
 aggregateWithdrawalResponse BLSAggregator::aggregateRewards(const std::string& address) {
     //TODO sean hash something different
     const std::array<unsigned char, 32> hash = BLSSigner::hash(address);

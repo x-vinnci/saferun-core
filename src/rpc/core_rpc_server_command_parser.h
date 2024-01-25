@@ -55,4 +55,5 @@ void parse_request(START_MINING& start_mining, rpc_input in);
 void parse_request(STORAGE_SERVER_PING& storage_server_ping, rpc_input in);
 void parse_request(SUBMIT_TRANSACTION& tx, rpc_input in);
 void parse_request(BLS_WITHDRAWAL_REQUEST& cmd, rpc_input in);
+void parse_request(BLS_REGISTRATION& cmd, rpc_input in);
 }  // namespace cryptonote::rpc

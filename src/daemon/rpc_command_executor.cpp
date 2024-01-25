@@ -2266,6 +2266,16 @@ bool rpc_command_executor::prepare_registration(bool force_registration) {
         return false;
     auto& snode_keys = *maybe_keys;
 
+    //TODO sean use the feature flag instead
+    if (hf_version > hf::hf20) {
+        tools::success_msg_writer(
+            "Service Node Pubkey: {}\n"
+            "Service Node Signature: {}\n", 
+            snode_keys.value<std::string>("service_node_pubkey", ""),
+            snode_keys.value<std::string>("service_node_signature", "")); // Assuming 'service_node_signature' is the key for signature
+        return true;
+    }
+
     if (!info.value("devnet", false))  // Devnet doesn't run storage-server / lokinet
     {
         auto now = std::chrono::system_clock::now();

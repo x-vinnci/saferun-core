@@ -2740,6 +2740,16 @@ std::vector<std::string> core::get_bls_pubkeys() const {
     return m_bls_aggregator->getPubkeys();
 }
 //-----------------------------------------------------------------------------------------------
+blsRegistrationResponse core::bls_registration(const std::string& ethereum_address) const {
+    auto resp = m_bls_aggregator->registration();
+    const auto& pubkey = get_service_keys().pub;
+    resp.address = ethereum_address;
+    resp.service_node_pubkey = tools::type_to_hex(pubkey);
+    // TODO sean sign this somehow
+    resp.service_node_signature = "";
+    return resp;
+}
+//-----------------------------------------------------------------------------------------------
 std::vector<service_nodes::service_node_pubkey_info> core::get_service_node_list_state(
         const std::vector<crypto::public_key>& service_node_pubkeys) const {
     return m_service_node_list.get_service_node_list_state(service_node_pubkeys);

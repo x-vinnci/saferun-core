@@ -492,4 +492,8 @@ void parse_request(BLS_WITHDRAWAL_REQUEST& cmd, rpc_input in) {
     get_values( in, "address", required{cmd.request.address});
 }
 
+void parse_request(BLS_REGISTRATION& cmd, rpc_input in) {
+    get_values( in, "address", required{cmd.request.address});
+}
+
 }  // namespace cryptonote::rpc

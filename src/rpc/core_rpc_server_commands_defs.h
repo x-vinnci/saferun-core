@@ -2340,6 +2340,30 @@ struct BLS_PUBKEYS: PUBLIC, NO_ARGS {
     static constexpr auto names() { return NAMES("bls_pubkey_request"); }
 };
 
+/// RPC: bls registration request
+///
+/// Sends a request out to get parameters necessary to register a service node through the ethereum smart contract
+///
+/// Inputs:
+///
+/// - `address` -- this address will be looked up in the batching database at the latest height to see how much they can withdraw
+///
+/// Outputs:
+///
+/// - `status` -- generic RPC error code; "OK" means the request was successful.
+/// - `address` -- The requested address
+/// - `bls_pubkey` -- The nodes BLS public key
+/// - `proof_of_possession` -- A signature over the bls pubkey to prove ownership of the private key
+/// - `service_node_pubkey` -- The oxen nodes service node pubkey
+/// - `service_node_signature` -- A signature over the registration parameters
+struct BLS_REGISTRATION: PUBLIC {
+    static constexpr auto names() { return NAMES("bls_registration_request"); }
+
+    struct request_parameters {
+        std::string address;
+    } request;
+};
+
 /// RPC: blockchain/get_checkpoints
 ///
 /// Query hardcoded/service node checkpoints stored for the blockchain. Omit all arguments to
@@ -2735,6 +2759,7 @@ using core_rpc_types = tools::type_list<
         BLS_REQUEST,
         BLS_WITHDRAWAL_REQUEST,
         BLS_PUBKEYS,
+        BLS_REGISTRATION,
         GET_SERVICE_NODE_REGISTRATION_CMD,
         GET_SERVICE_NODE_REGISTRATION_CMD_RAW,
         GET_SERVICE_NODE_STATUS,

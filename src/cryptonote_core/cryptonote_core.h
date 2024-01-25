@@ -954,6 +954,7 @@ class core : public i_miner_handler {
     aggregateResponse bls_request() const;
     aggregateWithdrawalResponse aggregate_withdrawal_request(const std::string& ethereum_address);
     std::vector<std::string> get_bls_pubkeys() const;
+    blsRegistrationResponse bls_registration(const std::string& ethereum_address) const;
 
     /**
      * @brief get a snapshot of the service node list state at the time of the call.
