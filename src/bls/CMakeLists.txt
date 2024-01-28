@@ -40,4 +40,5 @@ target_link_libraries(oxen_bls
     common
     cryptonote_basic
     logging
+    ethyl
     extra)

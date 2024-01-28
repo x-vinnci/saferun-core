@@ -213,7 +213,6 @@ class SNNetwork:
 
         ethereum_add_bls_args = self.ethsns[0].get_ethereum_registration_args(self.servicenodecontract.hardhatAccountAddress())
         result = self.servicenodecontract.addBLSPublicKey(ethereum_add_bls_args)
-        print(result)
         vprint("Done.")
 
         vprint("Local Devnet SN network setup complete!")
