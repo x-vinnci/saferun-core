@@ -136,6 +136,9 @@ class SNNetwork:
         with open(configfile, 'w') as filetowrite:
             filetowrite.write('#!/usr/bin/python3\n# -*- coding: utf-8 -*-\nlisten_ip=\"{}\"\nlisten_port=\"{}\"\nwallet_listen_ip=\"{}\"\nwallet_listen_port=\"{}\"\nwallet_address=\"{}\"\nexternal_address=\"{}\"'.format(self.sns[0].listen_ip,self.sns[0].rpc_port,self.mike.listen_ip,self.mike.rpc_port,self.mike.address(),self.bob.address()))
 
+        # TODO sean remove this
+        # input("Press Enter to continue...")
+
         # Mine some blocks; we need 100 per SN registration, and we can nearly 600 on fakenet before
         # it hits HF16 and kills mining rewards.  This lets us submit the first 5 SN registrations a
         # SN (at height 40, which is the earliest we can submit them without getting an occasional

@@ -8,6 +8,7 @@
 static auto logcat = oxen::log::Cat("l2_tracker");
 
 L2Tracker::L2Tracker() {
+    service_node = false;
 }
 
 L2Tracker::L2Tracker(const cryptonote::network_type nettype, const std::shared_ptr<Provider>& _provider) 
@@ -59,7 +60,6 @@ void L2Tracker::process_logs_for_state(State& state) {
 
 void L2Tracker::update_state() {
     try {
-        // Get latest state
         State new_state(rewards_contract->State());
         process_logs_for_state(new_state);
         insert_in_order(std::move(new_state));
@@ -76,11 +76,13 @@ void L2Tracker::update_state() {
             }
         }
     } catch (const std::exception& e) {
-        oxen::log::error(logcat, "Failed to update state: {}", e.what());
+        oxen::log::warning(logcat, "Failed to update state: {}", e.what());
     }
 }
 
 std::pair<uint64_t, crypto::hash> L2Tracker::latest_state() {
+    if (!service_node)
+        throw std::runtime_error("Non Service node doesn't keep track of state");
     if(state_history.empty()) {
         throw std::runtime_error("Internal error getting latest state from l2 tracker");
     }
@@ -96,6 +98,8 @@ bool L2Tracker::check_state_in_history(uint64_t height, const crypto::hash& stat
 }
 
 bool L2Tracker::check_state_in_history(uint64_t height, const std::string& state_root) {
+    if (!service_node)
+        return true;
     auto it = std::find_if(state_history.begin(), state_history.end(),
         [height, &state_root](const State& state) {
             return state.height == height && state.state == state_root;
@@ -117,6 +121,8 @@ void L2Tracker::initialize_transaction_review(uint64_t ethereum_height) {
 }
 
 bool L2Tracker::processNewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey, std::string& fail_reason) {
+    if (!service_node)
+        return true;
     if (review_block_height == 0) {
         fail_reason = "Review not initialized";
         oxen::log::error(logcat, "Failed to process new service node tx height {}", review_block_height);
@@ -135,6 +141,8 @@ bool L2Tracker::processNewServiceNodeTx(const std::string& bls_key, const std::s
 }
 
 bool L2Tracker::processServiceNodeLeaveRequestTx(const std::string& bls_key, std::string& fail_reason) {
+    if (!service_node)
+        return true;
     if (review_block_height == 0) {
         fail_reason = "Review not initialized";
         oxen::log::error(logcat, "Failed to process service node leave request tx height {}", review_block_height);
@@ -153,6 +161,8 @@ bool L2Tracker::processServiceNodeLeaveRequestTx(const std::string& bls_key, std
 }
 
 bool L2Tracker::processServiceNodeDeregisterTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason) {
+    if (!service_node)
+        return true;
     if (review_block_height == 0) {
         fail_reason = "Review not initialized";
         oxen::log::error(logcat, "Failed to process deregister tx height {}", review_block_height);
@@ -171,6 +181,8 @@ bool L2Tracker::processServiceNodeDeregisterTx(const std::string& bls_key, bool 
 }
 
 bool L2Tracker::finalize_transaction_review() {
+    if (!service_node)
+        return true;
     if (new_service_nodes.empty() && leave_requests.empty() && deregs.empty()) {
         review_block_height = 0;
         return true;
@@ -215,6 +227,8 @@ void L2Tracker::get_review_transactions() {
 }
 
 std::vector<TransactionStateChangeVariant> L2Tracker::get_block_transactions(uint64_t begin_height, uint64_t end_height) {
+    if (!service_node)
+        throw std::runtime_error("Non Service node doesn't keep track of state");
     std::vector<TransactionStateChangeVariant> all_transactions;
     for (const auto& state : state_history) {
         if (state.height >= begin_height && state.height <= end_height) {

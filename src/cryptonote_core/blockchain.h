@@ -149,6 +149,7 @@ class Blockchain {
      * @param offline true if running offline, else false
      * @param test_options test parameters
      * @param fixed_difficulty fixed difficulty for testing purposes; 0 means disabled
+     * @param ethereum_provider sync ethereum using this provider
      * @param get_checkpoints if set, will be called to get checkpoints data
      *
      * @return true on success, false if any initialization steps fail
@@ -161,6 +162,7 @@ class Blockchain {
             bool offline = false,
             const cryptonote::test_options* test_options = nullptr,
             difficulty_type fixed_difficulty = 0,
+            const std::string& ethereum_provider = "",
             const GetCheckpointsCallback& get_checkpoints = nullptr);
 
     /**

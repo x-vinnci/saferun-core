@@ -26,7 +26,7 @@ private:
     std::atomic<bool> stop_thread;
     std::thread update_thread;
 
-    uint64_t review_block_height;
+    uint64_t review_block_height = 0;
     std::vector<NewServiceNodeTx> new_service_nodes;
     std::vector<ServiceNodeLeaveRequestTx> leave_requests;
     std::vector<ServiceNodeDeregisterTx> deregs;
@@ -63,5 +63,6 @@ public:
 private:
     static std::string get_contract_address(const cryptonote::network_type nettype);
     void get_review_transactions();
+    bool service_node = true;
 // END
 };

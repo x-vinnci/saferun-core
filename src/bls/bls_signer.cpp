@@ -21,15 +21,21 @@ std::string buildTag(const std::string& baseTag, uint32_t chainID, const std::st
     return utils::toHexString(utils::hash(concatenatedTag));
 }
 
-BLSSigner::BLSSigner() {
+BLSSigner::BLSSigner(const cryptonote::network_type nettype) {
     initCurve();
     // This init function generates a secret key calling blsSecretKeySetByCSPRNG
     secretKey.init();
+    const auto config = get_config(nettype);
+    chainID = config.ETHEREUM_CHAIN_ID;
+    contractAddress = config.ETHEREUM_REWARDS_CONTRACT;
 }
 
-BLSSigner::BLSSigner(bls::SecretKey _secretKey) {
+BLSSigner::BLSSigner(const cryptonote::network_type nettype, bls::SecretKey _secretKey) {
     initCurve();
     secretKey = _secretKey;
+    const auto config = get_config(nettype);
+    chainID = config.ETHEREUM_CHAIN_ID;
+    contractAddress = config.ETHEREUM_REWARDS_CONTRACT;
 }
 
 BLSSigner::~BLSSigner() {
@@ -58,8 +64,6 @@ bls::Signature BLSSigner::signHash(const std::array<unsigned char, 32>& hash) {
 
 std::string BLSSigner::proofOfPossession() {
     //TODO sean put constants somewhere, source them
-    const uint32_t chainID = 31337;
-    const std::string contractAddress = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
 
     std::string fullTag = buildTag(proofOfPossessionTag, chainID, contractAddress);
     std::string message = "0x" + fullTag + getPublicKeyHex();

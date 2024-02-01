@@ -61,7 +61,7 @@ public:
     RewardsContract(const std::string& _contractAddress, std::shared_ptr<Provider> _provider);
 
     StateResponse State();
-    StateResponse State(std::optional<uint64_t> height);
+    StateResponse State(uint64_t height);
 
     std::vector<RewardsLogEntry> Logs(uint64_t height);
 

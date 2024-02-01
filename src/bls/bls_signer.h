@@ -16,16 +16,20 @@
 
 #include <memory>
 #include <oxenmq/oxenmq.h>
+#include "cryptonote_config.h"
 
 class BLSSigner {
 private:
     bls::SecretKey secretKey;
 
+    uint32_t chainID;
+    std::string contractAddress;
+
     void initCurve();
 
 public:
-    BLSSigner();
-    BLSSigner(bls::SecretKey _secretKey);
+    BLSSigner(const cryptonote::network_type nettype);
+    BLSSigner(const cryptonote::network_type nettype, bls::SecretKey _secretKey);
     ~BLSSigner();
 
     bls::Signature signHash(const std::array<unsigned char, 32>& hash);

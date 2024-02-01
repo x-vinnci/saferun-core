@@ -155,6 +155,11 @@ static const command_line::arg_descriptor<std::string> arg_public_ip = {
         "storage server) are accessible. This IP address will be advertised to the "
         "network via the service node uptime proofs. Required if operating as a "
         "service node."};
+static const command_line::arg_descriptor<std::string> arg_ethereum_provider = {
+        "ethereum-provider",
+        "Provider on which this service node will query the ethereum blockchain "
+        "when tracking the rewards smart contract. Required if operating as a "
+        "service node."};
 static const command_line::arg_descriptor<uint16_t> arg_storage_server_port = {
         "storage-server-port", "Deprecated option, ignored.", 0};
 static const command_line::arg_descriptor<uint16_t, false, true, 2> arg_quorumnet_port = {
@@ -251,7 +256,7 @@ core::core() :
         m_last_storage_server_ping(0),
         m_last_lokinet_ping(0),
         m_pad_transactions(false),
-        m_bls_signer(std::make_shared<BLSSigner>()),
+        m_bls_signer(std::make_shared<BLSSigner>(m_nettype)),
         ss_version{0},
         lokinet_version{0} {
     m_checkpoints_updating.clear();
@@ -308,6 +313,7 @@ void core::init_options(boost::program_options::options_description& desc) {
     command_line::add_arg(desc, arg_max_txpool_weight);
     command_line::add_arg(desc, arg_service_node);
     command_line::add_arg(desc, arg_public_ip);
+    command_line::add_arg(desc, arg_ethereum_provider);
     command_line::add_arg(desc, arg_storage_server_port);
     command_line::add_arg(desc, arg_quorumnet_port);
 
@@ -391,6 +397,14 @@ bool core::handle_command_line(const boost::program_options::variables_map& vm) 
                     "Please specify an IPv4 public address which the service node & storage server "
                     "is accessible from with: '--{} <ip address>'",
                     arg_public_ip.name);
+            args_okay = false;
+        }
+
+        const std::string ethereum_provider = command_line::get_arg(vm, arg_ethereum_provider);
+        if (!ethereum_provider.size()) {
+            log::error(
+                    logcat,
+                    "Please specify an ethereum provider from which the service node can access");
             args_okay = false;
         }
 
@@ -769,6 +783,7 @@ bool core::init(
     m_bls_aggregator = std::make_unique<BLSAggregator>(m_service_node_list, m_omq, m_bls_signer);
 
     const difficulty_type fixed_difficulty = command_line::get_arg(vm, arg_fixed_difficulty);
+    const auto ethereum_provider = command_line::get_arg(vm, arg_ethereum_provider);
     r = m_blockchain_storage.init(
             db.release(),
             ons_db,
@@ -777,6 +792,7 @@ bool core::init(
             m_offline,
             regtest ? &regtest_test_options : test_options,
             fixed_difficulty,
+            ethereum_provider,
             get_checkpoints);
     CHECK_AND_ASSERT_MES(r, false, "Failed to initialize blockchain storage");
 

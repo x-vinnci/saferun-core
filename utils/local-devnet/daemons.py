@@ -173,6 +173,7 @@ class Daemon(RPCDaemon):
                     '--service-node',
                     '--service-node-public-ip={}'.format(self.listen_ip),
                     '--storage-server-port={}'.format(self.ss_port),
+                    '--ethereum-provider="{}"'.format("127.0.0.1:8545"),
                     )
 
 

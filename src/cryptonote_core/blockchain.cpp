@@ -117,8 +117,6 @@ Blockchain::block_extended_info::block_extended_info(
 //------------------------------------------------------------------
 Blockchain::Blockchain(
         tx_memory_pool& tx_pool, service_nodes::service_node_list& service_node_list) :
-        //TODO sean load this from config data
-        m_provider(std::make_shared<Provider>("Sepolia Client", std::string("https://eth-sepolia.g.alchemy.com/v2/xjUjCAfxli88pqe7UjR4Tt1Jp2GKPJvy"))),
         m_db(),
         m_tx_pool(tx_pool),
         m_current_block_cumul_weight_limit(0),
@@ -505,6 +503,7 @@ bool Blockchain::init(
         bool offline,
         const cryptonote::test_options* test_options,
         difficulty_type fixed_difficulty,
+        const std::string& ethereum_provider,
         const GetCheckpointsCallback& get_checkpoints /* = nullptr*/)
 
 {
@@ -534,7 +533,12 @@ bool Blockchain::init(
     if (!m_checkpoints.init(m_nettype, m_db))
         throw std::runtime_error("Failed to initialize checkpoints");
 
-    m_l2_tracker = std::make_shared<L2Tracker>(m_nettype, m_provider);
+    m_provider = std::make_shared<Provider>("Ethereum Client", ethereum_provider);
+    if (ethereum_provider != "") {
+        m_l2_tracker = std::make_shared<L2Tracker>(m_nettype, m_provider);
+    } else {
+        m_l2_tracker = std::make_shared<L2Tracker>();
+    }
 
     m_offline = offline;
     m_fixed_difficulty = fixed_difficulty;
@@ -1646,13 +1650,6 @@ bool Blockchain::create_block_template_internal(
     uint64_t already_generated_coins;
     uint64_t pool_cookie;
 
-    //TODO sean
-    std::tie(b.l2_height, b.l2_state) = m_l2_tracker->latest_state();
-    // Fill tx_pool with ethereum transactions before we build the block
-    // TODO sean get the previous height from somewhere
-    std::vector<TransactionStateChangeVariant> eth_transactions = m_l2_tracker->get_block_transactions(b.l2_height -1, b.l2_height);
-    process_ethereum_transactions(eth_transactions);
-
     auto lock = tools::unique_locks(m_tx_pool, *this);
     if (m_btc_valid && !from_block) {
         // The pool cookie is atomic. The lack of locking is OK, as if it changes
@@ -1767,6 +1764,15 @@ bool Blockchain::create_block_template_internal(
     auto hf_version = b.major_version;
     size_t txs_weight;
     uint64_t fee;
+
+    //TODO sean
+    if (hf_version >= cryptonote::feature::ETH_BLS) {
+        std::tie(b.l2_height, b.l2_state) = m_l2_tracker->latest_state();
+        // Fill tx_pool with ethereum transactions before we build the block
+        // TODO sean get the previous height from somewhere
+        std::vector<TransactionStateChangeVariant> eth_transactions = m_l2_tracker->get_block_transactions(b.l2_height -1, b.l2_height);
+        process_ethereum_transactions(eth_transactions);
+    }
 
     // Add transactions in mempool to block
     if (!m_tx_pool.fill_block_template(
@@ -4919,7 +4925,9 @@ bool Blockchain::handle_block_to_main_chain(
     // to txs.  Keys spent in each are added to <keys> by the double spend check.
     txs.reserve(bl.tx_hashes.size());
 
-    m_l2_tracker->initialize_transaction_review(bl.l2_height);
+    auto hf_version = bl.major_version;
+    if (hf_version >= cryptonote::feature::ETH_BLS)
+        m_l2_tracker->initialize_transaction_review(bl.l2_height);
 
     for (const crypto::hash& tx_id : bl.tx_hashes) {
         transaction tx_tmp;
@@ -5053,7 +5061,7 @@ bool Blockchain::handle_block_to_main_chain(
         fee_summary += fee;
         cumulative_block_weight += tx_weight;
     }
-    if (!m_l2_tracker->finalize_transaction_review()) {
+    if (hf_version >= cryptonote::feature::ETH_BLS && !m_l2_tracker->finalize_transaction_review()) {
         log::info(
                 logcat,
                 fg(fmt::terminal_color::red),
@@ -5187,7 +5195,7 @@ bool Blockchain::handle_block_to_main_chain(
 
     if (is_hard_fork_at_least(m_nettype, feature::ETH_BLS, bl.height) &&
             !m_l2_tracker->check_state_in_history(bl.l2_height, bl.l2_state)) {
-        log::info(logcat, fg(fmt::terminal_color::red), "Failed to find state in l2 tracker.");
+        log::error(logcat, fg(fmt::terminal_color::red), "Failed to find state in l2 tracker.");
         bvc.m_verifivation_failed = true;
         return false;
     }
