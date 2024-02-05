@@ -1,3 +1,9 @@
+oxen (10.4.0-2~ubuntu2310) mantic; urgency=medium
+
+  * Update required storage server version
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 05 Feb 2024 01:38:32 -0400
+
 oxen (10.4.0-1~ubuntu2310) mantic; urgency=medium
 
   * mantic deb
