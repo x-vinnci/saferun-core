@@ -1,3 +1,9 @@
+oxen (10.4.0-2) unstable; urgency=medium
+
+  * Update required storage server version
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 05 Feb 2024 01:37:59 -0400
+
 oxen (10.4.0-1) unstable; urgency=medium
 
   [ KeeJef ]
