@@ -1,3 +1,9 @@
+oxen (10.4.0-2~ubuntu2204) jammy; urgency=medium
+
+  * Update required storage server version
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 05 Feb 2024 01:38:26 -0400
+
 oxen (10.4.0-1~ubuntu2204) jammy; urgency=medium
 
   [ KeeJef ]
