@@ -38,6 +38,7 @@
 #include <type_traits>
 #include <variant>
 #include <oxenc/base64.h>
+#include <oxenc/endian.h>
 #include "crypto/crypto.h"
 #include "cryptonote_basic/hardfork.h"
 #include "cryptonote_basic/tx_extra.h"
@@ -56,7 +57,6 @@
 #include "cryptonote_basic/cryptonote_format_utils.h"
 #include "cryptonote_basic/account.h"
 #include "cryptonote_basic/cryptonote_basic_impl.h"
-#include "cryptonote_core/tx_sanity_check.h"
 #include "cryptonote_core/uptime_proof.h"
 #include "net/parse.h"
 #include "crypto/hash.h"
@@ -1157,15 +1157,6 @@ namespace cryptonote { namespace rpc {
       return res;
     }
     auto tx_blob = oxenc::from_hex(req.tx_as_hex);
-
-    if (req.do_sanity_checks && !cryptonote::tx_sanity_check(tx_blob, m_core.get_blockchain_storage().get_num_mature_outputs(0)))
-    {
-      res.status = "Failed";
-      res.reason = "Sanity check failed";
-      res.sanity_check_failed = true;
-      return res;
-    }
-    res.sanity_check_failed = false;
 
     if (req.blink)
     {
@@ -3197,7 +3188,11 @@ namespace cryptonote { namespace rpc {
     entry.portions_for_operator         = info.portions_for_operator;
     entry.operator_address              = cryptonote::get_account_address_as_str(m_core.get_nettype(), false/*is_subaddress*/, info.operator_address);
     entry.swarm_id                      = info.swarm_id;
-    entry.registration_hf_version       = info.registration_hf_version;
+    std::string raw;
+    raw.resize(sizeof(info.swarm_id));
+    oxenc::write_host_as_big(info.swarm_id, raw.data());
+    entry.swarm = oxenc::to_hex(raw);
+    entry.registration_hf_version = info.registration_hf_version;
 
   }
 
