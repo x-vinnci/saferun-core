@@ -1,3 +1,9 @@
+oxen (10.4.0-2~deb13) trixie; urgency=medium
+
+  * Update required storage server version
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 05 Feb 2024 01:38:05 -0400
+
 oxen (10.4.0-1~deb13) trixie; urgency=medium
 
   * build deb for trixie
