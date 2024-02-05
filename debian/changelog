@@ -1,3 +1,25 @@
+oxen (10.4.0-1~ubuntu2204) jammy; urgency=medium
+
+  [ KeeJef ]
+  * Update GPG keys
+
+  [ Jason Rhinelander ]
+  * Add missing cstdint header for newer gcc
+  * Off-by-one wallet decoy selection bug fix (stable branch)
+  * Bump oxen-encoding to latest
+  * Disable server-side tx "sanity checks"
+  * Schedule testnet and tentative mainnet mandatory forks
+  * Add "swarm" as hex version of "swarm_id" in service node info
+  * Finalize mainnet HF block & height
+  * Static build dependency bumps
+  * epee compilation fix
+  * boost 1.84 compatibility fix
+  * drop zmq mingw patch (applied upstream)
+  * Bump oxenmq to latest version
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Mon, 05 Feb 2024 00:35:37 -0400
+
 oxen (10.3.0-1~ubuntu2204) jammy; urgency=medium
 
   * Don't build curl with nghttp3/quic support
