@@ -533,7 +533,6 @@ namespace rpc {
     {
       std::string tx_as_hex; // Full transaction information as hexidecimal string.
       bool do_not_relay;     // (Optional: Default false) Stop relaying transaction to other nodes.  Ignored if `blink` is true.
-      bool do_sanity_checks; // (Optional: Default true) Verify TX params have sane values.
       bool blink;            // (Optional: Default false) Submit this as a blink tx rather than into the mempool.
 
       KV_MAP_SERIALIZABLE
@@ -2066,6 +2065,7 @@ namespace rpc {
       bool staking_requirement;
       bool portions_for_operator;
       bool swarm_id;
+      bool swarm;
       bool operator_address;
       bool public_ip;
       bool storage_port;
@@ -2135,6 +2135,7 @@ namespace rpc {
         uint64_t                              staking_requirement;           // The staking requirement in atomic units that is required to be contributed to become a Service Node.
         uint64_t                              portions_for_operator;         // The operator percentage cut to take from each reward expressed in portions, see cryptonote_config.h's STAKING_PORTIONS.
         uint64_t                              swarm_id;                      // The identifier of the Service Node's current swarm.
+        std::string                           swarm;                         // The identifier of the Service Node's current swarm, as a 16-character hex string.
         std::string                           operator_address;              // The wallet address of the operator to which the operator cut of the staking reward is sent to.
         std::string                           public_ip;                     // The public ip address of the service node
         uint16_t                              storage_port;                  // The port number associated with the storage server
