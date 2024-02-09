@@ -256,6 +256,7 @@ namespace {
     // hash to be generated correctly.
     crypto::hash msg_signature_hash(crypto::hash const& top_block_hash, pulse::message const& msg) {
         crypto::hash result = {};
+        oxen::log::info(logcat, "TODO sean remove this msg type pulse: {}", msg.type);
         switch (msg.type) {
             case pulse::message_type::invalid: assert("Invalid Code Path" == nullptr); break;
 
@@ -274,6 +275,7 @@ namespace {
             } break;
 
             case pulse::message_type::block_template: {
+                oxen::log::info(logcat, "TODO sean remove this block template message in pulse: {}", msg.block_template.blob.data());
                 crypto::hash block_hash = blake2b_hash(
                         msg.block_template.blob.data(), msg.block_template.blob.size());
                 auto buf = tools::memcpy_le(msg.round, block_hash);
@@ -296,6 +298,7 @@ namespace {
             } break;
 
             case pulse::message_type::signed_block: {
+                oxen::log::info(logcat, "TODO sean remove this signed block in pulse: {}", top_block_hash);
                 crypto::signature const& final_signature =
                         msg.signed_block.signature_of_final_block_hash;
                 auto buf = tools::memcpy_le(

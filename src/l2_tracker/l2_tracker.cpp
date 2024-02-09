@@ -13,7 +13,7 @@ L2Tracker::L2Tracker() {
 
 L2Tracker::L2Tracker(const cryptonote::network_type nettype, const std::shared_ptr<Provider>& _provider) 
     : rewards_contract(std::make_shared<RewardsContract>(get_contract_address(nettype), _provider)),
-      stop_thread(false), review_block_height(0) {
+      stop_thread(false) {
     update_thread = std::thread(&L2Tracker::update_state_thread, this);
 }
         
@@ -81,13 +81,16 @@ void L2Tracker::update_state() {
 }
 
 std::pair<uint64_t, crypto::hash> L2Tracker::latest_state() {
-    if (!service_node)
+    if (!service_node) {
+        oxen::log::error(logcat, "L2 tracker doesnt have a provider and cant query state");
         throw std::runtime_error("Non Service node doesn't keep track of state");
+    }
     if(state_history.empty()) {
+        oxen::log::error(logcat, "L2 tracker doesnt have any state history to query");
         throw std::runtime_error("Internal error getting latest state from l2 tracker");
     }
     crypto::hash return_hash;
-    auto& latest_state = state_history.back();
+    auto& latest_state = state_history.front();
     tools::hex_to_type(latest_state.state, return_hash);
     return std::make_pair(latest_state.height, return_hash);
 }
@@ -107,121 +110,45 @@ bool L2Tracker::check_state_in_history(uint64_t height, const std::string& state
     return it != state_history.end();
 }
 
-void L2Tracker::initialize_transaction_review(uint64_t ethereum_height) {
-    if (review_block_height != 0) {
-        throw std::runtime_error(
-            "Review not finalized from last block, block height currently reviewing: " 
-            + std::to_string(review_block_height) 
-            + " new review height: " 
-            + std::to_string(ethereum_height)
-        );
-    }
-    review_block_height = ethereum_height;
-    get_review_transactions();  // Fills new_service_nodes, leave_requests, deregs
-}
-
-bool L2Tracker::processNewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey, std::string& fail_reason) {
+std::shared_ptr<TransactionReviewSession> L2Tracker::initialize_transaction_review(uint64_t ethereum_height) {
+    auto session = std::make_shared<TransactionReviewSession>(oxen_to_ethereum_block_heights[latest_oxen_block], ethereum_height);
     if (!service_node)
-        return true;
-    if (review_block_height == 0) {
-        fail_reason = "Review not initialized";
-        oxen::log::error(logcat, "Failed to process new service node tx height {}", review_block_height);
-        return false;
-    }
-
-    for (auto it = new_service_nodes.begin(); it != new_service_nodes.end(); ++it) {
-        if (it->bls_key == bls_key && it->eth_address == eth_address && it->service_node_pubkey == service_node_pubkey) {
-            new_service_nodes.erase(it);
-            return true;
-        }
-    }
-
-    fail_reason = "New Service Node Transaction not found bls_key: " + bls_key + " eth_address: " + eth_address + " service_node_pubkey: " + service_node_pubkey;
-    return false;
+        session->service_node = false;
+    populate_review_transactions(session);
+    return session;
 }
 
-bool L2Tracker::processServiceNodeLeaveRequestTx(const std::string& bls_key, std::string& fail_reason) {
+std::shared_ptr<TransactionReviewSession> L2Tracker::initialize_mempool_review() {
+    auto session = std::make_shared<TransactionReviewSession>(oxen_to_ethereum_block_heights[latest_oxen_block], std::numeric_limits<uint64_t>::max());
     if (!service_node)
-        return true;
-    if (review_block_height == 0) {
-        fail_reason = "Review not initialized";
-        oxen::log::error(logcat, "Failed to process service node leave request tx height {}", review_block_height);
-        return false;
-    }
-
-    for (auto it = leave_requests.begin(); it != leave_requests.end(); ++it) {
-        if (it->bls_key == bls_key) {
-            leave_requests.erase(it);
-            return true;
-        }
-    }
-
-    fail_reason = "Leave Request Transaction not found bls_key: " + bls_key;
-    return false;
+        session->service_node = false;
+    populate_review_transactions(session);
+    return session;
 }
-
-bool L2Tracker::processServiceNodeDeregisterTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason) {
-    if (!service_node)
-        return true;
-    if (review_block_height == 0) {
-        fail_reason = "Review not initialized";
-        oxen::log::error(logcat, "Failed to process deregister tx height {}", review_block_height);
-        return false;
-    }
-
-    for (auto it = deregs.begin(); it != deregs.end(); ++it) {
-        if (it->bls_key == bls_key) {
-            deregs.erase(it);
-            return true;
-        }
-    }
-
-    fail_reason = "Deregister Transaction not found bls_key: " + bls_key;
-    return false;
-}
-
-bool L2Tracker::finalize_transaction_review() {
-    if (!service_node)
-        return true;
-    if (new_service_nodes.empty() && leave_requests.empty() && deregs.empty()) {
-        review_block_height = 0;
-        return true;
-    }
-    return false;
-}
-
 
 std::string L2Tracker::get_contract_address(const cryptonote::network_type nettype) {
     return std::string(get_config(nettype).ETHEREUM_REWARDS_CONTRACT);
 }
 
-void L2Tracker::get_review_transactions() {
-    new_service_nodes.clear();
-    leave_requests.clear();
-    deregs.clear();
-    if (review_block_height == 0) {
-        oxen::log::warning(logcat, "get_review_transactions called with 0 block height");
-        return;
-    }
+void L2Tracker::populate_review_transactions(std::shared_ptr<TransactionReviewSession> session) {
     for (const auto& state : state_history) {
-        if (state.height == review_block_height) {
+        if (state.height >= session->review_block_height_min && state.height <= session->review_block_height_max) {
             for (const auto& transactionVariant : state.state_changes) {
-                std::visit([this](auto&& arg) {
+                std::visit([&session](auto&& arg) {
                     using T = std::decay_t<decltype(arg)>;
                     if constexpr (std::is_same_v<T, NewServiceNodeTx>) {
-                        new_service_nodes.push_back(arg);
+                        session->new_service_nodes.push_back(arg);
                     } else if constexpr (std::is_same_v<T, ServiceNodeLeaveRequestTx>) {
-                        leave_requests.push_back(arg);
+                        session->leave_requests.push_back(arg);
                     } else if constexpr (std::is_same_v<T, ServiceNodeDeregisterTx>) {
-                        deregs.push_back(arg);
+                        session->deregs.push_back(arg);
                     }
                 }, transactionVariant);
             }
-            break; // Exit the loop once the matching state is processed
         }
-        if (state.height < review_block_height) {
-            // State history should be ordered, if we go below our desired height then its not there so throw
-            throw std::runtime_error("Did not find review height in state history");
+        if (state.height < session->review_block_height_min) {
+            // State history should be ordered, if we go below our desired height then we can exit
+            break;
         }
     }
 }
@@ -243,4 +170,83 @@ std::vector<TransactionStateChangeVariant> L2Tracker::get_block_transactions(uin
     }
     return all_transactions;
 }
+
+void L2Tracker::record_block_height_mapping(uint64_t oxen_block_height, uint64_t ethereum_block_height) {
+    oxen_to_ethereum_block_heights[oxen_block_height] = ethereum_block_height;
+    latest_oxen_block = oxen_block_height;
+}
+
+bool TransactionReviewSession::processNewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey, std::string& fail_reason) {
+    if (!service_node)
+        return true;
+    if (review_block_height_max == 0) {
+        fail_reason = "Review not initialized";
+        oxen::log::error(logcat, "Failed to process new service node tx height {}", review_block_height_max);
+        return false;
+    }
+
+    oxen::log::info(logcat, "Searching for new_service_node bls_key: " + bls_key + " eth_address: " + eth_address + " service_node_pubkey: " + service_node_pubkey);
+    for (auto it = new_service_nodes.begin(); it != new_service_nodes.end(); ++it) {
+        oxen::log::info(logcat, "new_service_node bls_key: " + it->bls_key + " eth_address: " + it->eth_address + " service_node_pubkey: " + it->service_node_pubkey);
+        if (it->bls_key == bls_key && it->eth_address == eth_address && it->service_node_pubkey == service_node_pubkey) {
+            new_service_nodes.erase(it);
+            return true;
+        }
+    }
+
+    fail_reason = "New Service Node Transaction not found bls_key: " + bls_key + " eth_address: " + eth_address + " service_node_pubkey: " + service_node_pubkey;
+    return false;
+}
+
+bool TransactionReviewSession::processServiceNodeLeaveRequestTx(const std::string& bls_key, std::string& fail_reason) {
+    if (!service_node)
+        return true;
+    if (review_block_height_max == 0) {
+        fail_reason = "Review not initialized";
+        oxen::log::error(logcat, "Failed to process service node leave request tx height {}", review_block_height_max);
+        return false;
+    }
+
+    for (auto it = leave_requests.begin(); it != leave_requests.end(); ++it) {
+        if (it->bls_key == bls_key) {
+            leave_requests.erase(it);
+            return true;
+        }
+    }
+
+    fail_reason = "Leave Request Transaction not found bls_key: " + bls_key;
+    return false;
+}
+
+bool TransactionReviewSession::processServiceNodeDeregisterTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason) {
+    if (!service_node)
+        return true;
+    if (review_block_height_max == 0) {
+        fail_reason = "Review not initialized";
+        oxen::log::error(logcat, "Failed to process deregister tx height {}", review_block_height_max);
+        return false;
+    }
+
+    for (auto it = deregs.begin(); it != deregs.end(); ++it) {
+        if (it->bls_key == bls_key) {
+            deregs.erase(it);
+            return true;
+        }
+    }
+
+    fail_reason = "Deregister Transaction not found bls_key: " + bls_key;
+    return false;
+}
+
+bool TransactionReviewSession::finalize_review() {
+    if (!service_node)
+        return true;
+    if (new_service_nodes.empty() && leave_requests.empty() && deregs.empty()) {
+        review_block_height_min = review_block_height_max + 1;
+        review_block_height_max = 0;
+        return true;
+    }
+    return false;
+}
+
 

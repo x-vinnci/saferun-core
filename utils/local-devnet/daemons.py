@@ -163,6 +163,7 @@ class Daemon(RPCDaemon):
                 '--p2p-bind-port={}'.format(self.p2p_port),
                 '--rpc-admin={}:{}'.format(self.listen_ip, self.rpc_port),
                 '--quorumnet-port={}'.format(self.qnet_port),
+                '--ethereum-provider={}'.format("http://127.0.0.1:8545"),
                 )
 
         for d in peers:
@@ -173,7 +174,6 @@ class Daemon(RPCDaemon):
                     '--service-node',
                     '--service-node-public-ip={}'.format(self.listen_ip),
                     '--storage-server-port={}'.format(self.ss_port),
-                    '--ethereum-provider="{}"'.format("127.0.0.1:8545"),
                     )
 
 

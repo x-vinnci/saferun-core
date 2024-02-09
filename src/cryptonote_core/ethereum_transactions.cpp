@@ -4,6 +4,12 @@
 
 using cryptonote::hf;
 
+#include "logging/oxen_logger.h"
+//TODO sean delete sstream
+#include <sstream>
+
+static auto logcat = oxen::log::Cat("l2_tracker");
+
 namespace ethereum {
 
 template <typename... T>
@@ -84,7 +90,6 @@ bool validate_ethereum_new_service_node_tx(
                 tx,
                 cryptonote::txtype::ethereum_new_service_node))
             return false;
-
         if (check_condition(
                 !cryptonote::get_field_from_tx_extra(tx.extra, eth_extra),
                 reason,

@@ -702,11 +702,12 @@ class Blockchain {
      */
     bool check_tx_inputs(
             transaction& tx,
-            uint64_t& pmax_used_block_height,
-            crypto::hash& max_used_block_id,
             tx_verification_context& tvc,
-            bool kept_by_block = false,
-            std::unordered_set<crypto::key_image>* key_image_conflicts = nullptr);
+            std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
+            crypto::hash& max_used_block_id,
+            uint64_t& pmax_used_block_height,
+            std::unordered_set<crypto::key_image>* key_image_conflicts = nullptr,
+            bool kept_by_block = false);
 
     /**
      * @brief get fee quantization mask
@@ -1162,6 +1163,8 @@ class Blockchain {
      */
     void flush_invalid_blocks();
 
+    std::shared_ptr<L2Tracker> m_l2_tracker;
+
 #ifndef IN_UNIT_TESTS
   private:
 #endif
@@ -1286,7 +1289,6 @@ class Blockchain {
 
     // Ethereum client for communicating with L2 blockchain
     std::shared_ptr<Provider> m_provider;
-    std::shared_ptr<L2Tracker> m_l2_tracker;
 
     network_type m_nettype;
     bool m_offline;
@@ -1393,6 +1395,7 @@ class Blockchain {
     bool check_tx_inputs(
             transaction& tx,
             tx_verification_context& tvc,
+            std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
             uint64_t* pmax_used_block_height = nullptr,
             std::unordered_set<crypto::key_image>* key_image_conflicts = nullptr);
 
@@ -1637,7 +1640,7 @@ class Blockchain {
      */
     uint64_t get_adjusted_time() const;
 
-    void process_ethereum_transactions(const std::vector<TransactionStateChangeVariant>& transactions);
+    void add_ethereum_transactions_to_tx_pool(const std::vector<TransactionStateChangeVariant>& transactions);
 
     /**
      * @brief finish an alternate chain's timestamp window from the main chain

@@ -1378,6 +1378,11 @@ bool core::handle_parsed_txs(
     if (blink_rollback_height)
         *blink_rollback_height = 0;
     tx_pool_options tx_opts;
+    std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session;
+    if (version >= cryptonote::feature::ETH_BLS) {
+        oxen::log::info(logcat, "TODO sean remove this initializing with mempool");
+        ethereum_transaction_review_session = m_blockchain_storage.m_l2_tracker->initialize_mempool_review();
+    }
     for (size_t i = 0; i < parsed_txs.size(); i++) {
         auto& info = parsed_txs[i];
         if (!info.result) {
@@ -1406,6 +1411,7 @@ bool core::handle_parsed_txs(
                     info.tvc,
                     *local_opts,
                     version,
+                    ethereum_transaction_review_session,
                     blink_rollback_height)) {
             log::debug(logcat, "tx added: {}", info.tx_hash);
         } else {

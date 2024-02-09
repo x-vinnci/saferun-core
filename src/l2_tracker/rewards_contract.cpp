@@ -5,18 +5,22 @@
 #include <nlohmann/json.hpp>
 #pragma GCC diagnostic pop
 
+#include "logging/oxen_logger.h"
+
+static auto logcat = oxen::log::Cat("l2_tracker");
+
 TransactionType RewardsLogEntry::getLogType() const {
     if (topics.empty()) {
         throw std::runtime_error("No topics in log entry");
     }
-    // keccak256('NewServiceNode(uint64,address,BN256G1.G1Point,uint256,uint256)')
-    if (topics[0] == "da543ad9a040217dd88f378dc7fb7759316d2cf046a7eb1106294e6a30761458") {
+    // keccak256('NewServiceNode(uint64,address,(uint256,uint256),uint256,uint256)')
+    if (topics[0] == "0x33f8d30fa2c44ed0b2147e4aa1e1d14e3ee4f96d7586e1fea20c3cfe67b40083") {
         return TransactionType::NewServiceNode;
-    // keccak256('ServiceNodeRemovalRequest(uint64,address,BN256G1.G1Point)')
-    } else if (topics[0] == "cea31df077839a5b6d4f079cb9d9e37a75fd2e0494232d8b3b90c3b77eb2f08d") {
+    // keccak256('ServiceNodeRemovalRequest(uint64,address,(uint256,uint256))')
+    } else if (topics[0] == "0x89477e9f4ddcb5eb9f30353ab22c31ef9a91ab33fd1ffef09aadb3458be7775d") {
         return TransactionType::ServiceNodeLeaveRequest;
-    // keccak256('ServiceNodeLiquidated(uint64,address,BN256G1.G1Point)')
-    } else if (topics[0] == "5d7e17cd2edcc6334f540934c0f7150c32f6655120e51ab941b585014b28679a") {
+    // keccak256('ServiceNodeLiquidated(uint64,address,(uint256,uint256))')
+    } else if (topics[0] == "0x0bfb12191b00293af29126b1c5489f8daeb4a4af82db2960b7f8353c3105cd7c") {
         return TransactionType::ServiceNodeDeregister;
     }
     return TransactionType::Other;
@@ -72,6 +76,10 @@ StateResponse RewardsContract::State() {
 
 StateResponse RewardsContract::State(uint64_t height) {
     std::string blockHash = provider->getContractStorageRoot(contractAddress, height);
+    // Check if blockHash starts with "0x" and remove it
+    if (blockHash.size() >= 2 && blockHash[0] == '0' && blockHash[1] == 'x') {
+        blockHash = blockHash.substr(2); // Skip the first two characters
+    }
     return StateResponse{height, blockHash};
 }
 

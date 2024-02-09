@@ -237,6 +237,37 @@ bool tx_memory_pool::have_duplicated_non_standard_tx(
                 return true;
             }
         }
+    } else if (tx.type == txtype::ethereum_new_service_node) {
+        cryptonote::tx_extra_ethereum_new_service_node data = {};
+        // TODO sean bring this check back in
+        //if (!cryptonote::get_field_from_tx_extra(tx.extra, data)) {
+            //log::error(
+                    //logcat,
+                    //"Could not get ethereum new service node data from tx: {}, tx to add is possibly "
+                    //"invalid, rejecting",
+                    //get_transaction_hash(tx));
+            //return true;
+        //}
+    } else if (tx.type == txtype::ethereum_service_node_leave_request) {
+        cryptonote::tx_extra_ethereum_service_node_leave_request data = {};
+        if (!cryptonote::get_field_from_tx_extra(tx.extra, data)) {
+            log::error(
+                    logcat,
+                    "Could not get ethereum service node leave request data from tx: {}, tx to add is possibly "
+                    "invalid, rejecting",
+                    get_transaction_hash(tx));
+            return true;
+        }
+    } else if (tx.type == txtype::ethereum_service_node_deregister) {
+        cryptonote::tx_extra_ethereum_service_node_deregister data = {};
+        if (!cryptonote::get_field_from_tx_extra(tx.extra, data)) {
+            log::error(
+                    logcat,
+                    "Could not get ethereum service node leave request data from tx: {}, tx to add is possibly "
+                    "invalid, rejecting",
+                    get_transaction_hash(tx));
+            return true;
+        }
     } else {
         if (tx.type != txtype::standard && tx.type != txtype::stake) {
             // NOTE(oxen): This is a developer error. If we come across this in production, be
@@ -267,6 +298,7 @@ bool tx_memory_pool::add_tx(
         tx_verification_context& tvc,
         const tx_pool_options& opts,
         hf hf_version,
+        std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
         uint64_t* blink_rollback_height) {
     // this should already be called with that lock, but let's make it explicit for clarity
     std::unique_lock lock{m_transactions_lock};
@@ -403,12 +435,15 @@ bool tx_memory_pool::add_tx(
     bool inputs_okay = check_tx_inputs(
             [&tx]() -> cryptonote::transaction& { return tx; },
             id,
+            ethereum_transaction_review_session,
             max_used_block_height,
             max_used_block_id,
             tvc,
             opts.kept_by_block,
             opts.approved_blink ? blink_rollback_height : nullptr);
     const bool non_standard_tx = !tx.is_transfer();
+
+    oxen::log::info(logcat, "TODO sean remove this tx blob: {}, size: {}", blob, blob.size());
     if (!inputs_okay) {
         // if the transaction was valid before (kept_by_block), then it
         // may become valid again, so ignore the failed inputs check.
@@ -520,14 +555,14 @@ bool tx_memory_pool::add_tx(
 }
 //---------------------------------------------------------------------------------
 bool tx_memory_pool::add_tx(
-        transaction& tx, tx_verification_context& tvc, const tx_pool_options& opts, hf version) {
+        transaction& tx, tx_verification_context& tvc, const tx_pool_options& opts, hf version, std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session) {
     crypto::hash h{};
     size_t blob_size = 0;
     std::string bl;
     t_serializable_object_to_blob(tx, bl);
     if (bl.size() == 0 || !get_transaction_hash(tx, h))
         return false;
-    return add_tx(tx, h, bl, get_transaction_weight(tx, bl.size()), tvc, opts, version);
+    return add_tx(tx, h, bl, get_transaction_weight(tx, bl.size()), tvc, opts, version, ethereum_transaction_review_session);
 }
 //---------------------------------------------------------------------------------
 bool tx_memory_pool::add_new_blink(
@@ -549,7 +584,8 @@ bool tx_memory_pool::add_new_blink(
 
     bool approved = blink.approved();
     auto hf_version = m_blockchain.get_network_version(blink.height);
-    bool result = add_tx(tx, tvc, tx_pool_options::new_blink(approved, hf_version), hf_version);
+    std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session = m_blockchain.m_l2_tracker->initialize_mempool_review();
+    bool result = add_tx(tx, tvc, tx_pool_options::new_blink(approved, hf_version), hf_version, ethereum_transaction_review_session);
     if (result && approved) {
         auto lock = blink_unique_lock();
         m_blinks[txhash] = blink_ptr;
@@ -1085,8 +1121,10 @@ bool tx_memory_pool::get_relayable_transactions(
 
     const uint64_t now = time(NULL);
     txs.reserve(m_blockchain.get_txpool_tx_count());
+    oxen::log::info(logcat, "TODO sean remove this initializing with mempool");
+    std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session = m_blockchain.m_l2_tracker->initialize_mempool_review();
     m_blockchain.for_all_txpool_txes(
-            [this, now, &txs](
+            [this, now, &txs, &ethereum_transaction_review_session](
                     const crypto::hash& txid, const txpool_tx_meta_t& meta, const std::string*) {
                 if (!meta.do_not_relay &&
                     (!meta.relayed ||
@@ -1119,10 +1157,10 @@ bool tx_memory_pool::get_relayable_transactions(
                                 crypto::hash max_used_block_id{};
                                 if (!m_blockchain.check_tx_inputs(
                                             tx,
-                                            max_used_block_height,
-                                            max_used_block_id,
                                             tvc,
-                                            /*kept_by_block*/ false)) {
+                                            ethereum_transaction_review_session,
+                                            max_used_block_id,
+                                            max_used_block_height)) {
                                     log::info(
                                             logcat,
                                             "TX type: {} considered for relaying failed tx inputs "
@@ -1509,6 +1547,7 @@ bool tx_memory_pool::have_tx_keyimg_as_spent(const crypto::key_image& key_im) co
 bool tx_memory_pool::check_tx_inputs(
         const std::function<cryptonote::transaction&()>& get_tx,
         const crypto::hash& txid,
+        std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
         uint64_t& max_used_block_height,
         crypto::hash& max_used_block_id,
         tx_verification_context& tvc,
@@ -1527,13 +1566,16 @@ bool tx_memory_pool::check_tx_inputs(
         }
     }
     std::unordered_set<crypto::key_image> key_image_conflicts;
+    
+    oxen::log::info(logcat, "TODO sean remove this: {}", "check_tx_inputs");
     bool ret = m_blockchain.check_tx_inputs(
             get_tx(),
-            max_used_block_height,
-            max_used_block_id,
             tvc,
-            kept_by_block,
-            blink_rollback_height ? &key_image_conflicts : nullptr);
+            ethereum_transaction_review_session,
+            max_used_block_id,
+            max_used_block_height,
+            blink_rollback_height ? &key_image_conflicts : nullptr,
+            kept_by_block);
 
     if (ret && !key_image_conflicts.empty()) {
         // There are some key image conflicts, but since we have blink_rollback_height this is an
@@ -1625,6 +1667,7 @@ bool tx_memory_pool::check_tx_inputs(
 bool tx_memory_pool::is_transaction_ready_to_go(
         txpool_tx_meta_t& txd,
         const crypto::hash& txid,
+        std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
         const std::string& txblob,
         transaction& tx) const {
     struct transction_parser {
@@ -1656,7 +1699,7 @@ bool tx_memory_pool::is_transaction_ready_to_go(
 
         tx_verification_context tvc;
         if (!check_tx_inputs(
-                    lazy_tx, txid, txd.max_used_block_height, txd.max_used_block_id, tvc)) {
+                    lazy_tx, txid, ethereum_transaction_review_session, txd.max_used_block_height, txd.max_used_block_id, tvc)) {
             txd.last_failed_height = m_blockchain.get_current_blockchain_height() - 1;
             txd.last_failed_id = m_blockchain.get_block_id_by_height(txd.last_failed_height);
             return false;
@@ -1672,7 +1715,7 @@ bool tx_memory_pool::is_transaction_ready_to_go(
             // transaction become again valid
             tx_verification_context tvc;
             if (!check_tx_inputs(
-                        lazy_tx, txid, txd.max_used_block_height, txd.max_used_block_id, tvc)) {
+                        lazy_tx, txid, ethereum_transaction_review_session, txd.max_used_block_height, txd.max_used_block_id, tvc)) {
                 txd.last_failed_height = m_blockchain.get_current_blockchain_height() - 1;
                 txd.last_failed_id = m_blockchain.get_block_id_by_height(txd.last_failed_height);
                 return false;
@@ -1816,6 +1859,12 @@ bool tx_memory_pool::fill_block_template(
     uint64_t next_reward = 0;
     uint64_t net_fee = 0;
 
+    std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session;
+    if (version >= cryptonote::feature::ETH_BLS) {
+        oxen::log::info(logcat, "TODO sean remove this initializing mempool with");
+        ethereum_transaction_review_session = m_blockchain.m_l2_tracker->initialize_mempool_review();
+    }
+
     for (auto sorted_it : m_txs_by_fee_and_receive_time) {
         txpool_tx_meta_t meta;
         if (!m_blockchain.get_txpool_tx_meta(sorted_it.second, meta)) {
@@ -1879,7 +1928,7 @@ bool tx_memory_pool::fill_block_template(
         const cryptonote::txpool_tx_meta_t original_meta = meta;
         bool ready = false;
         try {
-            ready = is_transaction_ready_to_go(meta, sorted_it.second, txblob, tx);
+            ready = is_transaction_ready_to_go(meta, sorted_it.second, ethereum_transaction_review_session, txblob, tx);
             // TODO oxen delete this after HF20 has occurred
             // after here
             if (ready)

@@ -45,6 +45,7 @@
 #include "epee/string_tools.h"
 #include "oxen_economy.h"
 #include "tx_blink.h"
+#include "l2_tracker/l2_tracker.h"
 
 namespace cryptonote {
 class Blockchain;
@@ -166,6 +167,7 @@ class tx_memory_pool {
             tx_verification_context& tvc,
             const tx_pool_options& opts,
             hf hf_version,
+            std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
             uint64_t* blink_rollback_height = nullptr);
 
     /**
@@ -187,7 +189,8 @@ class tx_memory_pool {
             transaction& tx,
             tx_verification_context& tvc,
             const tx_pool_options& opts,
-            hf hf_version);
+            hf hf_version,
+            std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session);
 
     /**
      * @brief attempts to add a blink transaction to the transaction pool.
@@ -712,6 +715,7 @@ class tx_memory_pool {
     bool is_transaction_ready_to_go(
             txpool_tx_meta_t& txd,
             const crypto::hash& txid,
+            std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
             const std::string& txblob,
             transaction& tx) const;
 
@@ -815,6 +819,7 @@ class tx_memory_pool {
     bool check_tx_inputs(
             const std::function<cryptonote::transaction&()>& get_tx,
             const crypto::hash& txid,
+            std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
             uint64_t& max_used_block_height,
             crypto::hash& max_used_block_id,
             tx_verification_context& tvc,

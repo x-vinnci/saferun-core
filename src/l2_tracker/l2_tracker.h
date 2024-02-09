@@ -18,18 +18,34 @@ struct State {
         : height(_state_response.height), state(_state_response.state) {}
 };
 
+struct TransactionReviewSession {
+    bool service_node = true;
+    uint64_t review_block_height_min;
+    uint64_t review_block_height_max;
+    std::vector<NewServiceNodeTx> new_service_nodes;
+    std::vector<ServiceNodeLeaveRequestTx> leave_requests;
+    std::vector<ServiceNodeDeregisterTx> deregs;
+
+    TransactionReviewSession(uint64_t min_height, uint64_t max_height)
+        : review_block_height_min(min_height), review_block_height_max(max_height) {}
+
+    bool processNewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey, std::string& fail_reason);
+    bool processServiceNodeLeaveRequestTx(const std::string& bls_key, std::string& fail_reason);
+    bool processServiceNodeDeregisterTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason);
+
+    bool finalize_review();
+};
+
+
 
 class L2Tracker {
 private:
     std::shared_ptr<RewardsContract> rewards_contract;
     std::vector<State> state_history;
+    std::unordered_map<uint64_t, uint64_t> oxen_to_ethereum_block_heights; // Maps Oxen block height to Ethereum block height
+    uint64_t latest_oxen_block;
     std::atomic<bool> stop_thread;
     std::thread update_thread;
-
-    uint64_t review_block_height = 0;
-    std::vector<NewServiceNodeTx> new_service_nodes;
-    std::vector<ServiceNodeLeaveRequestTx> leave_requests;
-    std::vector<ServiceNodeDeregisterTx> deregs;
 
 public:
     L2Tracker();
@@ -50,12 +66,10 @@ public:
     // and the tracker will make sure that it should actually be on the oxen blockchain
     // at that height. When done looping call the finalize function which will 
     // then check that all transactions have been accounted for.
-    void initialize_transaction_review(uint64_t ethereum_height);
-    bool processNewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey, std::string& fail_reason);
-    bool processServiceNodeLeaveRequestTx(const std::string& bls_key, std::string& fail_reason);
-    bool processServiceNodeDeregisterTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason);
+    std::shared_ptr<TransactionReviewSession> initialize_transaction_review(uint64_t ethereum_height);
+    std::shared_ptr<TransactionReviewSession> initialize_mempool_review();
 
-    bool finalize_transaction_review();
+    void record_block_height_mapping(uint64_t oxen_block_height, uint64_t ethereum_block_height);
 
     std::pair<uint64_t, crypto::hash> latest_state();
     std::vector<TransactionStateChangeVariant> get_block_transactions(uint64_t begin_height, uint64_t end_height);
@@ -63,6 +77,7 @@ public:
 private:
     static std::string get_contract_address(const cryptonote::network_type nettype);
     void get_review_transactions();
+    void populate_review_transactions(std::shared_ptr<TransactionReviewSession> session);
     bool service_node = true;
 // END
 };
