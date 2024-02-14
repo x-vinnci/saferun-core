@@ -1,3 +1,12 @@
+oxen (10.4.1-1~deb10) buster; urgency=medium
+
+  * Add 2.6.1 storage server upgrade with 8 day dereg grace period
+  * Bump Apple deployment target
+  * Windows compilation fixes
+  * Rediff patches
+
+ -- Jason Rhinelander <jason@imaginary.ca>  Tue, 13 Feb 2024 22:40:28 -0400
+
 oxen (10.4.0-2~deb10) buster; urgency=medium
 
   * Update required storage server version
