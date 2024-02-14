@@ -256,7 +256,6 @@ namespace {
     // hash to be generated correctly.
     crypto::hash msg_signature_hash(crypto::hash const& top_block_hash, pulse::message const& msg) {
         crypto::hash result = {};
-        oxen::log::info(logcat, "TODO sean remove this msg type pulse: {}", msg.type);
         switch (msg.type) {
             case pulse::message_type::invalid: assert("Invalid Code Path" == nullptr); break;
 
@@ -275,7 +274,6 @@ namespace {
             } break;
 
             case pulse::message_type::block_template: {
-                oxen::log::info(logcat, "TODO sean remove this block template message in pulse: {}", msg.block_template.blob.data());
                 crypto::hash block_hash = blake2b_hash(
                         msg.block_template.blob.data(), msg.block_template.blob.size());
                 auto buf = tools::memcpy_le(msg.round, block_hash);
@@ -298,7 +296,6 @@ namespace {
             } break;
 
             case pulse::message_type::signed_block: {
-                oxen::log::info(logcat, "TODO sean remove this signed block in pulse: {}", top_block_hash);
                 crypto::signature const& final_signature =
                         msg.signed_block.signature_of_final_block_hash;
                 auto buf = tools::memcpy_le(
@@ -1472,7 +1469,8 @@ namespace {
             round_context& context,
             service_nodes::service_node_list& node_list,
             void* quorumnet_state,
-            service_nodes::service_node_keys const& key) {
+            service_nodes::service_node_keys const& key,
+            cryptonote::Blockchain& blockchain) {
         handle_messages_received_early_for(
                 context.transient.wait_for_handshake_bitsets.stage, quorumnet_state);
         pulse_wait_stage const& stage = context.transient.wait_for_handshake_bitsets.stage;
@@ -1557,6 +1555,9 @@ namespace {
                                                                                   "block template "
                                                                                   "from block "
                                                                                   "producer"));
+            //TODO sean put this back and use a max block
+            // Fill tx_pool with ethereum transactions before we build the block
+            blockchain.add_ethereum_transactions_to_tx_pool();
 
             if (context.prepare_for_round.participant == sn_type::producer)
                 return round_state::send_block_template;
@@ -2003,7 +2004,7 @@ void main(void* quorumnet_state, cryptonote::core& core) {
 
             case round_state::wait_for_handshake_bitsets:
                 context.state =
-                        wait_for_handshake_bitsets(context, node_list, quorumnet_state, key);
+                        wait_for_handshake_bitsets(context, node_list, quorumnet_state, key, blockchain);
                 break;
 
             case round_state::wait_for_block_template:

@@ -132,7 +132,7 @@ std::string L2Tracker::get_contract_address(const cryptonote::network_type netty
 
 void L2Tracker::populate_review_transactions(std::shared_ptr<TransactionReviewSession> session) {
     for (const auto& state : state_history) {
-        if (state.height >= session->review_block_height_min && state.height <= session->review_block_height_max) {
+        if (state.height > session->review_block_height_min && state.height <= session->review_block_height_max) {
             for (const auto& transactionVariant : state.state_changes) {
                 std::visit([&session](auto&& arg) {
                     using T = std::decay_t<decltype(arg)>;
@@ -146,26 +146,27 @@ void L2Tracker::populate_review_transactions(std::shared_ptr<TransactionReviewSe
                 }, transactionVariant);
             }
         }
-        if (state.height < session->review_block_height_min) {
+        if (state.height <= session->review_block_height_min) {
             // State history should be ordered, if we go below our desired height then we can exit
             break;
         }
     }
 }
 
-std::vector<TransactionStateChangeVariant> L2Tracker::get_block_transactions(uint64_t begin_height, uint64_t end_height) {
+std::vector<TransactionStateChangeVariant> L2Tracker::get_block_transactions() {
     if (!service_node)
         throw std::runtime_error("Non Service node doesn't keep track of state");
     std::vector<TransactionStateChangeVariant> all_transactions;
+    const auto begin_height = oxen_to_ethereum_block_heights[latest_oxen_block];
     for (const auto& state : state_history) {
-        if (state.height >= begin_height && state.height <= end_height) {
+        if (state.height > begin_height) {
             for (const auto& transactionVariant : state.state_changes) {
                 all_transactions.push_back(transactionVariant);
             }
         }
-        if (state.height < begin_height) {
-            // If we go below our desired begin height then throw, as state history should be ordered
-            throw std::runtime_error("Begin height not found in state history");
+        if (state.height <= begin_height) {
+            // If we go below our desired begin height then break, as state history should be ordered
+            break;
         }
     }
     return all_transactions;
@@ -246,6 +247,7 @@ bool TransactionReviewSession::finalize_review() {
         review_block_height_max = 0;
         return true;
     }
+
     return false;
 }
 

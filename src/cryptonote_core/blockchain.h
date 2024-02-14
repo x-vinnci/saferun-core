@@ -1163,6 +1163,8 @@ class Blockchain {
      */
     void flush_invalid_blocks();
 
+    void add_ethereum_transactions_to_tx_pool();
+
     std::shared_ptr<L2Tracker> m_l2_tracker;
 
 #ifndef IN_UNIT_TESTS
@@ -1640,7 +1642,6 @@ class Blockchain {
      */
     uint64_t get_adjusted_time() const;
 
-    void add_ethereum_transactions_to_tx_pool(const std::vector<TransactionStateChangeVariant>& transactions);
 
     /**
      * @brief finish an alternate chain's timestamp window from the main chain

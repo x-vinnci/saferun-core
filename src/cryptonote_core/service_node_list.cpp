@@ -1192,7 +1192,7 @@ bool service_node_list::state_t::process_ethereum_unlock_tx(
     }
 
     //TODO sean get this from somewhere using bls key instead
-    crypto::public_key snode_key;
+    crypto::public_key snode_key = {};
     //if (!cryptonote::get_service_node_pubkey_from_tx_extra(tx.extra, snode_key))
         //return false;
 

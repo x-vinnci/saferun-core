@@ -72,7 +72,7 @@ public:
     void record_block_height_mapping(uint64_t oxen_block_height, uint64_t ethereum_block_height);
 
     std::pair<uint64_t, crypto::hash> latest_state();
-    std::vector<TransactionStateChangeVariant> get_block_transactions(uint64_t begin_height, uint64_t end_height);
+    std::vector<TransactionStateChangeVariant> get_block_transactions();
 
 private:
     static std::string get_contract_address(const cryptonote::network_type nettype);

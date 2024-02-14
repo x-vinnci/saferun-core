@@ -1770,13 +1770,8 @@ bool Blockchain::create_block_template_internal(
     uint64_t fee;
 
     //TODO sean
-    if (hf_version >= cryptonote::feature::ETH_BLS) {
+    if (hf_version >= cryptonote::feature::ETH_BLS)
         std::tie(b.l2_height, b.l2_state) = m_l2_tracker->latest_state();
-        // Fill tx_pool with ethereum transactions before we build the block
-        // TODO sean get the previous height from somewhere
-        std::vector<TransactionStateChangeVariant> eth_transactions = m_l2_tracker->get_block_transactions(b.l2_height -1, b.l2_height);
-        add_ethereum_transactions_to_tx_pool(eth_transactions);
-    }
 
     // Add transactions in mempool to block
     if (!m_tx_pool.fill_block_template(
@@ -1953,11 +1948,14 @@ bool Blockchain::create_next_pulse_block_template(
     return result;
 }
 
-void Blockchain::add_ethereum_transactions_to_tx_pool(const std::vector<TransactionStateChangeVariant>& transactions) {
+void Blockchain::add_ethereum_transactions_to_tx_pool() {
     auto hf_version = get_network_version();
+    if (hf_version < feature::ETH_BLS)
+        return;
+    std::vector<TransactionStateChangeVariant> eth_transactions = m_l2_tracker->get_block_transactions();
     tx_extra_field field;
 
-    for (const auto& tx_variant : transactions) {
+    for (const auto& tx_variant : eth_transactions) {
         transaction tx;
         tx.version = transaction_prefix::get_max_version_for_hf(hf_version);
 
@@ -1965,9 +1963,10 @@ void Blockchain::add_ethereum_transactions_to_tx_pool(const std::vector<Transact
             using T = std::decay_t<decltype(arg)>;
             if constexpr (std::is_same_v<T, NewServiceNodeTx>) {
                 tx.type = txtype::ethereum_new_service_node;
-                crypto::public_key service_node_pubkey;
+                crypto::public_key service_node_pubkey = {};
                 tools::hex_to_type(arg.service_node_pubkey, service_node_pubkey);
-                crypto::signature signature;
+                // TODO sean need to actually get the signature
+                crypto::signature signature = {};
                 tools::hex_to_type(arg.signature, signature);
                 tx_extra_ethereum_new_service_node new_service_node = { 0, arg.bls_key, arg.eth_address, service_node_pubkey, signature };
                 cryptonote::add_new_service_node_to_tx_extra(tx.extra, new_service_node);
@@ -1991,6 +1990,7 @@ void Blockchain::add_ethereum_transactions_to_tx_pool(const std::vector<Transact
 
         oxen::log::info(logcat, "TODO sean remove this BBBBBBBBB TX hash created: {}", tx_hash);
         oxen::log::info(logcat, "TODO sean remove this BBBBBBBBB blob hex: {}", oxenc::to_hex(cryptonote::tx_to_blob(tx)));
+        on_new_tx_from_block(tx);
         if (!m_tx_pool.add_tx(tx, tx_hash, cryptonote::tx_to_blob(tx), tx_weight, tvc, tx_pool_options::new_tx(), hf_version, ethereum_transaction_review_session))
         {
             if (tvc.m_verifivation_failed)
@@ -3464,7 +3464,6 @@ bool Blockchain::check_tx_inputs(
 #endif
 
     auto a = std::chrono::steady_clock::now();
-    oxen::log::info(logcat, "TODO sean remove this: {}", "calling check tx inputs");
     bool res = check_tx_inputs(tx, tvc, ethereum_transaction_review_session, &max_used_block_height, key_image_conflicts);
     if (m_show_time_stats) {
         size_t ring_size = 0;
@@ -4610,7 +4609,6 @@ void Blockchain::return_tx_to_pool(std::vector<std::pair<transaction, std::strin
     auto version = get_network_version();
     std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session;
     if (version >= cryptonote::feature::ETH_BLS) {
-        oxen::log::info(logcat, "TODO sean remove this initializing with mempool");
         ethereum_transaction_review_session = m_l2_tracker->initialize_mempool_review();
     }
     for (auto& tx : txs) {
@@ -4962,7 +4960,6 @@ bool Blockchain::handle_block_to_main_chain(
     auto hf_version = bl.major_version;
     std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session;
     if (hf_version >= cryptonote::feature::ETH_BLS) {
-        oxen::log::info(logcat, "TODO sean remove this initializing with l2 height: {}", bl.l2_height);
         ethereum_transaction_review_session = m_l2_tracker->initialize_transaction_review(bl.l2_height);
     }
 
@@ -5043,7 +5040,6 @@ bool Blockchain::handle_block_to_main_chain(
         {
             // validate that transaction inputs and the keys spending them are correct.
             tx_verification_context tvc{};
-            oxen::log::info(logcat, "TODO sean remove this: {}", "calling check tx inputs");
             if (!check_tx_inputs(tx, tvc, ethereum_transaction_review_session)) {
                 log::info(
                         logcat,
@@ -6037,9 +6033,6 @@ bool Blockchain::prepare_handle_incoming_blocks(
 
 
             if (!parse_and_validate_tx_base_from_blob(tx_blob, tx)) {
-                oxen::log::info(logcat, "TODO sean remove this BBBBBBBBB TX hash: {}", tx_prefix_hash);
-                oxen::log::info(logcat, "TODO sean remove this BBBBBBBBB blob hex could not parse: {}", oxenc::to_hex(tx_blob));
-                oxen::log::info(logcat, "TODO sean remove this BBBBBBBBB blob hex size : {}", tx_blob.size());
                 log::error(log::Cat("verify"), "Could not parse tx from incoming blocks");
                 m_scan_table.clear();
                 return false;

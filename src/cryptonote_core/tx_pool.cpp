@@ -302,6 +302,11 @@ bool tx_memory_pool::add_tx(
         uint64_t* blink_rollback_height) {
     // this should already be called with that lock, but let's make it explicit for clarity
     std::unique_lock lock{m_transactions_lock};
+    if (blob.size() == 0) {
+        oxen::log::error(logcat, "Could not add to txpool, blob is empty of tx: {}", id);
+        throw std::runtime_error("Could not add to txpool, blob empty");
+    }
+
 
     if (tx.version == txversion::v0) {
         // v0 never accepted
@@ -443,7 +448,6 @@ bool tx_memory_pool::add_tx(
             opts.approved_blink ? blink_rollback_height : nullptr);
     const bool non_standard_tx = !tx.is_transfer();
 
-    oxen::log::info(logcat, "TODO sean remove this tx blob: {}, size: {}", blob, blob.size());
     if (!inputs_okay) {
         // if the transaction was valid before (kept_by_block), then it
         // may become valid again, so ignore the failed inputs check.
@@ -514,8 +518,10 @@ bool tx_memory_pool::add_tx(
             LockedTXN lock(m_blockchain);
             m_blockchain.remove_txpool_tx(id);
             m_blockchain.add_txpool_tx(id, blob, meta);
-            if (!insert_key_images(tx, id, opts.kept_by_block))
+            if (!insert_key_images(tx, id, opts.kept_by_block)) {
+                oxen::log::error(logcat, "Failed to insert key images for tx: ", id);
                 return false;
+            }
             m_txs_by_fee_and_receive_time.emplace(
                     std::tuple<bool, double, std::time_t>(
                             non_standard_tx,
@@ -1121,7 +1127,6 @@ bool tx_memory_pool::get_relayable_transactions(
 
     const uint64_t now = time(NULL);
     txs.reserve(m_blockchain.get_txpool_tx_count());
-    oxen::log::info(logcat, "TODO sean remove this initializing with mempool");
     std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session = m_blockchain.m_l2_tracker->initialize_mempool_review();
     m_blockchain.for_all_txpool_txes(
             [this, now, &txs, &ethereum_transaction_review_session](
@@ -1567,7 +1572,6 @@ bool tx_memory_pool::check_tx_inputs(
     }
     std::unordered_set<crypto::key_image> key_image_conflicts;
     
-    oxen::log::info(logcat, "TODO sean remove this: {}", "check_tx_inputs");
     bool ret = m_blockchain.check_tx_inputs(
             get_tx(),
             tvc,
@@ -1722,6 +1726,8 @@ bool tx_memory_pool::is_transaction_ready_to_go(
             }
         }
     }
+    //TODO sean make sure the ethereum transactions are ready to go into the block
+
     // if we here, transaction seems valid, but, anyway, check for key_images collisions with
     // blockchain, just to be sure
     if (m_blockchain.have_tx_keyimges_as_spent(lazy_tx())) {
@@ -1861,7 +1867,6 @@ bool tx_memory_pool::fill_block_template(
 
     std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session;
     if (version >= cryptonote::feature::ETH_BLS) {
-        oxen::log::info(logcat, "TODO sean remove this initializing mempool with");
         ethereum_transaction_review_session = m_blockchain.m_l2_tracker->initialize_mempool_review();
     }
 

@@ -228,7 +228,6 @@ bool parse_and_validate_tx_from_blob(const std::string_view tx_blob, transaction
 }
 //---------------------------------------------------------------
 bool parse_and_validate_tx_base_from_blob(const std::string_view tx_blob, transaction& tx) {
-    oxen::log::info(logcat, "TODO sean remove this transaction blob size: {}", tx_blob.size());
     serialization::binary_string_unarchiver ba{tx_blob};
     try {
         tx.serialize_base(ba);

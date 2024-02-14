@@ -81,8 +81,8 @@ private:
         auto it = service_node_list.get_first_pubkey_iterator();
         auto end_it = service_node_list.get_end_pubkey_iterator();
         crypto::x25519_public_key x_pkey{0};
-        uint32_t ip;
-        uint16_t port;
+        uint32_t ip = 0;
+        uint16_t port = 0;
 
         while (it != end_it) {
             service_node_list.access_proof(it->first, [&x_pkey, &ip, &port](auto& proof) {

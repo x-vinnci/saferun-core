@@ -297,7 +297,7 @@ json rpc_command_executor::invoke(
 bool rpc_command_executor::print_checkpoints(
         std::optional<uint64_t> start_height, std::optional<uint64_t> end_height, bool print_json) {
 
-    uint32_t count;
+    uint32_t count = 0;
     if (!start_height && !end_height)
         count = GET_CHECKPOINTS::NUM_CHECKPOINTS_TO_QUERY_BY_DEFAULT;
     else if (!start_height || !end_height)

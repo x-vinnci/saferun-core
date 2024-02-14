@@ -1985,6 +1985,9 @@ void BlockchainLMDB::unlock() {
 void BlockchainLMDB::add_txpool_tx(
         const crypto::hash& txid, const std::string& blob, const txpool_tx_meta_t& meta) {
     log::trace(logcat, "BlockchainLMDB::{}", __func__);
+    if (blob.size() == 0)
+        throw1(DB_ERROR("Attempting to add txpool tx with empty blob"));
+
     check_open();
     mdb_txn_cursors* m_cursors = &m_wcursors;
 
@@ -2002,7 +2005,6 @@ void BlockchainLMDB::add_txpool_tx(
                             .c_str()));
     }
     MDB_val_sized(blob_val, blob);
-    //TODO sean remove this
     if (blob_val.mv_size == 0)
         throw1(DB_ERROR("error adding txpool tx blob: tx is present, but data is empty"));
     if (auto result = mdb_cursor_put(m_cur_txpool_blob, &k, &blob_val, MDB_NODUPDATA)) {

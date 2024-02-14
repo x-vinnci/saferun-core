@@ -1380,7 +1380,6 @@ bool core::handle_parsed_txs(
     tx_pool_options tx_opts;
     std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session;
     if (version >= cryptonote::feature::ETH_BLS) {
-        oxen::log::info(logcat, "TODO sean remove this initializing with mempool");
         ethereum_transaction_review_session = m_blockchain_storage.m_l2_tracker->initialize_mempool_review();
     }
     for (size_t i = 0; i < parsed_txs.size(); i++) {
@@ -2216,8 +2215,10 @@ block_complete_entry get_block_complete_entry(block& b, tx_memory_pool& pool) {
     bce.block = cryptonote::block_to_blob(b);
     for (const auto& tx_hash : b.tx_hashes) {
         std::string txblob;
-        CHECK_AND_ASSERT_THROW_MES(
-                pool.get_transaction(tx_hash, txblob), "Transaction not found in pool");
+        if (!pool.get_transaction(tx_hash, txblob) || txblob.size() == 0) {
+            oxen::log::error(logcat, "Transaction {} not found in pool", tx_hash);
+            throw std::runtime_error("Transaction not found in pool");
+        }
         bce.txs.push_back(txblob);
     }
     return bce;
