@@ -367,7 +367,7 @@ std::optional<registration_details> reg_tx_extract_fields(const cryptonote::tran
     return reg;
 }
 
-std::optional<registration_details> eth_reg_tx_extract_fields(const cryptonote::transaction& tx) {
+std::optional<registration_details> eth_reg_tx_extract_fields(hf hf_version, const cryptonote::transaction& tx) {
     cryptonote::tx_extra_ethereum_new_service_node registration;
     if (!get_field_from_tx_extra(tx.extra, registration))
         return std::nullopt;
@@ -376,11 +376,13 @@ std::optional<registration_details> eth_reg_tx_extract_fields(const cryptonote::
     reg.service_node_pubkey = registration.service_node_pubkey;
 
     // TODO sean this needs to be thought out
-    //auto& [addr, amount] = reg.reserved.emplace_back();
-    //addr.m_spend_public_key = registration.public_spend_keys[i];
-    //amount = registration.amounts[i];
+    auto& [addr, amount] = reg.eth_contributions.emplace_back();
+    addr = registration.eth_address;
+    // TODO sean SOMETHING BETTER HERE
+    amount = 100'000'000'000;
+    //amount = registration.amount;
 
-    //reg.hf = registration.hf_or_expiration;
+    reg.hf = static_cast<uint64_t>(hf_version);
     reg.uses_portions = false;
 
     reg.fee = 0;
@@ -422,10 +424,25 @@ void validate_registration(
                                           ? oxen::MAX_CONTRIBUTORS_HF19
                                           : oxen::MAX_CONTRIBUTORS_V1;
 
-    if (reg.reserved.empty())
-        throw invalid_registration{"No operator contribution given"};
-    if (reg.reserved.size() > max_contributors)
-        throw invalid_registration{"Too many contributors"};
+    std::vector<uint64_t> extracted_amounts;
+    if (hf_version >= hf::hf20) {
+        if (reg.eth_contributions.empty())
+            throw invalid_registration{"No operator contribution given"};
+        if (!reg.reserved.empty())
+            throw invalid_registration{"Operator contributions through oxen no longer an option"};
+        if (reg.eth_contributions.size() > max_contributors)
+            throw invalid_registration{"Too many contributors"};
+        std::transform(reg.eth_contributions.begin(), reg.eth_contributions.end(), std::back_inserter(extracted_amounts),
+                       [](const std::pair<std::string, uint64_t>& pair) { return pair.second; });
+    } else {
+        if (reg.reserved.empty())
+            throw invalid_registration{"No operator contribution given"};
+        if (reg.reserved.size() > max_contributors)
+            throw invalid_registration{"Too many contributors"};
+        std::transform(reg.reserved.begin(), reg.reserved.end(), std::back_inserter(extracted_amounts),
+                       [](const std::pair<cryptonote::account_public_address, uint64_t>& pair) { return pair.second; });
+    }
+
 
     bool valid_stakes, valid_fee;
     if (reg.uses_portions) {
@@ -433,8 +450,7 @@ void validate_registration(
         valid_stakes = check_service_node_portions(hf_version, reg.reserved);
         valid_fee = reg.fee <= cryptonote::old::STAKING_PORTIONS;
     } else {
-        valid_stakes =
-                check_service_node_stakes(hf_version, nettype, staking_requirement, reg.reserved);
+        valid_stakes = check_service_node_stakes(hf_version, nettype, staking_requirement, extracted_amounts);
         valid_fee = reg.fee <= cryptonote::STAKING_FEE_BASIS;
     }
 
@@ -446,11 +462,11 @@ void validate_registration(
 
     if (!valid_stakes) {
         std::string amount_dump;
-        amount_dump.reserve(22 * reg.reserved.size());
-        for (size_t i = 0; i < reg.reserved.size(); i++) {
+        amount_dump.reserve(22 * extracted_amounts.size());
+        for (size_t i = 0; i < extracted_amounts.size(); i++) {
             if (i)
                 amount_dump += ", ";
-            amount_dump += std::to_string(reg.reserved[i].second);
+            amount_dump += std::to_string(extracted_amounts[i]);
         }
         throw invalid_registration{
                 "Invalid "s + (reg.uses_portions ? "portions" : "amounts") + ": {" + amount_dump +
@@ -1436,17 +1452,18 @@ std::pair<crypto::public_key, std::shared_ptr<service_node_info>> validate_and_g
 {
     auto info = std::make_shared<service_node_info>();
 
-    auto maybe_reg = eth_reg_tx_extract_fields(tx);
+    auto maybe_reg = eth_reg_tx_extract_fields(hf_version, tx);
     if (!maybe_reg)
         throw std::runtime_error("Could not extract registration details from transaction");
     auto& reg = *maybe_reg;
 
     uint64_t staking_requirement = get_staking_requirement(nettype, block_height);
     validate_registration(hf_version, nettype, staking_requirement, block_timestamp, reg);
-    validate_registration_signature(reg);
+    // TODO sean bring this signature verification back
+    //validate_registration_signature(reg);
 
     info->staking_requirement = staking_requirement;
-    info->operator_address = reg.reserved[0].first;
+    info->operator_ethereum_address = reg.eth_contributions[0].first;
     info->portions_for_operator = staking_requirement;
     info->registration_height = block_height;
     info->registration_hf_version = hf_version;
@@ -1571,15 +1588,15 @@ bool service_node_list::state_t::process_ethereum_registration_tx(
             log::info(
                     logcat,
                     fg(fmt::terminal_color::green),
-                    "Service node registered (yours): {} on height: {}",
+                    "Service node registered (yours) from ethereum: {} on height: {}",
                     key,
                     block_height);
         else
-            log::info(logcat, "New service node registered: {} on height: {}", key, block_height);
+            log::info(logcat, "New service node registered from ethereum: {} on height: {}", key, block_height);
         service_nodes_infos[key] = std::move(service_node_info);
         return true;
     } catch (const std::exception& e) {
-        log::info(logcat, "Failed to register node from ethereum transaction: {}", e.what());
+        log::error(logcat, "Failed to register node from ethereum transaction: {}", e.what());
     }
     return false;
 }

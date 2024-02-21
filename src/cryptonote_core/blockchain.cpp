@@ -1986,11 +1986,8 @@ void Blockchain::add_ethereum_transactions_to_tx_pool() {
         tx_verification_context tvc = {};
 
         std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session = m_l2_tracker->initialize_mempool_review();
-        // Add transaction to memory pool
-
-        oxen::log::info(logcat, "TODO sean remove this BBBBBBBBB TX hash created: {}", tx_hash);
-        oxen::log::info(logcat, "TODO sean remove this BBBBBBBBB blob hex: {}", oxenc::to_hex(cryptonote::tx_to_blob(tx)));
         on_new_tx_from_block(tx);
+        // Add transaction to memory pool
         if (!m_tx_pool.add_tx(tx, tx_hash, cryptonote::tx_to_blob(tx), tx_weight, tvc, tx_pool_options::new_tx(), hf_version, ethereum_transaction_review_session))
         {
             if (tvc.m_verifivation_failed)

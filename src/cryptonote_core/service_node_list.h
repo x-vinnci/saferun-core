@@ -210,6 +210,7 @@ struct service_node_info  // registration information
         v5_pulse_recomm_credit,
         v6_reassign_sort_keys,
         v7_decommission_reason,
+        v8_ethereum_address,
         _count
     };
 
@@ -297,6 +298,7 @@ struct service_node_info  // registration information
     uint64_t portions_for_operator = 0;
     swarm_id_t swarm_id = 0;
     cryptonote::account_public_address operator_address{};
+    std::string operator_ethereum_address{};
     uint64_t last_ip_change_height = 0;  // The height of the last quorum penalty for changing IPs
     version_t version = tools::enum_top<version_t>;
     cryptonote::hf registration_hf_version = cryptonote::hf::none;
@@ -358,6 +360,10 @@ struct service_node_info  // registration information
         VARINT_FIELD(last_decommission_reason_consensus_all)
         VARINT_FIELD(last_decommission_reason_consensus_any)
     }
+    //TODO sean serialize this
+    //if (version >= version_t::v8_ethereum_address) {
+        //FIELD(operator_ethereum_address)
+    //}
     END_SERIALIZE()
 };
 
@@ -920,6 +926,7 @@ bool tx_get_staking_components_and_amounts(
         staking_components* contribution);
 
 using contribution = std::pair<cryptonote::account_public_address, uint64_t>;
+using eth_contribution = std::pair<std::string, uint64_t>;
 struct registration_details {
     crypto::public_key service_node_pubkey;
     std::vector<contribution> reserved;
@@ -927,6 +934,7 @@ struct registration_details {
     uint64_t hf;         // expiration timestamp before HF19
     bool uses_portions;  // if true then `hf` is a timestamp
     crypto::signature signature;
+    std::vector<eth_contribution> eth_contributions;
 };
 
 bool is_registration_tx(
@@ -948,7 +956,7 @@ std::pair<crypto::public_key, std::shared_ptr<service_node_info>> validate_and_g
         uint32_t index);
 
 std::optional<registration_details> reg_tx_extract_fields(const cryptonote::transaction& tx);
-std::optional<registration_details> eth_reg_tx_extract_fields(const cryptonote::transaction& tx);
+std::optional<registration_details> eth_reg_tx_extract_fields(cryptonote::hf hf_version, const cryptonote::transaction& tx);
 
 uint64_t offset_testing_quorum_height(quorum_type type, uint64_t height);
 
