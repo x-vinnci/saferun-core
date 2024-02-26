@@ -5223,20 +5223,17 @@ bool Blockchain::handle_block_to_main_chain(
         bvc.m_verifivation_failed = true;
         return false;
     }
-
     if (is_hard_fork_at_least(m_nettype, feature::ETH_BLS, bl.height) &&
             !m_l2_tracker->check_state_in_history(bl.l2_height, bl.l2_state)) {
         log::error(logcat, fg(fmt::terminal_color::red), "Failed to find state in l2 tracker.");
         bvc.m_verifivation_failed = true;
         return false;
     }
-
     if (!m_ons_db.add_block(bl, only_txs)) {
         log::info(logcat, fg(fmt::terminal_color::red), "Failed to add block to ONS DB.");
         bvc.m_verifivation_failed = true;
         return false;
     }
-
     if (m_sqlite_db) {
         // This takes the block that is already validated and records the rewards that should be paid to the service nodes into the batching database
         if (!m_service_node_list.process_batching_rewards(bl)) {
@@ -5254,7 +5251,6 @@ bool Blockchain::handle_block_to_main_chain(
             throw std::logic_error("Blockchain missing SQLite Database");
     }
 
-
     m_l2_tracker->record_block_height_mapping(bl.height, bl.l2_height);
     block_add_info hook_data{bl, only_txs, checkpoint};
     for (const auto& hook : m_block_add_hooks) {
@@ -5270,7 +5266,6 @@ bool Blockchain::handle_block_to_main_chain(
             return false;
         }
     }
-
     auto addblock_elapsed = std::chrono::steady_clock::now() - addblock;
 
     // do this after updating the hard fork state since the weight limit may change due to fork
@@ -5321,7 +5316,6 @@ bool Blockchain::handle_block_to_main_chain(
                 tools::friendly_duration(block_processing_time),
                 tools::friendly_duration(miner.verify_pow_time));
     }
-
     if (m_show_time_stats) {
         log::info(
                 logcat,
@@ -5342,7 +5336,6 @@ bool Blockchain::handle_block_to_main_chain(
 
     bvc.m_added_to_main_chain = true;
     ++m_sync_counter;
-
     m_tx_pool.on_blockchain_inc(bl);
     invalidate_block_template_cache();
 
@@ -5351,7 +5344,6 @@ bool Blockchain::handle_block_to_main_chain(
         for (const auto& hook : m_block_post_add_hooks)
             hook(hook_data);
     }
-
     return true;
 }
 //------------------------------------------------------------------

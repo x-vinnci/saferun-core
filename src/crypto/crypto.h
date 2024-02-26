@@ -103,6 +103,11 @@ struct x25519_public_key : ec_point {};
 struct x25519_secret_key_ : bytes<32> {};
 using x25519_secret_key = epee::mlocked<tools::scrubbed<x25519_secret_key_>>;
 
+struct eth_address : bytes<20, true, uint32_t> {
+    // Returns true if non-null, i.e. not all 0.
+    explicit operator bool() const { return data_ != null<eth_address>.data_; }
+};
+
 void hash_to_scalar(const void* data, size_t length, ec_scalar& res);
 ec_scalar hash_to_scalar(const void* data, size_t length);
 void random_scalar(unsigned char* bytes);

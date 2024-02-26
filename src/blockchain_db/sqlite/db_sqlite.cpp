@@ -309,21 +309,22 @@ void BlockchainSQLite::blockchain_detached(uint64_t new_height) {
 }
 
 // Must be called with the address_str_cache_mutex held!
-const std::string& BlockchainSQLite::get_address_str(const cryptonote::batch_sn_payment& addr) {
-    if (addr.eth_address.has_value())
-        return *addr.eth_address;
+std::string BlockchainSQLite::get_address_str(const cryptonote::batch_sn_payment& addr) {
+    if (addr.eth_address.has_value()) {
+        return tools::type_to_hex(addr.eth_address.value());
+    }
     auto& address_str = address_str_cache[addr.address_info.address];
     if (address_str.empty())
         address_str = cryptonote::get_account_address_as_str(m_nettype, 0, addr.address_info.address);
     return address_str;
 }
 
-bool BlockchainSQLite::update_sn_rewards_address(const std::string& oxen_address, const std::string& eth_address) {
+bool BlockchainSQLite::update_sn_rewards_address(const std::string& oxen_address, const crypto::eth_address& eth_address) {
     auto update_address = prepared_st(
             "UPDATE batched_payments_accrued SET address = ? WHERE address = ?"
             " ON CONFLICT (address) DO UPDATE SET amount = amount + excluded.amount"
             );
-    db::exec_query(update_address, eth_address, oxen_address);
+    db::exec_query(update_address, tools::type_to_hex(eth_address), oxen_address);
     return true;
 }
 
@@ -461,9 +462,12 @@ void BlockchainSQLite::calculate_rewards(
 
     payments.clear();
     // Pay the operator fee to the operator
-    if (operator_fee > 0)
+    if (operator_fee > 0) {
+      if (sn_info.operator_ethereum_address)
+        payments.emplace_back(sn_info.operator_ethereum_address, operator_fee);
+      else
         payments.emplace_back(sn_info.operator_address, operator_fee);
-
+    }
     // Pay the balance to all the contributors (including the operator again)
     uint64_t total_contributed_to_sn = std::accumulate(
             sn_info.contributors.begin(),
@@ -477,7 +481,10 @@ void BlockchainSQLite::calculate_rewards(
         uint64_t c_reward = mul128_div64(
                 contributor.amount, distribution_amount - operator_fee, total_contributed_to_sn);
         if (c_reward > 0)
-            payments.emplace_back(*contributor.address, c_reward);
+            if (contributor.ethereum_address)
+                payments.emplace_back(contributor.ethereum_address, operator_fee);
+            else
+                payments.emplace_back(contributor.address, c_reward);
     }
 }
 
@@ -548,6 +555,7 @@ bool BlockchainSQLite::reward_handler(
     }
 
     // Step 3: Add Governance reward to the list
+    // TODO sean governance ethereum address
     if (m_nettype != cryptonote::network_type::FAKECHAIN) {
         if (parsed_governance_addr.first != block.major_version) {
             cryptonote::get_account_address_from_str(

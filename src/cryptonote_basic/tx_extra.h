@@ -625,7 +625,7 @@ struct tx_extra_oxen_name_system {
 
 struct tx_extra_ethereum_address_notification {
     uint8_t version = 0;
-    std::string eth_address;
+    crypto::eth_address eth_address;
     std::string oxen_address;
     crypto::signature signature;
 
@@ -640,7 +640,7 @@ struct tx_extra_ethereum_address_notification {
 struct tx_extra_ethereum_new_service_node {
     uint8_t version = 0;
     std::string bls_key;
-    std::string eth_address;
+    crypto::eth_address eth_address;
     crypto::public_key service_node_pubkey;
     crypto::signature signature;
 

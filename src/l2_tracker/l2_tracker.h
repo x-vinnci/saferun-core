@@ -29,7 +29,7 @@ struct TransactionReviewSession {
     TransactionReviewSession(uint64_t min_height, uint64_t max_height)
         : review_block_height_min(min_height), review_block_height_max(max_height) {}
 
-    bool processNewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey, std::string& fail_reason);
+    bool processNewServiceNodeTx(const std::string& bls_key, const crypto::eth_address& eth_address, const std::string& service_node_pubkey, std::string& fail_reason);
     bool processServiceNodeLeaveRequestTx(const std::string& bls_key, std::string& fail_reason);
     bool processServiceNodeDeregisterTx(const std::string& bls_key, bool refund_stake, std::string& fail_reason);
 

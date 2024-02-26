@@ -34,14 +34,16 @@ std::optional<TransactionStateChangeVariant> RewardsLogEntry::getLogTransaction(
             // service node id is a topic so only address and pubkey are in data
             // address is 32 bytes , pubkey is 64 bytes and serviceNodePubkey is 32 bytes
             //
-            // pull 32 bytes from start
-            std::string eth_address = data.substr(2, 64);
+            // The address is in 32 bytes, but actually only uses 20 bytes and the first 12 are padding
+            std::string eth_address_str = data.substr(2 + 24, 40);
             // from position 64 (32 bytes -> 64 characters) + 2 for '0x' pull 64 bytes (128 characters)
             std::string bls_key = data.substr(64 + 2, 128);
             // pull 32 bytes (64 characters)
             std::string service_node_pubkey = data.substr(128 + 64 + 2, 64);
             // pull 32 bytes (64 characters)
             std::string signature = data.substr(128 + 64 + 64 + 2, 64);
+            crypto::eth_address eth_address;
+            tools::hex_to_type(eth_address_str, eth_address);
             return NewServiceNodeTx(bls_key, eth_address, service_node_pubkey, signature);
         }
         case TransactionType::ServiceNodeLeaveRequest: {

@@ -433,7 +433,7 @@ void validate_registration(
         if (reg.eth_contributions.size() > max_contributors)
             throw invalid_registration{"Too many contributors"};
         std::transform(reg.eth_contributions.begin(), reg.eth_contributions.end(), std::back_inserter(extracted_amounts),
-                       [](const std::pair<std::string, uint64_t>& pair) { return pair.second; });
+                       [](const std::pair<crypto::eth_address, uint64_t>& pair) { return pair.second; });
     } else {
         if (reg.reserved.empty())
             throw invalid_registration{"No operator contribution given"};
@@ -1472,6 +1472,28 @@ std::pair<crypto::public_key, std::shared_ptr<service_node_info>> validate_and_g
     info->swarm_id = UNASSIGNED_SWARM_ID;
     info->last_ip_change_height = block_height;
 
+    for (auto it = reg.eth_contributions.begin(); it != reg.eth_contributions.end(); ++it) {
+        auto& [addr, amount] = *it;
+        bool dupe = false;
+        for (auto it2 = std::next(it); it2 != reg.eth_contributions.end(); ++it2) {
+            if (it2->first == addr) {
+                log::info(
+                        logcat,
+                        "Invalid registration: duplicate reserved address in registration (tx {})",
+                        cryptonote::get_transaction_hash(tx));
+                throw std::runtime_error("duplicate reserved address in registration");
+            }
+        }
+
+        auto& contributor = info->contributors.emplace_back();
+        contributor.reserved = amount;
+        contributor.amount = amount;
+
+        contributor.ethereum_address = addr;
+        info->total_reserved += contributor.reserved;
+        info->total_contributed += contributor.reserved;
+    }
+
     return {reg.service_node_pubkey, info};
 }
 
@@ -2227,7 +2249,6 @@ void service_node_list::block_add(
         // in old-data.
         uint64_t const block_height = cryptonote::get_block_height(block);
         bool newest_block = m_blockchain.get_current_blockchain_height() == (block_height + 1);
-
         auto now = pulse::clock::now().time_since_epoch();
         auto earliest_time = std::chrono::seconds(block.timestamp) - cryptonote::TARGET_BLOCK_TIME;
         auto latest_time = std::chrono::seconds(block.timestamp) + cryptonote::TARGET_BLOCK_TIME;
@@ -2239,7 +2260,6 @@ void service_node_list::block_add(
                 throw std::runtime_error{"Unexpected Pulse error: quorum was not generated"};
             if (quorum->validators.empty())
                 throw std::runtime_error{"Unexpected Pulse error: quorum was empty"};
-
             for (size_t validator_index = 0;
                  validator_index < service_nodes::PULSE_QUORUM_NUM_VALIDATORS;
                  validator_index++) {
@@ -2822,7 +2842,6 @@ void service_node_list::state_t::update_from_block(
     // decommissioned).
     std::vector<pubkey_and_sninfo> active_snode_list = sort_and_filter(
             service_nodes_infos, [](const service_node_info& info) { return info.is_active(); });
-
     if (need_swarm_update) {
         crypto::hash const block_hash = cryptonote::get_block_hash(block);
         uint64_t seed = 0;
@@ -2845,7 +2864,6 @@ void service_node_list::state_t::update_from_block(
             }
         }
     }
-
     generate_other_quorums(*this, active_snode_list, nettype, hf_version);
 }
 
@@ -4937,7 +4955,7 @@ payout service_node_payout_portions(const crypto::public_key& key, const service
 
         if (contributor.address == info.operator_address)
             portion += info.portions_for_operator;
-        result.payouts.push_back({*contributor.address, portion});
+        result.payouts.push_back({contributor.address, portion});
     }
 
     return result;

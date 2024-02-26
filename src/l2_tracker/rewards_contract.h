@@ -3,6 +3,8 @@
 #include <memory>
 #include <variant>
 
+#include <crypto/crypto.h>
+
 #include <ethyl/provider.hpp>
 #include <ethyl/logs.hpp>
 
@@ -16,11 +18,11 @@ enum class TransactionType {
 class NewServiceNodeTx {
 public:
     std::string bls_key;
-    std::string eth_address;
+    crypto::eth_address eth_address;
     std::string service_node_pubkey;
     std::string signature;
 
-    NewServiceNodeTx(const std::string& _bls_key, const std::string& _eth_address, const std::string& _service_node_pubkey, const std::string& _signature)
+    NewServiceNodeTx(const std::string& _bls_key, const crypto::eth_address& _eth_address, const std::string& _service_node_pubkey, const std::string& _signature)
         : bls_key(_bls_key), eth_address(_eth_address), service_node_pubkey(_service_node_pubkey), signature(_signature) {}
 };
 

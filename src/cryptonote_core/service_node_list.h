@@ -246,8 +246,8 @@ struct service_node_info  // registration information
         uint8_t version = 1;
         uint64_t amount = 0;
         uint64_t reserved = 0;
-        std::optional<cryptonote::account_public_address> address{};
-        std::optional<std::string> ethereum_address{};
+        cryptonote::account_public_address address{};
+        crypto::eth_address ethereum_address{};
         std::vector<contribution_t> locked_contributions;
 
         contributor_t() = default;
@@ -262,11 +262,10 @@ struct service_node_info  // registration information
         VARINT_FIELD(version)
         VARINT_FIELD(amount)
         VARINT_FIELD(reserved)
-        FIELD(*address)
+        FIELD(address)
         FIELD(locked_contributions)
-        //TODO sean serialize this
-        //if (version >= 1)
-            //FIELD(*ethereum_address);
+        if (version >= 1)
+            FIELD(ethereum_address);
         END_SERIALIZE()
     };
 
@@ -298,7 +297,7 @@ struct service_node_info  // registration information
     uint64_t portions_for_operator = 0;
     swarm_id_t swarm_id = 0;
     cryptonote::account_public_address operator_address{};
-    std::string operator_ethereum_address{};
+    crypto::eth_address operator_ethereum_address{};
     uint64_t last_ip_change_height = 0;  // The height of the last quorum penalty for changing IPs
     version_t version = tools::enum_top<version_t>;
     cryptonote::hf registration_hf_version = cryptonote::hf::none;
@@ -360,10 +359,9 @@ struct service_node_info  // registration information
         VARINT_FIELD(last_decommission_reason_consensus_all)
         VARINT_FIELD(last_decommission_reason_consensus_any)
     }
-    //TODO sean serialize this
-    //if (version >= version_t::v8_ethereum_address) {
-        //FIELD(operator_ethereum_address)
-    //}
+    if (version >= version_t::v8_ethereum_address) {
+        FIELD(operator_ethereum_address)
+    }
     END_SERIALIZE()
 };
 
@@ -926,7 +924,7 @@ bool tx_get_staking_components_and_amounts(
         staking_components* contribution);
 
 using contribution = std::pair<cryptonote::account_public_address, uint64_t>;
-using eth_contribution = std::pair<std::string, uint64_t>;
+using eth_contribution = std::pair<crypto::eth_address, uint64_t>;
 struct registration_details {
     crypto::public_key service_node_pubkey;
     std::vector<contribution> reserved;

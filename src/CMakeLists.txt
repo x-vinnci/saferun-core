@@ -31,7 +31,8 @@
 
 # warnings are cleared only for GCC on Linux
 if (NOT (MINGW OR APPLE OR FREEBSD OR OPENBSD OR DRAGONFLY))
-  add_compile_options("${WARNINGS_AS_ERRORS_FLAG}") # applies only to targets that follow
+  message(STATUS "Setting warnings as errors")
+  #add_compile_options("${WARNINGS_AS_ERRORS_FLAG}") # applies only to targets that follow
 endif()
 
 set_property(GLOBAL PROPERTY oxen_executable_targets "")

@@ -746,12 +746,12 @@ namespace {
             _load_owner(ons, "backup_owner", x.backup_owner);
         }
         void operator()(const tx_extra_ethereum_address_notification& x) {
-            set("eth_address", x.eth_address);
+            set("eth_address", tools::type_to_hex(x.eth_address));
             set("signature", tools::view_guts(x.signature));
         }
         void operator()(const tx_extra_ethereum_new_service_node& x) {
             set("bls_key", x.bls_key);
-            set("eth_address", x.eth_address);
+            set("eth_address", tools::type_to_hex(x.eth_address));
             set("service_node_pubkey", tools::view_guts(x.service_node_pubkey));
             set("signature", tools::view_guts(x.signature));
         }
@@ -2674,6 +2674,7 @@ void core_rpc_server::fill_sn_response_entry(
             "operator_fee",
             microportion(info.portions_for_operator),
             "operator_address",
+            info.operator_ethereum_address ? tools::type_to_hex(info.operator_ethereum_address) :
             cryptonote::get_account_address_as_str(
                     m_core.get_nettype(), false /*subaddress*/, info.operator_address),
             "swarm_id",
@@ -2847,8 +2848,9 @@ void core_rpc_server::fill_sn_response_entry(
             auto& c = contributors.emplace_back(json{
                     {"amount", contributor.amount},
                     {"address",
-                     cryptonote::get_account_address_as_str(
-                             m_core.get_nettype(), false /*subaddress*/, *contributor.address)}});
+                        contributor.ethereum_address ? tools::type_to_hex(contributor.ethereum_address) :
+                        cryptonote::get_account_address_as_str(
+                            m_core.get_nettype(), false /*subaddress*/, contributor.address)}});
             if (contributor.reserved != contributor.amount)
                 c["reserved"] = contributor.reserved;
             if (want_locked_c) {

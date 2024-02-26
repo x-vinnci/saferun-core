@@ -177,7 +177,7 @@ void L2Tracker::record_block_height_mapping(uint64_t oxen_block_height, uint64_t
     latest_oxen_block = oxen_block_height;
 }
 
-bool TransactionReviewSession::processNewServiceNodeTx(const std::string& bls_key, const std::string& eth_address, const std::string& service_node_pubkey, std::string& fail_reason) {
+bool TransactionReviewSession::processNewServiceNodeTx(const std::string& bls_key, const crypto::eth_address& eth_address, const std::string& service_node_pubkey, std::string& fail_reason) {
     if (!service_node)
         return true;
     if (review_block_height_max == 0) {
@@ -186,16 +186,16 @@ bool TransactionReviewSession::processNewServiceNodeTx(const std::string& bls_ke
         return false;
     }
 
-    oxen::log::info(logcat, "Searching for new_service_node bls_key: " + bls_key + " eth_address: " + eth_address + " service_node_pubkey: " + service_node_pubkey);
+    oxen::log::info(logcat, "Searching for new_service_node bls_key: " + bls_key + " eth_address: " + tools::type_to_hex(eth_address) + " service_node_pubkey: " + service_node_pubkey);
     for (auto it = new_service_nodes.begin(); it != new_service_nodes.end(); ++it) {
-        oxen::log::info(logcat, "new_service_node bls_key: " + it->bls_key + " eth_address: " + it->eth_address + " service_node_pubkey: " + it->service_node_pubkey);
+        oxen::log::info(logcat, "new_service_node bls_key: " + it->bls_key + " eth_address: " + tools::type_to_hex(it->eth_address) + " service_node_pubkey: " + it->service_node_pubkey);
         if (it->bls_key == bls_key && it->eth_address == eth_address && it->service_node_pubkey == service_node_pubkey) {
             new_service_nodes.erase(it);
             return true;
         }
     }
 
-    fail_reason = "New Service Node Transaction not found bls_key: " + bls_key + " eth_address: " + eth_address + " service_node_pubkey: " + service_node_pubkey;
+    fail_reason = "New Service Node Transaction not found bls_key: " + bls_key + " eth_address: " + tools::type_to_hex(eth_address) + " service_node_pubkey: " + service_node_pubkey;
     return false;
 }
 
