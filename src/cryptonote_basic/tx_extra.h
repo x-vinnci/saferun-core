@@ -639,7 +639,7 @@ struct tx_extra_ethereum_address_notification {
 
 struct tx_extra_ethereum_new_service_node {
     uint8_t version = 0;
-    std::string bls_key;
+    crypto::bls_public_key bls_key;
     crypto::eth_address eth_address;
     crypto::public_key service_node_pubkey;
     crypto::signature signature;
@@ -655,7 +655,7 @@ struct tx_extra_ethereum_new_service_node {
 
 struct tx_extra_ethereum_service_node_leave_request {
     uint8_t version = 0;
-    std::string bls_key;
+    crypto::bls_public_key bls_key;
 
     BEGIN_SERIALIZE()
         FIELD(version)
@@ -665,13 +665,11 @@ struct tx_extra_ethereum_service_node_leave_request {
 
 struct tx_extra_ethereum_service_node_deregister {
     uint8_t version = 0;
-    std::string bls_key;
-    bool refund_stake;
+    crypto::bls_public_key bls_key;
 
     BEGIN_SERIALIZE()
         FIELD(version)
         FIELD(bls_key)
-        FIELD(refund_stake)
     END_SERIALIZE()
 };
 

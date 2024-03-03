@@ -63,6 +63,35 @@ class ServiceNodeRewardContract:
         self.web3.eth.wait_for_transaction_receipt(tx_hash)
         return tx_hash
 
+    def initiateRemoveBLSPublicKey(self, service_node_id):
+        # function initiateRemoveBLSPublicKey(uint64 serviceNodeID) public {
+
+        unsent_tx = self.contract.functions.initiateRemoveBLSPublicKey(service_node_id
+                    ).build_transaction({
+                        "from": self.acc.address,
+                        'gas': 2000000,
+                        'nonce': self.web3.eth.get_transaction_count(self.acc.address)})
+        signed_tx = self.web3.eth.account.sign_transaction(unsent_tx, private_key=self.acc.key)
+        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        self.web3.eth.wait_for_transaction_receipt(tx_hash)
+        return tx_hash
+
+    def getServiceNodeID(self, bls_public_key):
+        service_node_end_id = 2**64-1
+        service_node_end = self.contract.functions.serviceNodes(service_node_end_id).call()
+        service_node_id = service_node_end[0]
+        while True:
+            service_node = self.contract.functions.serviceNodes(service_node_id).call()
+            if hex(service_node[3][0])[2:].zfill(64) + hex(service_node[3][1])[2:].zfill(64) == bls_public_key:
+                return service_node_id
+            service_node_id = service_node[0]
+            if service_node_id == service_node_end_id:
+                raise Exception("Iterated through smart contract list and could not find bls key")
+
+
+
+
+
 contract_abi = json.loads("""
 [ {
   "inputs": [

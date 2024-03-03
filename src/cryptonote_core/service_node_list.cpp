@@ -374,6 +374,7 @@ std::optional<registration_details> eth_reg_tx_extract_fields(hf hf_version, con
 
     registration_details reg{};
     reg.service_node_pubkey = registration.service_node_pubkey;
+    reg.bls_key = registration.bls_key;
 
     // TODO sean this needs to be thought out
     auto& [addr, amount] = reg.eth_contributions.emplace_back();
@@ -1063,28 +1064,26 @@ bool service_node_list::state_t::process_ethereum_deregister_tx(
     }
 
 
-    crypto::public_key key;
-    // TODO sean get this public key from the bls key somehow
-
-    auto iter = service_nodes_infos.find(key);
+    crypto::public_key snode_key = sn_list->bls_public_key_lookup(dereg.bls_key);
+    auto iter = service_nodes_infos.find(snode_key);
     if (iter == service_nodes_infos.end()) {
         log::debug(
                 logcat,
                 "Received state change tx for non-registered service node {} (perhaps a delayed "
                 "tx?)",
-                key);
+                snode_key);
         return false;
     }
 
-    bool is_me = my_keys && my_keys->pub == key;
+    bool is_me = my_keys && my_keys->pub == snode_key;
     if (is_me)
         log::info(
                 logcat,
                 fg(fmt::terminal_color::red),
                 "Deregistration for service node (yours): {}",
-                key);
+                snode_key);
     else
-        log::info(logcat, "Deregistration for service node: {}", key);
+        log::info(logcat, "Deregistration for service node: {}", snode_key);
 
     service_nodes_infos.erase(iter);
     return true;
@@ -1207,11 +1206,7 @@ bool service_node_list::state_t::process_ethereum_unlock_tx(
         return false;
     }
 
-    //TODO sean get this from somewhere using bls key instead
-    crypto::public_key snode_key = {};
-    //if (!cryptonote::get_service_node_pubkey_from_tx_extra(tx.extra, snode_key))
-        //return false;
-
+    crypto::public_key snode_key = sn_list->bls_public_key_lookup(unlock.bls_key);
     auto it = service_nodes_infos.find(snode_key);
     if (it == service_nodes_infos.end())
         return false;
@@ -1232,11 +1227,8 @@ bool service_node_list::state_t::process_ethereum_unlock_tx(
 
 
     uint64_t unlock_height = get_locked_key_image_unlock_height(nettype, node_info.registration_height, block_height);
-    for (const auto& contributor : node_info.contributors) {
-        // TODO sean, why did only the key image unlocker get this set?
-        // now im looping over all of them cause there is no more key images
-        duplicate_info(it->second).requested_unlock_height = unlock_height;
-    }
+    duplicate_info(it->second).requested_unlock_height = unlock_height;
+    return true;
 }
 
 //------------------------------------------------------------------
@@ -1464,6 +1456,7 @@ std::pair<crypto::public_key, std::shared_ptr<service_node_info>> validate_and_g
 
     info->staking_requirement = staking_requirement;
     info->operator_ethereum_address = reg.eth_contributions[0].first;
+    info->bls_public_key = reg.bls_key;
     info->portions_for_operator = staking_requirement;
     info->registration_height = block_height;
     info->registration_hf_version = hf_version;
@@ -4260,6 +4253,31 @@ std::string service_node_list::remote_lookup(std::string_view xpk) {
     }
 
     return "tcp://" + epee::string_tools::get_ip_string_from_int32(ip) + ":" + std::to_string(port);
+}
+
+crypto::public_key service_node_list::bls_public_key_lookup(crypto::bls_public_key bls_key) {
+    std::vector<crypto::public_key> sn_pks;
+    auto sns = get_service_node_list_state();
+    sn_pks.reserve(sns.size());
+    for (const auto& sni : sns)
+        sn_pks.push_back(sni.pubkey);
+    bool found = false;
+    crypto::public_key found_pk;
+    for_each_service_node_info_and_proof(
+        sn_pks.begin(), sn_pks.end(), [&bls_key, &found, &found_pk](auto& pk, auto& sni, auto& proof) {
+            if (tools::view_guts(sni.bls_public_key) == tools::view_guts(bls_key)) {
+                found = true;
+                found_pk = pk;
+            }
+        }
+    );
+
+    if (!found) {
+        log::error(logcat, "Could not find bls key: {}", tools::type_to_hex(bls_key));
+        throw std::runtime_error("Could not find bls key");
+    }
+
+    return found_pk;
 }
 
 void service_node_list::record_checkpoint_participation(

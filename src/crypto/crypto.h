@@ -108,6 +108,11 @@ struct eth_address : bytes<20, true, uint32_t> {
     explicit operator bool() const { return data_ != null<eth_address>.data_; }
 };
 
+struct bls_public_key : bytes<64, true, uint32_t> {
+    // Returns true if non-null, i.e. not all 0.
+    explicit operator bool() const { return data_ != null<bls_public_key>.data_; }
+};
+
 void hash_to_scalar(const void* data, size_t length, ec_scalar& res);
 ec_scalar hash_to_scalar(const void* data, size_t length);
 void random_scalar(unsigned char* bytes);

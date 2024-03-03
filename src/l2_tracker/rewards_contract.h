@@ -17,28 +17,28 @@ enum class TransactionType {
 
 class NewServiceNodeTx {
 public:
-    std::string bls_key;
+    crypto::bls_public_key bls_key;
     crypto::eth_address eth_address;
     std::string service_node_pubkey;
     std::string signature;
 
-    NewServiceNodeTx(const std::string& _bls_key, const crypto::eth_address& _eth_address, const std::string& _service_node_pubkey, const std::string& _signature)
+    NewServiceNodeTx(const crypto::bls_public_key& _bls_key, const crypto::eth_address& _eth_address, const std::string& _service_node_pubkey, const std::string& _signature)
         : bls_key(_bls_key), eth_address(_eth_address), service_node_pubkey(_service_node_pubkey), signature(_signature) {}
 };
 
 class ServiceNodeLeaveRequestTx {
 public:
-    std::string bls_key;
+    crypto::bls_public_key bls_key;
 
-    ServiceNodeLeaveRequestTx(const std::string& _bls_key)
+    ServiceNodeLeaveRequestTx(const crypto::bls_public_key& _bls_key)
         : bls_key(_bls_key) {}
 };
 
 class ServiceNodeDeregisterTx {
 public:
-    std::string bls_key;
+    crypto::bls_public_key bls_key;
 
-    ServiceNodeDeregisterTx(const std::string& _bls_key)
+    ServiceNodeDeregisterTx(const crypto::bls_public_key& _bls_key)
         : bls_key(_bls_key) {}
 };
 

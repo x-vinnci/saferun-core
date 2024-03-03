@@ -217,6 +217,9 @@ class SNNetwork:
         ethereum_add_bls_args = self.ethsns[0].get_ethereum_registration_args(self.servicenodecontract.hardhatAccountAddress())
         vprint("Submitted registration on ethereum for service node with pubkey: {}".format(self.ethsns[0].sn_key()))
         result = self.servicenodecontract.addBLSPublicKey(ethereum_add_bls_args)
+        time.sleep(152)
+        result = self.servicenodecontract.initiateRemoveBLSPublicKey(self.servicenodecontract.getServiceNodeID(ethereum_add_bls_args["bls_pubkey"]))
+        vprint("Submitted transaction to deregister service node id: {}".format(self.servicenodecontract.getServiceNodeID(ethereum_add_bls_args["bls_pubkey"])))
         vprint("Done.")
 
         vprint("Local Devnet SN network setup complete!")

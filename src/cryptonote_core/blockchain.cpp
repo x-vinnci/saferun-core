@@ -1977,7 +1977,7 @@ void Blockchain::add_ethereum_transactions_to_tx_pool() {
                 cryptonote::add_service_node_leave_request_to_tx_extra(tx.extra, leave_request);
             } else if constexpr (std::is_same_v<T, ServiceNodeDeregisterTx>) {
                 tx.type = txtype::ethereum_service_node_deregister;
-                tx_extra_ethereum_service_node_deregister deregister = { 0, arg.bls_key, true };
+                tx_extra_ethereum_service_node_deregister deregister = { 0, arg.bls_key };
                 cryptonote::add_service_node_deregister_to_tx_extra(tx.extra, deregister);
             }
         }, tx_variant);
@@ -4114,7 +4114,7 @@ bool Blockchain::check_tx_inputs(
 			cryptonote::tx_extra_ethereum_service_node_deregister entry = {};
 			std::string fail_reason;
 			if (!ethereum::validate_ethereum_service_node_deregister_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason) ||
-                !ethereum_transaction_review_session->processServiceNodeDeregisterTx(entry.bls_key, entry.refund_stake, fail_reason)) {
+                !ethereum_transaction_review_session->processServiceNodeDeregisterTx(entry.bls_key, fail_reason)) {
 				log::error(log::Cat("verify"), "Failed to validate Ethereum Service Node Deregister TX reason: {}", fail_reason);
 				tvc.m_verbose_error = std::move(fail_reason);
 				return false;

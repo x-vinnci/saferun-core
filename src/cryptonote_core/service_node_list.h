@@ -298,6 +298,7 @@ struct service_node_info  // registration information
     swarm_id_t swarm_id = 0;
     cryptonote::account_public_address operator_address{};
     crypto::eth_address operator_ethereum_address{};
+    crypto::bls_public_key bls_public_key{};
     uint64_t last_ip_change_height = 0;  // The height of the last quorum penalty for changing IPs
     version_t version = tools::enum_top<version_t>;
     cryptonote::hf registration_hf_version = cryptonote::hf::none;
@@ -360,6 +361,7 @@ struct service_node_info  // registration information
         VARINT_FIELD(last_decommission_reason_consensus_any)
     }
     if (version >= version_t::v8_ethereum_address) {
+        FIELD(bls_public_key)
         FIELD(operator_ethereum_address)
     }
     END_SERIALIZE()
@@ -610,6 +612,8 @@ class service_node_list {
             std::unique_ptr<uptime_proof::Proof> proof,
             bool& my_uptime_proof_confirmation,
             crypto::x25519_public_key& x25519_pkey);
+
+    crypto::public_key bls_public_key_lookup(crypto::bls_public_key bls_key);
 
     void record_checkpoint_participation(
             crypto::public_key const& pubkey, uint64_t height, bool participated);
@@ -933,6 +937,7 @@ struct registration_details {
     bool uses_portions;  // if true then `hf` is a timestamp
     crypto::signature signature;
     std::vector<eth_contribution> eth_contributions;
+    crypto::bls_public_key bls_key;
 };
 
 bool is_registration_tx(

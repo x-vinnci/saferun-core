@@ -750,16 +750,16 @@ namespace {
             set("signature", tools::view_guts(x.signature));
         }
         void operator()(const tx_extra_ethereum_new_service_node& x) {
-            set("bls_key", x.bls_key);
+            set("bls_key", tools::type_to_hex(x.bls_key));
             set("eth_address", tools::type_to_hex(x.eth_address));
             set("service_node_pubkey", tools::view_guts(x.service_node_pubkey));
             set("signature", tools::view_guts(x.signature));
         }
         void operator()(const tx_extra_ethereum_service_node_leave_request& x) {
-            set("bls_key", x.bls_key);
+            set("bls_key", tools::type_to_hex(x.bls_key));
         }
         void operator()(const tx_extra_ethereum_service_node_deregister& x) {
-            set("bls_key", x.bls_key);
+            set("bls_key", tools::type_to_hex(x.bls_key));
         }
 
 
@@ -2681,6 +2681,8 @@ void core_rpc_server::fill_sn_response_entry(
             info.swarm_id,
             "swarm",
             "{:x}"_format(info.swarm_id),
+            "bls_key",
+            info.bls_public_key ? tools::type_to_hex(info.bls_public_key) : "",
             "registration_hf_version",
             info.registration_hf_version);
 

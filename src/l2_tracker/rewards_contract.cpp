@@ -36,14 +36,16 @@ std::optional<TransactionStateChangeVariant> RewardsLogEntry::getLogTransaction(
             //
             // The address is in 32 bytes, but actually only uses 20 bytes and the first 12 are padding
             std::string eth_address_str = data.substr(2 + 24, 40);
+            crypto::eth_address eth_address;
+            tools::hex_to_type(eth_address_str, eth_address);
             // from position 64 (32 bytes -> 64 characters) + 2 for '0x' pull 64 bytes (128 characters)
-            std::string bls_key = data.substr(64 + 2, 128);
+            std::string bls_key_str = data.substr(64 + 2, 128);
+            crypto::bls_public_key bls_key;
+            tools::hex_to_type(bls_key_str, bls_key);
             // pull 32 bytes (64 characters)
             std::string service_node_pubkey = data.substr(128 + 64 + 2, 64);
             // pull 32 bytes (64 characters)
             std::string signature = data.substr(128 + 64 + 64 + 2, 64);
-            crypto::eth_address eth_address;
-            tools::hex_to_type(eth_address_str, eth_address);
             return NewServiceNodeTx(bls_key, eth_address, service_node_pubkey, signature);
         }
         case TransactionType::ServiceNodeLeaveRequest: {
@@ -52,7 +54,9 @@ std::optional<TransactionStateChangeVariant> RewardsLogEntry::getLogTransaction(
             // address is 32 bytes and pubkey is 64 bytes,
             //
             // from position 64 (32 bytes -> 64 characters) + 2 for '0x' pull 64 bytes (128 characters)
-            std::string bls_key = data.substr(64 + 2, 128);
+            std::string bls_key_str = data.substr(64 + 2, 128);
+            crypto::bls_public_key bls_key;
+            tools::hex_to_type(bls_key_str, bls_key);
             return ServiceNodeLeaveRequestTx(bls_key);
         }
         case TransactionType::ServiceNodeDeregister: {
@@ -61,7 +65,9 @@ std::optional<TransactionStateChangeVariant> RewardsLogEntry::getLogTransaction(
             // address is 32 bytes and pubkey is 64 bytes,
             //
             // from position 64 (32 bytes -> 64 characters) + 2 for '0x' pull 64 bytes (128 characters)
-            std::string bls_key = data.substr(64 + 2, 128);
+            std::string bls_key_str = data.substr(64 + 2, 128);
+            crypto::bls_public_key bls_key;
+            tools::hex_to_type(bls_key_str, bls_key);
             return ServiceNodeDeregisterTx(bls_key);
         }
         default:
