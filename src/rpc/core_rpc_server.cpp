@@ -2540,11 +2540,15 @@ void core_rpc_server::invoke(
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
-void core_rpc_server::invoke( BLS_REQUEST& bls_request, rpc_context context) {
-    const aggregateResponse bls_signature_response = m_core.bls_request();
-    bls_request.response["status"] = STATUS_OK;
-    bls_request.response["signature"] = bls_signature_response.signature;
-    bls_request.response["non_signers"] = bls_signature_response.non_signers;
+void core_rpc_server::invoke(BLS_REWARDS_REQUEST& bls_rewards_request, rpc_context context) {
+    const aggregateWithdrawalResponse bls_withdrawal_signature_response = m_core.aggregate_withdrawal_request(bls_rewards_request.request.address);
+    bls_rewards_request.response["status"] = STATUS_OK;
+    bls_rewards_request.response["address"] = bls_withdrawal_signature_response.address;
+    bls_rewards_request.response["height"] = bls_withdrawal_signature_response.height;
+    bls_rewards_request.response["amount"] = bls_withdrawal_signature_response.amount;
+    bls_rewards_request.response["signed_message"] = bls_withdrawal_signature_response.signed_message;
+    bls_rewards_request.response["signature"] = bls_withdrawal_signature_response.signature;
+    bls_rewards_request.response["signers_bls_pubkeys"] = bls_withdrawal_signature_response.signers_bls_pubkeys;
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -2556,14 +2560,14 @@ void core_rpc_server::invoke(BLS_WITHDRAWAL_REQUEST& bls_withdrawal_request, rpc
     bls_withdrawal_request.response["amount"] = bls_withdrawal_signature_response.amount;
     bls_withdrawal_request.response["signed_message"] = bls_withdrawal_signature_response.signed_message;
     bls_withdrawal_request.response["signature"] = bls_withdrawal_signature_response.signature;
-    bls_withdrawal_request.response["non_signers"] = bls_withdrawal_signature_response.non_signers;
+    bls_withdrawal_request.response["signers_bls_pubkeys"] = bls_withdrawal_signature_response.signers_bls_pubkeys;
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void core_rpc_server::invoke(BLS_PUBKEYS& bls_pubkey_request, rpc_context context) {
-    const std::vector<std::string> bls_pubkeys = m_core.get_bls_pubkeys();
+    const std::vector<std::pair<std::string, uint64_t>> nodes = m_core.get_bls_pubkeys();
     bls_pubkey_request.response["status"] = STATUS_OK;
-    bls_pubkey_request.response["pubkeys"] = bls_pubkeys;
+    bls_pubkey_request.response["nodes"] = nodes;
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -3385,7 +3389,7 @@ void core_rpc_server::invoke(
         for (const auto& address : req.addresses) {
             uint64_t amount = 0;
             if (cryptonote::is_valid_address(address, nettype())) {
-                amount = blockchain.sqlite_db()->get_accrued_earnings(address);
+                const auto [_, amount] = blockchain.sqlite_db()->get_accrued_earnings(address);
                 at_least_one_succeeded = true;
             }
             balances[address] = amount;

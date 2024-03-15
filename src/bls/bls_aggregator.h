@@ -26,17 +26,17 @@
 #include <oxenc/endian.h>
 #include "common/string_util.h"
 
-struct aggregateResponse {
-    std::vector<int64_t> non_signers;
-    std::string signature;
-};
+//struct aggregateResponse {
+    //std::vector<int64_t> non_signers;
+    //std::string signature;
+//};
 
 struct aggregateWithdrawalResponse {
     std::string address;
     uint64_t amount;
     uint64_t height;
     std::string signed_message;
-    std::vector<int64_t> non_signers;
+    std::vector<std::string> signers_bls_pubkeys;
     std::string signature;
 };
 
@@ -58,13 +58,9 @@ public:
     BLSAggregator(service_nodes::service_node_list& _snl, std::shared_ptr<oxenmq::OxenMQ> _omq, std::shared_ptr<BLSSigner> _bls_signer);
     ~BLSAggregator();
 
-    std::string aggregatePubkeyHex();
-    std::vector<std::string> getPubkeys();
-    aggregateResponse aggregateSignatures(const std::string& message);
+    std::vector<std::pair<std::string, std::string>> getPubkeys();
     aggregateWithdrawalResponse aggregateRewards(const std::string& address);
     blsRegistrationResponse registration() const;
-
-    std::vector<int64_t> findNonSigners(const std::vector<int64_t>& indices);
 
 private:
     // Goes out to the nodes on the network and makes oxenmq requests to all of them, when getting the reply

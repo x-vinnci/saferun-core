@@ -248,14 +248,14 @@ class Daemon(RPCDaemon):
         return self.json_rpc("get_service_node_status").json()["result"]
 
     def get_ethereum_registration_args(self, address):
-        registration_args = self.json_rpc("bls_registration_request", {"address": address}).json()["result"]
-        return {
-            "address" : registration_args["address"],
-            "bls_pubkey" : registration_args["bls_pubkey"],
-            "proof_of_possession" : registration_args["proof_of_possession"],
-            "service_node_pubkey" : registration_args["service_node_pubkey"],
-            "service_node_signature" : registration_args["service_node_signature"]
-        }
+        return self.json_rpc("bls_registration_request", {"address": address}).json()["result"]
+
+    def get_bls_pubkeys(self):
+        return self.json_rpc("bls_pubkey_request", {}).json()["result"]["nodes"]
+
+    def get_bls_rewards(self, address):
+        return self.json_rpc("bls_rewards_request", {"address": address}).json()
+        # return self.json_rpc("bls_rewards_request", {"address": address}).json()["result"]
 
 
 

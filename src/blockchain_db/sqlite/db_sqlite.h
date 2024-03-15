@@ -81,7 +81,7 @@ class BlockchainSQLite : public db::Database {
   public:
     // get_accrued_earnings -> queries the database for the amount that has been accrued to
     // `service_node_address` will return the atomic value in oxen that the service node is owed.
-    uint64_t get_accrued_earnings(const std::string& address);
+    std::pair<uint64_t, uint64_t> get_accrued_earnings(const std::string& address);
     // get_all_accrued_earnings -> queries the database for all the amount that has been accrued to
     // service nodes will return 2 vectors corresponding to the addresses and the atomic value in
     // oxen that the service nodes are owed.

@@ -43,6 +43,9 @@ class ServiceNodeRewardContract:
     def hardhatAccountAddress(self):
         return self.acc.address
 
+    def erc20balance(self, address):
+        return self.erc20_contract.functions.balanceOf(Web3.to_checksum_address(address)).call()
+
     def addBLSPublicKey(self, args):
         # function addBLSPublicKey(uint256 pkX, uint256 pkY, uint256 sigs0, uint256 sigs1, uint256 sigs2, uint256 sigs3, uint256 serviceNodePubkey, uint256 serviceNodeSignature) public {
         unsent_tx = self.contract.functions.addBLSPublicKey(int(args["bls_pubkey"][:64], 16),
@@ -71,6 +74,58 @@ class ServiceNodeRewardContract:
                         "from": self.acc.address,
                         'gas': 2000000,
                         'nonce': self.web3.eth.get_transaction_count(self.acc.address)})
+        signed_tx = self.web3.eth.account.sign_transaction(unsent_tx, private_key=self.acc.key)
+        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        self.web3.eth.wait_for_transaction_receipt(tx_hash)
+        return tx_hash
+
+    def seedPublicKeyList(self, args):
+        pkX = []
+        pkY = []
+        amounts = []
+        for item in args:
+            pkX.append(int(item[0][:64], 16))  # First 32 bytes as pkX
+            pkY.append(int(item[0][64:], 16))  # Last 32 bytes as pkY
+            amounts.append(item[1])  # Corresponding amount
+
+        unsent_tx = self.contract.functions.seedPublicKeyList(pkX, pkY, amounts).build_transaction({
+            "from": self.acc.address,
+            'gas': 3000000,  # Adjust gas limit as necessary
+            'nonce': self.web3.eth.get_transaction_count(self.acc.address)
+        })
+        signed_tx = self.web3.eth.account.sign_transaction(unsent_tx, private_key=self.acc.key)
+        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        self.web3.eth.wait_for_transaction_receipt(tx_hash)
+        return tx_hash
+
+    def numberServiceNodes(self):
+        return self.contract.functions.serviceNodesLength().call()
+
+    def updateRewardsBalance(self, recipientAddress, recipientAmount, blsSig, ids):
+        unsent_tx = self.contract.functions.updateRewardsBalance(
+            Web3.to_checksum_address(recipientAddress),
+            recipientAmount,
+            int(blsSig[:64], 16),
+            int(blsSig[64:128], 16),
+            int(blsSig[128:192], 16),
+            int(blsSig[192:256], 16),
+            ids
+        ).build_transaction({
+            "from": self.acc.address,
+            'gas': 3000000,  # Adjust gas limit as necessary
+            'nonce': self.web3.eth.get_transaction_count(self.acc.address)
+        })
+        signed_tx = self.web3.eth.account.sign_transaction(unsent_tx, private_key=self.acc.key)
+        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        self.web3.eth.wait_for_transaction_receipt(tx_hash)
+        return tx_hash
+
+    def claimRewards(self):
+        unsent_tx = self.contract.functions.claimRewards().build_transaction({
+            "from": self.acc.address,
+            'gas': 2000000,  # Adjust gas limit as necessary
+            'nonce': self.web3.eth.get_transaction_count(self.acc.address)
+        })
         signed_tx = self.web3.eth.account.sign_transaction(unsent_tx, private_key=self.acc.key)
         tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
         self.web3.eth.wait_for_transaction_receipt(tx_hash)

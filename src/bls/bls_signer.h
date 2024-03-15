@@ -37,11 +37,20 @@ public:
     std::string getPublicKeyHex();
     bls::PublicKey getPublicKey();
 
+    static std::string buildTag(const std::string_view& baseTag, uint32_t chainID, const std::string& contractAddress);
+    std::string buildTag(const std::string_view& baseTag);
+
     static std::array<unsigned char, 32> hash(std::string in);
     static std::array<unsigned char, 32> hashModulus(std::string message);
+
+    static constexpr std::string_view proofOfPossessionTag = "BLS_SIG_TRYANDINCREMENT_POP"sv;
+    static constexpr std::string_view rewardTag = "BLS_SIG_TRYANDINCREMENT_REWARD"sv;
+    static constexpr std::string_view removalTag = "BLS_SIG_TRYANDINCREMENT_REMOVE"sv;
+    static constexpr std::string_view liquidateTag = "BLS_SIG_TRYANDINCREMENT_LIQUIDATE"sv;
 
 
 private:
 
 // END
 };
+

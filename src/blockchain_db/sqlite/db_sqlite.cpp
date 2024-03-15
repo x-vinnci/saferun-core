@@ -311,7 +311,10 @@ void BlockchainSQLite::blockchain_detached(uint64_t new_height) {
 // Must be called with the address_str_cache_mutex held!
 std::string BlockchainSQLite::get_address_str(const cryptonote::batch_sn_payment& addr) {
     if (addr.eth_address.has_value()) {
-        return tools::type_to_hex(addr.eth_address.value());
+        auto eth_address = tools::type_to_hex(addr.eth_address.value());
+        std::transform(eth_address.begin(), eth_address.end(), eth_address.begin(),
+            [](unsigned char c){ return std::tolower(c); });
+        return "0x" + eth_address;
     }
     auto& address_str = address_str_cache[addr.address_info.address];
     if (address_str.empty())
@@ -408,24 +411,29 @@ std::vector<cryptonote::batch_sn_payment> BlockchainSQLite::get_sn_payments(uint
     return payments;
 }
 
-uint64_t BlockchainSQLite::get_accrued_earnings(const std::string& address) {
+std::pair<uint64_t, uint64_t> BlockchainSQLite::get_accrued_earnings(const std::string& address) {
     log::trace(logcat, "BlockchainDB_SQLITE::{}", __func__);
+    //auto earnings = prepared_maybe_get<int64_t>(R"(
+        //WITH RelevantOxenAddress AS (
+            //SELECT oxen_address
+            //FROM eth_mapping
+            //WHERE eth_address = ?
+            //HAVING height = MAX(height)
+        //)
+        //SELECT amount
+        //FROM batched_payments_accrued
+        //WHERE address = ?
+        //UNION
+        //SELECT bpa.amount
+        //FROM batched_payments_accrued bpa
+        //JOIN RelevantOxenAddress roa ON bpa.address = roa.oxen_address;
+    //)", address, address);
     auto earnings = prepared_maybe_get<int64_t>(R"(
-        WITH RelevantOxenAddress AS (
-            SELECT oxen_address
-            FROM eth_mapping
-            WHERE eth_address = ?
-            HAVING height = MAX(height)
-        )
         SELECT amount
         FROM batched_payments_accrued
         WHERE address = ?
-        UNION
-        SELECT bpa.amount
-        FROM batched_payments_accrued bpa
-        JOIN RelevantOxenAddress roa ON bpa.address = roa.oxen_address;
-    )", address, address);
-    return static_cast<uint64_t>(earnings.value_or(0) / 1000);
+    )", address);
+    return std::make_pair(height, static_cast<uint64_t>(earnings.value_or(0) / 1000));
 }
 
 std::pair<std::vector<std::string>, std::vector<uint64_t>> BlockchainSQLite::get_all_accrued_earnings() {

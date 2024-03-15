@@ -75,6 +75,8 @@ extern "C" {
 #include "uptime_proof.h"
 #include "version.h"
 
+#include "ethyl/utils.hpp"
+
 DISABLE_VS_WARNINGS(4355)
 
 #define BAD_SEMANTICS_TXES_MAX_SIZE 100
@@ -1093,17 +1095,6 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
         m_quorumnet_state = quorumnet_new(*this);
 
         m_omq->add_category("bls", oxenmq::Access{oxenmq::AuthLevel::none})
-            .add_request_command("signature_request", [&](oxenmq::Message& m) {
-                oxen::log::debug(logcat, "Received omq signature request");
-                if (m.data.size() != 1)
-                    m.send_reply(
-                        "400",
-                        "Bad request: BLS commands must have only one data part "
-                        "(received " +
-                        std::to_string(m.data.size()) + ")");
-                const auto h = m_bls_signer->hash(std::string(m.data[0]));
-                m.send_reply(m_bls_signer->signHash(h).getStr());
-            })
             .add_request_command("get_reward_balance", [&](oxenmq::Message& m) {
                 oxen::log::debug(logcat, "Received omq signature request");
                 if (m.data.size() != 1)
@@ -1112,11 +1103,20 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                         "Bad request: BLS rewards command have one data part containing the address"
                         "(received " +
                         std::to_string(m.data.size()) + ")");
-                uint64_t amount = get_blockchain_storage().sqlite_db()->get_accrued_earnings(std::string(m.data[0]));
-                //TODO sean this should concat a bunch of things instead of amount
-                std::string concatenated_information_for_signing = std::to_string(amount);
-                const auto h = m_bls_signer->hash(concatenated_information_for_signing);
-                m.send_reply(concatenated_information_for_signing, m_bls_signer->signHash(h).getStr());
+                std::string eth_address = std::string(m.data[0]);
+                if (eth_address.substr(0, 2) != "0x") {
+                    eth_address = "0x" + eth_address;
+                }
+                std::transform(eth_address.begin(), eth_address.end(), eth_address.begin(),
+                    [](unsigned char c){ return std::tolower(c); });
+                auto [batchdb_height, amount] = get_blockchain_storage().sqlite_db()->get_accrued_earnings(eth_address);
+                if (amount == 0)
+                    m.send_reply("400", "Address has a zero balance in the database");
+                //bytes memory encodedMessage = abi.encodePacked(rewardTag, recipientAddress, recipientAmount);
+                std::string encoded_message = "0x" + m_bls_signer->buildTag(m_bls_signer->rewardTag) + utils::padToNBytes(eth_address.substr(2), 20, utils::PaddingDirection::LEFT) + utils::padTo32Bytes(utils::decimalToHex(amount), utils::PaddingDirection::LEFT);
+                const auto h = m_bls_signer->hash(encoded_message);
+                // Returns status, address, amount, height, bls_pubkey, signed message, signature
+                m.send_reply("200", m.data[0], std::to_string(amount), std::to_string(batchdb_height), m_bls_signer->getPublicKeyHex(), encoded_message, m_bls_signer->signHash(h).getStr());
             })
             .add_request_command("pubkey_request", [&](oxenmq::Message& m) {
                 oxen::log::debug(logcat, "Received omq bls pubkey request");
@@ -1126,8 +1126,7 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                         "Bad request: BLS pubkey request must have no data parts"
                         "(received " +
                         std::to_string(m.data.size()) + ")");
-                const auto h = m_bls_signer->hash(std::string(m.data[0]));
-                m.send_reply(m_bls_signer->getPublicKeyHex());
+                m.send_reply(tools::type_to_hex(m_service_keys.pub), m_bls_signer->getPublicKeyHex());
             });
     }
 
@@ -2734,33 +2733,22 @@ core::get_service_node_blacklisted_key_images() const {
     return m_service_node_list.get_blacklisted_key_images();
 }
 //-----------------------------------------------------------------------------------------------
-//TODO sean this whole function needs to disappear before release, otherwise people can sign arbitrary messages
-aggregateResponse core::bls_request() const {
-    //TODO sean remove this, just generating random string
-    const auto length = 20;
-    srand(static_cast<unsigned int>(time(nullptr))); // Seed the random number generator
-    const char charset[] = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz";
-    const int64_t max_index = sizeof(charset) - 1;
-
-    std::string randomString;
-
-    for (size_t i = 0; i < length; ++i) {
-        randomString += charset[static_cast<uint64_t>(rand() % max_index)];
-    }
-
-    const auto resp = m_bls_aggregator->aggregateSignatures(randomString);
-    return resp;
-}
-//-----------------------------------------------------------------------------------------------
 aggregateWithdrawalResponse core::aggregate_withdrawal_request(const std::string& ethereum_address) {
-    uint64_t rewards = m_blockchain_storage.sqlite_db()->get_accrued_earnings(ethereum_address);
-    //TODO sean something about combining the rewards and address, needs to be standard message format
-    const auto resp = m_bls_aggregator->aggregateRewards(std::to_string(rewards));
+    const auto resp = m_bls_aggregator->aggregateRewards(ethereum_address);
     return resp;
 }
 //-----------------------------------------------------------------------------------------------
-std::vector<std::string> core::get_bls_pubkeys() const {
-    return m_bls_aggregator->getPubkeys();
+std::vector<std::pair<std::string, uint64_t>> core::get_bls_pubkeys() const {
+    std::vector<std::pair<std::string, uint64_t>> bls_pubkeys_and_amounts;
+    const auto pubkeys = m_bls_aggregator->getPubkeys();
+    for (const auto& node : pubkeys) {
+        std::vector<crypto::public_key> service_node_pubkeys;
+        auto& key = service_node_pubkeys.emplace_back();
+        tools::hex_to_type(node.first, key);
+        const auto infos = m_service_node_list.get_service_node_list_state(service_node_pubkeys);
+        bls_pubkeys_and_amounts.emplace_back(node.second, infos[0].info->total_contributed);
+    }
+    return bls_pubkeys_and_amounts;
 }
 //-----------------------------------------------------------------------------------------------
 blsRegistrationResponse core::bls_registration(const std::string& ethereum_address) const {

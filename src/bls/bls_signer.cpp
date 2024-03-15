@@ -7,20 +7,6 @@
 
 static auto logcat = oxen::log::Cat("bls_signer");
 
-const std::string proofOfPossessionTag = "BLS_SIG_TRYANDINCREMENT_POP";
-const std::string rewardTag = "BLS_SIG_TRYANDINCREMENT_REWARD";
-const std::string removalTag = "BLS_SIG_TRYANDINCREMENT_REMOVE";
-const std::string liquidateTag = "BLS_SIG_TRYANDINCREMENT_LIQUIDATE";
-
-std::string buildTag(const std::string& baseTag, uint32_t chainID, const std::string& contractAddress) {
-    // Check if contractAddress starts with "0x" prefix
-    std::string contractAddressOutput = contractAddress;
-    if (contractAddressOutput.substr(0, 2) == "0x")
-        contractAddressOutput = contractAddressOutput.substr(2);  // remove "0x"
-    std::string concatenatedTag = "0x" + utils::toHexString(baseTag) + utils::padTo32Bytes(utils::decimalToHex(chainID), utils::PaddingDirection::LEFT) + contractAddressOutput;
-    return utils::toHexString(utils::hash(concatenatedTag));
-}
-
 BLSSigner::BLSSigner(const cryptonote::network_type nettype) {
     initCurve();
     // This init function generates a secret key calling blsSecretKeySetByCSPRNG
@@ -54,6 +40,19 @@ void BLSSigner::initCurve() {
     publicKey.v = *reinterpret_cast<const mclBnG1*>(&gen);
 
     blsSetGeneratorOfPublicKey(&publicKey);
+}
+
+std::string BLSSigner::buildTag(const std::string_view& baseTag, uint32_t chainID, const std::string& contractAddress) {
+    // Check if contractAddress starts with "0x" prefix
+    std::string contractAddressOutput = contractAddress;
+    if (contractAddressOutput.substr(0, 2) == "0x")
+        contractAddressOutput = contractAddressOutput.substr(2);  // remove "0x"
+    std::string concatenatedTag = "0x" + utils::toHexString(baseTag) + utils::padTo32Bytes(utils::decimalToHex(chainID), utils::PaddingDirection::LEFT) + contractAddressOutput;
+    return utils::toHexString(utils::hash(concatenatedTag));
+}
+
+std::string BLSSigner::buildTag(const std::string_view& baseTag) {
+    return buildTag(baseTag, chainID, contractAddress);
 }
 
 bls::Signature BLSSigner::signHash(const std::array<unsigned char, 32>& hash) {

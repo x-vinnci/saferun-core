@@ -2130,7 +2130,7 @@ bool rpc_command_executor::flush_cache(bool bad_txs, bool bad_blocks) {
 bool rpc_command_executor::claim_rewards(const std::string& address) {
     auto maybe_withdrawal_response = try_running(
             [this, address] {
-                return invoke<BLS_WITHDRAWAL_REQUEST>(json{{"address", address}});
+                return invoke<BLS_REWARDS_REQUEST>(json{{"address", address}});
             },
             "Failed to get withdrawal rewards");
     if (!maybe_withdrawal_response)
