@@ -2298,9 +2298,9 @@ struct GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES : PUBLIC, NO_ARGS {
 /// - `address` -- The requested address
 /// - `amount` -- The amount that the address can claim
 /// - `height` -- The oxen blockchain height that the rewards have been calculated at
-/// - `signed_message` -- The Root that has been signed by the network
-/// - `signature` -- BLS signature of the merkle root
-/// - `non_signers` -- array of indices of the nodes that did not sign
+/// - `signed_message` -- The message that has been signed by the network
+/// - `signature` -- BLS signature of the message
+/// - `signers_bls_pubkeys` -- array of bls pubkeys of the nodes that signed
 struct BLS_REWARDS_REQUEST : PUBLIC {
     static constexpr auto names() { return NAMES("bls_rewards_request"); }
 
@@ -2309,28 +2309,49 @@ struct BLS_REWARDS_REQUEST : PUBLIC {
     } request;
 };
 
-/// RPC: bls request
+/// RPC: bls exit request
 ///
-/// Sends a request out for all nodes to sign a BLS signature of the amount that an address is allowed to withdraw
+/// Sends a request out for all nodes to sign a BLS signature that the node with the requested bls pubkey can exit
 ///
 /// Inputs:
 ///
-/// - `address` -- this address will be looked up in the batching database at the latest height to see how much they can withdraw
+/// - `bls_key` -- this bls_key will be searched to see if the node can exit
 ///
 /// Outputs:
 ///
 /// - `status` -- generic RPC error code; "OK" means the request was successful.
-/// - `address` -- The requested address
-/// - `amount` -- The amount that the address can claim
-/// - `height` -- The oxen blockchain height that the rewards have been calculated at
-/// - `signed_message` -- The Root that has been signed by the network
-/// - `signature` -- BLS signature of the merkle root
-/// - `non_signers` -- array of indices of the nodes that did not sign
-struct BLS_WITHDRAWAL_REQUEST : PUBLIC {
-    static constexpr auto names() { return NAMES("bls_withdrawal_request"); }
+/// - `bls_key` -- The bls pubkey of the node requesting to exit
+/// - `signed_message` -- The message that has been signed by the network
+/// - `signature` -- BLS signature of the message
+/// - `signers_bls_pubkeys` -- array of bls pubkeys of the nodes that signed
+struct BLS_EXIT_REQUEST : PUBLIC {
+    static constexpr auto names() { return NAMES("bls_exit_request"); }
 
     struct request_parameters {
-        std::string address;
+        std::string bls_key;
+    } request;
+};
+
+/// RPC: bls liquidation request
+///
+/// Sends a request out for all nodes to sign a BLS signature that the node with the requested bls pubkey can be liquidated
+///
+/// Inputs:
+///
+/// - `bls_key` -- this bls_key will be searched to see if the node can be liquidated
+///
+/// Outputs:
+///
+/// - `status` -- generic RPC error code; "OK" means the request was successful.
+/// - `bls_key` -- The bls pubkey of the node requested to be liquidated
+/// - `signed_message` -- The message that has been signed by the network
+/// - `signature` -- BLS signature of the message
+/// - `signers_bls_pubkeys` -- array of bls pubkeys of the nodes that signed
+struct BLS_LIQUIDATION_REQUEST : PUBLIC {
+    static constexpr auto names() { return NAMES("bls_liquidation_request"); }
+
+    struct request_parameters {
+        std::string bls_key;
     } request;
 };
 
@@ -2364,6 +2385,8 @@ struct BLS_PUBKEYS: PUBLIC, NO_ARGS {
 /// - `proof_of_possession` -- A signature over the bls pubkey to prove ownership of the private key
 /// - `service_node_pubkey` -- The oxen nodes service node pubkey
 /// - `service_node_signature` -- A signature over the registration parameters
+///
+/// TODO sean - This should not be public
 struct BLS_REGISTRATION: PUBLIC {
     static constexpr auto names() { return NAMES("bls_registration_request"); }
 
@@ -2765,7 +2788,8 @@ using core_rpc_types = tools::type_list<
         GET_SERVICE_NODES,
         GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES,
         BLS_REWARDS_REQUEST,
-        BLS_WITHDRAWAL_REQUEST,
+        BLS_EXIT_REQUEST,
+        BLS_LIQUIDATION_REQUEST,
         BLS_PUBKEYS,
         BLS_REGISTRATION,
         GET_SERVICE_NODE_REGISTRATION_CMD,

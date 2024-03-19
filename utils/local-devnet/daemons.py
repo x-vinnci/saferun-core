@@ -255,7 +255,12 @@ class Daemon(RPCDaemon):
 
     def get_bls_rewards(self, address):
         return self.json_rpc("bls_rewards_request", {"address": address}).json()
-        # return self.json_rpc("bls_rewards_request", {"address": address}).json()["result"]
+
+    def get_exit_request(self, bls_key):
+        return self.json_rpc("bls_exit_request", {"bls_key": bls_key}).json()
+
+    def get_liquidation_request(self, bls_key):
+        return self.json_rpc("bls_liquidation_request", {"bls_key": bls_key}).json()
 
 
 

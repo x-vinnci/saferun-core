@@ -2552,12 +2552,20 @@ void core_rpc_server::invoke(BLS_REWARDS_REQUEST& bls_rewards_request, rpc_conte
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
-void core_rpc_server::invoke(BLS_WITHDRAWAL_REQUEST& bls_withdrawal_request, rpc_context context) {
-    const aggregateWithdrawalResponse bls_withdrawal_signature_response = m_core.aggregate_withdrawal_request(bls_withdrawal_request.request.address);
+void core_rpc_server::invoke(BLS_EXIT_REQUEST& bls_withdrawal_request, rpc_context context) {
+    const aggregateExitResponse bls_withdrawal_signature_response = m_core.aggregate_exit_request(bls_withdrawal_request.request.bls_key);
     bls_withdrawal_request.response["status"] = STATUS_OK;
-    bls_withdrawal_request.response["address"] = bls_withdrawal_signature_response.address;
-    bls_withdrawal_request.response["height"] = bls_withdrawal_signature_response.height;
-    bls_withdrawal_request.response["amount"] = bls_withdrawal_signature_response.amount;
+    bls_withdrawal_request.response["bls_key"] = bls_withdrawal_signature_response.bls_key;
+    bls_withdrawal_request.response["signed_message"] = bls_withdrawal_signature_response.signed_message;
+    bls_withdrawal_request.response["signature"] = bls_withdrawal_signature_response.signature;
+    bls_withdrawal_request.response["signers_bls_pubkeys"] = bls_withdrawal_signature_response.signers_bls_pubkeys;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke(BLS_LIQUIDATION_REQUEST& bls_withdrawal_request, rpc_context context) {
+    const aggregateExitResponse bls_withdrawal_signature_response = m_core.aggregate_liquidation_request(bls_withdrawal_request.request.bls_key);
+    bls_withdrawal_request.response["status"] = STATUS_OK;
+    bls_withdrawal_request.response["bls_key"] = bls_withdrawal_signature_response.bls_key;
     bls_withdrawal_request.response["signed_message"] = bls_withdrawal_signature_response.signed_message;
     bls_withdrawal_request.response["signature"] = bls_withdrawal_signature_response.signature;
     bls_withdrawal_request.response["signers_bls_pubkeys"] = bls_withdrawal_signature_response.signers_bls_pubkeys;

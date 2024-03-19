@@ -79,6 +79,46 @@ class ServiceNodeRewardContract:
         self.web3.eth.wait_for_transaction_receipt(tx_hash)
         return tx_hash
 
+    def removeBLSPublicKeyWithSignature(self, blsKey, blsSig, ids):
+        unsent_tx = self.contract.functions.removeBLSPublicKeyWithSignature(
+            self.getServiceNodeID(blsKey),
+            int(blsKey[:64], 16),
+            int(blsKey[64:128], 16),
+            int(blsSig[:64], 16),
+            int(blsSig[64:128], 16),
+            int(blsSig[128:192], 16),
+            int(blsSig[192:256], 16),
+            ids
+        ).build_transaction({
+            "from": self.acc.address,
+            'gas': 3000000,  # Adjust gas limit as necessary
+            'nonce': self.web3.eth.get_transaction_count(self.acc.address)
+        })
+        signed_tx = self.web3.eth.account.sign_transaction(unsent_tx, private_key=self.acc.key)
+        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        self.web3.eth.wait_for_transaction_receipt(tx_hash)
+        return tx_hash
+
+    def liquidateBLSPublicKeyWithSignature(self, blsKey, blsSig, ids):
+        unsent_tx = self.contract.functions.liquidateBLSPublicKeyWithSignature(
+            self.getServiceNodeID(blsKey),
+            int(blsKey[:64], 16),
+            int(blsKey[64:128], 16),
+            int(blsSig[:64], 16),
+            int(blsSig[64:128], 16),
+            int(blsSig[128:192], 16),
+            int(blsSig[192:256], 16),
+            ids
+        ).build_transaction({
+            "from": self.acc.address,
+            'gas': 3000000,  # Adjust gas limit as necessary
+            'nonce': self.web3.eth.get_transaction_count(self.acc.address)
+        })
+        signed_tx = self.web3.eth.account.sign_transaction(unsent_tx, private_key=self.acc.key)
+        tx_hash = self.web3.eth.send_raw_transaction(signed_tx.rawTransaction)
+        self.web3.eth.wait_for_transaction_receipt(tx_hash)
+        return tx_hash
+
     def seedPublicKeyList(self, args):
         pkX = []
         pkY = []
@@ -143,1073 +183,1134 @@ class ServiceNodeRewardContract:
             if service_node_id == service_node_end_id:
                 raise Exception("Iterated through smart contract list and could not find bls key")
 
+    def getNonSigners(self, bls_public_keys):
+        service_node_end_id = 2**64-1
+        service_node_end = self.contract.functions.serviceNodes(service_node_end_id).call()
+        service_node_id = service_node_end[0]
+        non_signers = []
+        while service_node_id != service_node_end_id:
+            service_node = self.contract.functions.serviceNodes(service_node_id).call()
+            bls_key = hex(service_node[3][0])[2:].zfill(64) + hex(service_node[3][1])[2:].zfill(64)
+            if bls_key not in bls_public_keys:
+                non_signers.append(service_node_id)
+            service_node_id = service_node[0]
+        return non_signers;
+
 
 
 
 
 contract_abi = json.loads("""
-[ {
-  "inputs": [
+[
     {
-      "internalType": "address",
-      "name": "_token",
-      "type": "address"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "_token",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "_foundationPool",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_stakingRequirement",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_liquidatorRewardRatio",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_poolShareOfLiquidationRatio",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "_recipientRatio",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "nonpayable",
+      "type": "constructor"
     },
     {
-      "internalType": "address",
-      "name": "_foundationPool",
-      "type": "address"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "target",
+          "type": "address"
+        }
+      ],
+      "name": "AddressEmptyCode",
+      "type": "error"
     },
     {
-      "internalType": "uint256",
-      "name": "_stakingRequirement",
-      "type": "uint256"
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "AddressInsufficientBalance",
+      "type": "error"
     },
     {
-      "internalType": "uint256",
-      "name": "_liquidatorRewardRatio",
-      "type": "uint256"
+      "inputs": [],
+      "name": "ArrayLengthMismatch",
+      "type": "error"
     },
     {
-      "internalType": "uint256",
-      "name": "_poolShareOfLiquidationRatio",
-      "type": "uint256"
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        }
+      ],
+      "name": "BLSPubkeyAlreadyExists",
+      "type": "error"
     },
     {
-      "internalType": "uint256",
-      "name": "_recipientRatio",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "nonpayable",
-  "type": "constructor"
-},
-{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "target",
-      "type": "address"
-    }
-  ],
-  "name": "AddressEmptyCode",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "account",
-      "type": "address"
-    }
-  ],
-  "name": "AddressInsufficientBalance",
-  "type": "error"
-},
-{
-  "inputs": [],
-  "name": "ArrayLengthMismatch",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    }
-  ],
-  "name": "BLSPubkeyAlreadyExists",
-  "type": "error"
-},
-{
-  "inputs": [],
-  "name": "ContractNotActive",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint256",
+          "name": "pkX",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "pkY",
+          "type": "uint256"
+        }
+      ],
+      "name": "BLSPubkeyDoesNotMatch",
+      "type": "error"
     },
     {
-      "internalType": "address",
-      "name": "recipient",
-      "type": "address"
-    }
-  ],
-  "name": "EarlierLeaveRequestMade",
-  "type": "error"
-},
-{
-  "inputs": [],
-  "name": "FailedInnerCall",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint256",
-      "name": "numSigners",
-      "type": "uint256"
+      "inputs": [],
+      "name": "ContractNotActive",
+      "type": "error"
     },
     {
-      "internalType": "uint256",
-      "name": "requiredSigners",
-      "type": "uint256"
-    }
-  ],
-  "name": "InsufficientBLSSignatures",
-  "type": "error"
-},
-{
-  "inputs": [],
-  "name": "InvalidBLSProofOfPossession",
-  "type": "error"
-},
-{
-  "inputs": [],
-  "name": "InvalidBLSSignature",
-  "type": "error"
-},
-{
-  "inputs": [],
-  "name": "InvalidParameter",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        }
+      ],
+      "name": "EarlierLeaveRequestMade",
+      "type": "error"
     },
     {
-      "internalType": "uint256",
-      "name": "timestamp",
-      "type": "uint256"
+      "inputs": [],
+      "name": "FailedInnerCall",
+      "type": "error"
     },
     {
-      "internalType": "uint256",
-      "name": "currenttime",
-      "type": "uint256"
-    }
-  ],
-  "name": "LeaveRequestTooEarly",
-  "type": "error"
-},
-{
-  "inputs": [
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "numSigners",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "requiredSigners",
+          "type": "uint256"
+        }
+      ],
+      "name": "InsufficientBLSSignatures",
+      "type": "error"
+    },
     {
-      "internalType": "address",
+      "inputs": [],
+      "name": "InvalidBLSProofOfPossession",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidBLSSignature",
+      "type": "error"
+    },
+    {
+      "inputs": [],
+      "name": "InvalidParameter",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint256",
+          "name": "timestamp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "currenttime",
+          "type": "uint256"
+        }
+      ],
+      "name": "LeaveRequestTooEarly",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "owner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableInvalidOwner",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "account",
+          "type": "address"
+        }
+      ],
+      "name": "OwnableUnauthorizedAccount",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "expectedRecipient",
+          "type": "address"
+        },
+        {
+          "internalType": "address",
+          "name": "providedRecipient",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "serviceNodeID",
+          "type": "uint256"
+        }
+      ],
+      "name": "RecipientAddressDoesNotMatch",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        }
+      ],
+      "name": "RecipientAddressNotProvided",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "token",
+          "type": "address"
+        }
+      ],
+      "name": "SafeERC20FailedOperation",
+      "type": "error"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        }
+      ],
+      "name": "ServiceNodeDoesntExist",
+      "type": "error"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "X",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "Y",
+              "type": "uint256"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BN256G1.G1Point",
+          "name": "pubkey",
+          "type": "tuple"
+        }
+      ],
+      "name": "NewSeededServiceNode",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "X",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "Y",
+              "type": "uint256"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BN256G1.G1Point",
+          "name": "pubkey",
+          "type": "tuple"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "serviceNodePubkey",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "serviceNodeSignature",
+          "type": "uint256"
+        }
+      ],
+      "name": "NewServiceNode",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "previousOwner",
+          "type": "address"
+        },
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "OwnershipTransferred",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipientAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "previousBalance",
+          "type": "uint256"
+        }
+      ],
+      "name": "RewardsBalanceUpdated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "address",
+          "name": "recipientAddress",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "amount",
+          "type": "uint256"
+        }
+      ],
+      "name": "RewardsClaimed",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "X",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "Y",
+              "type": "uint256"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BN256G1.G1Point",
+          "name": "pubkey",
+          "type": "tuple"
+        }
+      ],
+      "name": "ServiceNodeLiquidated",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "indexed": false,
+          "internalType": "uint256",
+          "name": "returnedAmount",
+          "type": "uint256"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "X",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "Y",
+              "type": "uint256"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BN256G1.G1Point",
+          "name": "pubkey",
+          "type": "tuple"
+        }
+      ],
+      "name": "ServiceNodeRemoval",
+      "type": "event"
+    },
+    {
+      "anonymous": false,
+      "inputs": [
+        {
+          "indexed": true,
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
+        {
+          "indexed": false,
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "X",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "Y",
+              "type": "uint256"
+            }
+          ],
+          "indexed": false,
+          "internalType": "struct BN256G1.G1Point",
+          "name": "pubkey",
+          "type": "tuple"
+        }
+      ],
+      "name": "ServiceNodeRemovalRequest",
+      "type": "event"
+    },
+    {
+      "inputs": [],
+      "name": "IsActive",
+      "outputs": [
+        {
+          "internalType": "bool",
+          "name": "",
+          "type": "bool"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "LIST_END",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "MAX_SERVICE_NODE_REMOVAL_WAIT_TIME",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256",
+          "name": "pkX",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "pkY",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs0",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs1",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs2",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs3",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "serviceNodePubkey",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "serviceNodeSignature",
+          "type": "uint256"
+        }
+      ],
+      "name": "addBLSPublicKey",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "aggregate_pubkey",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "X",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "Y",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "blsNonSignerThreshold",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "recipientAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "balance",
+          "type": "uint256"
+        }
+      ],
+      "name": "buildRecipientMessage",
+      "outputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "stateMutability": "pure",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "claimRewards",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "designatedToken",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "foundationPool",
+      "outputs": [
+        {
+          "internalType": "contract IERC20",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        }
+      ],
+      "name": "initiateRemoveBLSPublicKey",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint256",
+          "name": "pkX",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "pkY",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs0",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs1",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs2",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs3",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64[]",
+          "name": "ids",
+          "type": "uint64[]"
+        }
+      ],
+      "name": "liquidateBLSPublicKeyWithSignature",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "liquidateTag",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "nextServiceNodeID",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [],
       "name": "owner",
-      "type": "address"
-    }
-  ],
-  "name": "OwnableInvalidOwner",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "account",
-      "type": "address"
-    }
-  ],
-  "name": "OwnableUnauthorizedAccount",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "expectedRecipient",
-      "type": "address"
+      "outputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-      "internalType": "address",
-      "name": "providedRecipient",
-      "type": "address"
+      "inputs": [],
+      "name": "proofOfPossessionTag",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-      "internalType": "uint256",
-      "name": "serviceNodeID",
-      "type": "uint256"
-    }
-  ],
-  "name": "RecipientAddressDoesNotMatch",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    }
-  ],
-  "name": "RecipientAddressNotProvided",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "token",
-      "type": "address"
-    }
-  ],
-  "name": "SafeERC20FailedOperation",
-  "type": "error"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    }
-  ],
-  "name": "ServiceNodeDoesntExist",
-  "type": "error"
-},
-{
-  "anonymous": false,
-  "inputs": [
-    {
-      "indexed": true,
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    },
-    {
-      "components": [
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "",
+          "type": "address"
+        }
+      ],
+      "name": "recipients",
+      "outputs": [
         {
           "internalType": "uint256",
-          "name": "X",
+          "name": "rewards",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "Y",
+          "name": "claimed",
           "type": "uint256"
         }
       ],
-      "indexed": false,
-      "internalType": "struct BN256G1.G1Point",
-      "name": "pubkey",
-      "type": "tuple"
-    }
-  ],
-  "name": "NewSeededServiceNode",
-  "type": "event"
-},
-{
-  "anonymous": false,
-  "inputs": [
-    {
-      "indexed": true,
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-      "indexed": false,
-      "internalType": "address",
-      "name": "recipient",
-      "type": "address"
+      "inputs": [],
+      "name": "removalTag",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-      "components": [
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        }
+      ],
+      "name": "removeBLSPublicKeyAfterWaitTime",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "serviceNodeID",
+          "type": "uint64"
+        },
         {
           "internalType": "uint256",
-          "name": "X",
+          "name": "pkX",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "Y",
-          "type": "uint256"
-        }
-      ],
-      "indexed": false,
-      "internalType": "struct BN256G1.G1Point",
-      "name": "pubkey",
-      "type": "tuple"
-    },
-    {
-      "indexed": false,
-      "internalType": "uint256",
-      "name": "serviceNodePubkey",
-      "type": "uint256"
-    },
-    {
-      "indexed": false,
-      "internalType": "uint256",
-      "name": "serviceNodeSignature",
-      "type": "uint256"
-    }
-  ],
-  "name": "NewServiceNode",
-  "type": "event"
-},
-{
-  "anonymous": false,
-  "inputs": [
-    {
-      "indexed": true,
-      "internalType": "address",
-      "name": "previousOwner",
-      "type": "address"
-    },
-    {
-      "indexed": true,
-      "internalType": "address",
-      "name": "newOwner",
-      "type": "address"
-    }
-  ],
-  "name": "OwnershipTransferred",
-  "type": "event"
-},
-{
-  "anonymous": false,
-  "inputs": [
-    {
-      "indexed": true,
-      "internalType": "address",
-      "name": "recipientAddress",
-      "type": "address"
-    },
-    {
-      "indexed": false,
-      "internalType": "uint256",
-      "name": "amount",
-      "type": "uint256"
-    },
-    {
-      "indexed": false,
-      "internalType": "uint256",
-      "name": "previousBalance",
-      "type": "uint256"
-    }
-  ],
-  "name": "RewardsBalanceUpdated",
-  "type": "event"
-},
-{
-  "anonymous": false,
-  "inputs": [
-    {
-      "indexed": true,
-      "internalType": "address",
-      "name": "recipientAddress",
-      "type": "address"
-    },
-    {
-      "indexed": false,
-      "internalType": "uint256",
-      "name": "amount",
-      "type": "uint256"
-    }
-  ],
-  "name": "RewardsClaimed",
-  "type": "event"
-},
-{
-  "anonymous": false,
-  "inputs": [
-    {
-      "indexed": true,
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    },
-    {
-      "indexed": false,
-      "internalType": "address",
-      "name": "recipient",
-      "type": "address"
-    },
-    {
-      "components": [
-        {
-          "internalType": "uint256",
-          "name": "X",
+          "name": "pkY",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "Y",
-          "type": "uint256"
-        }
-      ],
-      "indexed": false,
-      "internalType": "struct BN256G1.G1Point",
-      "name": "pubkey",
-      "type": "tuple"
-    }
-  ],
-  "name": "ServiceNodeLiquidated",
-  "type": "event"
-},
-{
-  "anonymous": false,
-  "inputs": [
-    {
-      "indexed": true,
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    },
-    {
-      "indexed": false,
-      "internalType": "address",
-      "name": "recipient",
-      "type": "address"
-    },
-    {
-      "components": [
-        {
-          "internalType": "uint256",
-          "name": "X",
+          "name": "sigs0",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "Y",
-          "type": "uint256"
-        }
-      ],
-      "indexed": false,
-      "internalType": "struct BN256G1.G1Point",
-      "name": "pubkey",
-      "type": "tuple"
-    }
-  ],
-  "name": "ServiceNodeRemoval",
-  "type": "event"
-},
-{
-  "anonymous": false,
-  "inputs": [
-    {
-      "indexed": true,
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    },
-    {
-      "indexed": false,
-      "internalType": "address",
-      "name": "recipient",
-      "type": "address"
-    },
-    {
-      "components": [
-        {
-          "internalType": "uint256",
-          "name": "X",
+          "name": "sigs1",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "Y",
-          "type": "uint256"
-        }
-      ],
-      "indexed": false,
-      "internalType": "struct BN256G1.G1Point",
-      "name": "pubkey",
-      "type": "tuple"
-    }
-  ],
-  "name": "ServiceNodeRemovalRequest",
-  "type": "event"
-},
-{
-  "inputs": [],
-  "name": "IsActive",
-  "outputs": [
-    {
-      "internalType": "bool",
-      "name": "",
-      "type": "bool"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "LIST_END",
-  "outputs": [
-    {
-      "internalType": "uint64",
-      "name": "",
-      "type": "uint64"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "MAX_SERVICE_NODE_REMOVAL_WAIT_TIME",
-  "outputs": [
-    {
-      "internalType": "uint256",
-      "name": "",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint256",
-      "name": "pkX",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "pkY",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs0",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs1",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs2",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs3",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "serviceNodePubkey",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "serviceNodeSignature",
-      "type": "uint256"
-    }
-  ],
-  "name": "addBLSPublicKey",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "aggregate_pubkey",
-  "outputs": [
-    {
-      "internalType": "uint256",
-      "name": "X",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "Y",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "blsNonSignerThreshold",
-  "outputs": [
-    {
-      "internalType": "uint256",
-      "name": "",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "recipientAddress",
-      "type": "address"
-    },
-    {
-      "internalType": "uint256",
-      "name": "balance",
-      "type": "uint256"
-    }
-  ],
-  "name": "buildRecipientMessage",
-  "outputs": [
-    {
-      "internalType": "bytes",
-      "name": "",
-      "type": "bytes"
-    }
-  ],
-  "stateMutability": "pure",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "claimRewards",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "designatedToken",
-  "outputs": [
-    {
-      "internalType": "contract IERC20",
-      "name": "",
-      "type": "address"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "foundationPool",
-  "outputs": [
-    {
-      "internalType": "contract IERC20",
-      "name": "",
-      "type": "address"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    }
-  ],
-  "name": "initiateRemoveBLSPublicKey",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs0",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs1",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs2",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs3",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint64[]",
-      "name": "ids",
-      "type": "uint64[]"
-    }
-  ],
-  "name": "liquidateBLSPublicKeyWithSignature",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "liquidateTag",
-  "outputs": [
-    {
-      "internalType": "bytes32",
-      "name": "",
-      "type": "bytes32"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "nextServiceNodeID",
-  "outputs": [
-    {
-      "internalType": "uint64",
-      "name": "",
-      "type": "uint64"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "owner",
-  "outputs": [
-    {
-      "internalType": "address",
-      "name": "",
-      "type": "address"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "proofOfPossessionTag",
-  "outputs": [
-    {
-      "internalType": "bytes32",
-      "name": "",
-      "type": "bytes32"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "",
-      "type": "address"
-    }
-  ],
-  "name": "recipients",
-  "outputs": [
-    {
-      "internalType": "uint256",
-      "name": "rewards",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "claimed",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "removalTag",
-  "outputs": [
-    {
-      "internalType": "bytes32",
-      "name": "",
-      "type": "bytes32"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    }
-  ],
-  "name": "removeBLSPublicKeyAfterWaitTime",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "serviceNodeID",
-      "type": "uint64"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs0",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs1",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs2",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs3",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint64[]",
-      "name": "ids",
-      "type": "uint64[]"
-    }
-  ],
-  "name": "removeBLSPublicKeyWithSignature",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "renounceOwnership",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "rewardTag",
-  "outputs": [
-    {
-      "internalType": "bytes32",
-      "name": "",
-      "type": "bytes32"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint256[]",
-      "name": "pkX",
-      "type": "uint256[]"
-    },
-    {
-      "internalType": "uint256[]",
-      "name": "pkY",
-      "type": "uint256[]"
-    },
-    {
-      "internalType": "uint256[]",
-      "name": "amounts",
-      "type": "uint256[]"
-    }
-  ],
-  "name": "seedPublicKeyList",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "bytes",
-      "name": "",
-      "type": "bytes"
-    }
-  ],
-  "name": "serviceNodeIDs",
-  "outputs": [
-    {
-      "internalType": "uint64",
-      "name": "",
-      "type": "uint64"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "uint64",
-      "name": "",
-      "type": "uint64"
-    }
-  ],
-  "name": "serviceNodes",
-  "outputs": [
-    {
-      "internalType": "uint64",
-      "name": "next",
-      "type": "uint64"
-    },
-    {
-      "internalType": "uint64",
-      "name": "previous",
-      "type": "uint64"
-    },
-    {
-      "internalType": "address",
-      "name": "recipient",
-      "type": "address"
-    },
-    {
-      "components": [
-        {
-          "internalType": "uint256",
-          "name": "X",
+          "name": "sigs2",
           "type": "uint256"
         },
         {
           "internalType": "uint256",
-          "name": "Y",
+          "name": "sigs3",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64[]",
+          "name": "ids",
+          "type": "uint64[]"
+        }
+      ],
+      "name": "removeBLSPublicKeyWithSignature",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "renounceOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "rewardTag",
+      "outputs": [
+        {
+          "internalType": "bytes32",
+          "name": "",
+          "type": "bytes32"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint256[]",
+          "name": "pkX",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "pkY",
+          "type": "uint256[]"
+        },
+        {
+          "internalType": "uint256[]",
+          "name": "amounts",
+          "type": "uint256[]"
+        }
+      ],
+      "name": "seedPublicKeyList",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "bytes",
+          "name": "",
+          "type": "bytes"
+        }
+      ],
+      "name": "serviceNodeIDs",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "uint64",
+          "name": "",
+          "type": "uint64"
+        }
+      ],
+      "name": "serviceNodes",
+      "outputs": [
+        {
+          "internalType": "uint64",
+          "name": "next",
+          "type": "uint64"
+        },
+        {
+          "internalType": "uint64",
+          "name": "previous",
+          "type": "uint64"
+        },
+        {
+          "internalType": "address",
+          "name": "recipient",
+          "type": "address"
+        },
+        {
+          "components": [
+            {
+              "internalType": "uint256",
+              "name": "X",
+              "type": "uint256"
+            },
+            {
+              "internalType": "uint256",
+              "name": "Y",
+              "type": "uint256"
+            }
+          ],
+          "internalType": "struct BN256G1.G1Point",
+          "name": "pubkey",
+          "type": "tuple"
+        },
+        {
+          "internalType": "uint256",
+          "name": "leaveRequestTimestamp",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "deposit",
           "type": "uint256"
         }
       ],
-      "internalType": "struct BN256G1.G1Point",
-      "name": "pubkey",
-      "type": "tuple"
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-      "internalType": "uint256",
-      "name": "leaveRequestTimestamp",
-      "type": "uint256"
+      "inputs": [],
+      "name": "serviceNodesLength",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "count",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
     },
     {
-      "internalType": "uint256",
-      "name": "deposit",
-      "type": "uint256"
+      "inputs": [],
+      "name": "start",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "totalNodes",
+      "outputs": [
+        {
+          "internalType": "uint256",
+          "name": "",
+          "type": "uint256"
+        }
+      ],
+      "stateMutability": "view",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "newOwner",
+          "type": "address"
+        }
+      ],
+      "name": "transferOwnership",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [
+        {
+          "internalType": "address",
+          "name": "recipientAddress",
+          "type": "address"
+        },
+        {
+          "internalType": "uint256",
+          "name": "recipientAmount",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs0",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs1",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs2",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint256",
+          "name": "sigs3",
+          "type": "uint256"
+        },
+        {
+          "internalType": "uint64[]",
+          "name": "ids",
+          "type": "uint64[]"
+        }
+      ],
+      "name": "updateRewardsBalance",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
+    },
+    {
+      "inputs": [],
+      "name": "updateServiceNodesLength",
+      "outputs": [],
+      "stateMutability": "nonpayable",
+      "type": "function"
     }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "serviceNodesLength",
-  "outputs": [
-    {
-      "internalType": "uint256",
-      "name": "count",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "start",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "totalNodes",
-  "outputs": [
-    {
-      "internalType": "uint256",
-      "name": "",
-      "type": "uint256"
-    }
-  ],
-  "stateMutability": "view",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "newOwner",
-      "type": "address"
-    }
-  ],
-  "name": "transferOwnership",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [
-    {
-      "internalType": "address",
-      "name": "recipientAddress",
-      "type": "address"
-    },
-    {
-      "internalType": "uint256",
-      "name": "recipientAmount",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs0",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs1",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs2",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint256",
-      "name": "sigs3",
-      "type": "uint256"
-    },
-    {
-      "internalType": "uint64[]",
-      "name": "ids",
-      "type": "uint64[]"
-    }
-  ],
-  "name": "updateRewardsBalance",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-},
-{
-  "inputs": [],
-  "name": "updateServiceNodesLength",
-  "outputs": [],
-  "stateMutability": "nonpayable",
-  "type": "function"
-}
 ]
 """)
 erc20_contract_abi = json.loads("""

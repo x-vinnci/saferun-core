@@ -26,10 +26,12 @@
 #include <oxenc/endian.h>
 #include "common/string_util.h"
 
-//struct aggregateResponse {
-    //std::vector<int64_t> non_signers;
-    //std::string signature;
-//};
+struct aggregateExitResponse {
+    std::string bls_key;
+    std::string signed_message;
+    std::vector<std::string> signers_bls_pubkeys;
+    std::string signature;
+};
 
 struct aggregateWithdrawalResponse {
     std::string address;
@@ -60,6 +62,8 @@ public:
 
     std::vector<std::pair<std::string, std::string>> getPubkeys();
     aggregateWithdrawalResponse aggregateRewards(const std::string& address);
+    aggregateExitResponse aggregateExit(const std::string& bls_key);
+    aggregateExitResponse aggregateLiquidation(const std::string& bls_key);
     blsRegistrationResponse registration() const;
 
 private:

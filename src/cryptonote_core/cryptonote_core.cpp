@@ -1096,11 +1096,11 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
 
         m_omq->add_category("bls", oxenmq::Access{oxenmq::AuthLevel::none})
             .add_request_command("get_reward_balance", [&](oxenmq::Message& m) {
-                oxen::log::debug(logcat, "Received omq signature request");
+                oxen::log::debug(logcat, "Received omq rewards signature request");
                 if (m.data.size() != 1)
                     m.send_reply(
                         "400",
-                        "Bad request: BLS rewards command have one data part containing the address"
+                        "Bad request: BLS rewards command should have one data part containing the address"
                         "(received " +
                         std::to_string(m.data.size()) + ")");
                 std::string eth_address = std::string(m.data[0]);
@@ -1117,6 +1117,38 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                 const auto h = m_bls_signer->hash(encoded_message);
                 // Returns status, address, amount, height, bls_pubkey, signed message, signature
                 m.send_reply("200", m.data[0], std::to_string(amount), std::to_string(batchdb_height), m_bls_signer->getPublicKeyHex(), encoded_message, m_bls_signer->signHash(h).getStr());
+            })
+            .add_request_command("get_exit", [&](oxenmq::Message& m) {
+                oxen::log::debug(logcat, "Received omq exit signature request");
+                if (m.data.size() != 1)
+                    m.send_reply(
+                        "400",
+                        "Bad request: BLS exit command should have one data part containing the bls_key"
+                        "(received " +
+                        std::to_string(m.data.size()) + ")");
+                // TODO sean this should actually check here if the bls key can exit, right not its approving everything
+                std::string bls_key_requesting_exit(m.data[0]);
+                //bytes memory encodedMessage = abi.encodePacked(removalTag, blsKey);
+                std::string encoded_message = "0x" + m_bls_signer->buildTag(m_bls_signer->removalTag) + bls_key_requesting_exit;
+                const auto h = m_bls_signer->hash(encoded_message);
+                // Data contains -> status, bls_key, bls_pubkey, signed message, signature
+                m.send_reply("200", m.data[0], m_bls_signer->getPublicKeyHex(), encoded_message, m_bls_signer->signHash(h).getStr());
+            })
+            .add_request_command("get_liquidation", [&](oxenmq::Message& m) {
+                oxen::log::debug(logcat, "Received omq liquidation signature request");
+                if (m.data.size() != 1)
+                    m.send_reply(
+                        "400",
+                        "Bad request: BLS liquidation command should have one data part containing the bls_key"
+                        "(received " +
+                        std::to_string(m.data.size()) + ")");
+                // TODO sean this should actually check here if the bls key can exit, right not its approving everything
+                std::string bls_key_requesting_exit(m.data[0]);
+                //bytes memory encodedMessage = abi.encodePacked(liquidateTag, blsKey);
+                std::string encoded_message = "0x" + m_bls_signer->buildTag(m_bls_signer->liquidateTag) + utils::padToNBytes(bls_key_requesting_exit, 64, utils::PaddingDirection::LEFT);
+                const auto h = m_bls_signer->hash(encoded_message);
+                // Data contains -> status, bls_key, bls_pubkey, signed message, signature
+                m.send_reply("200", m.data[0], m_bls_signer->getPublicKeyHex(), encoded_message, m_bls_signer->signHash(h).getStr());
             })
             .add_request_command("pubkey_request", [&](oxenmq::Message& m) {
                 oxen::log::debug(logcat, "Received omq bls pubkey request");
@@ -2735,6 +2767,16 @@ core::get_service_node_blacklisted_key_images() const {
 //-----------------------------------------------------------------------------------------------
 aggregateWithdrawalResponse core::aggregate_withdrawal_request(const std::string& ethereum_address) {
     const auto resp = m_bls_aggregator->aggregateRewards(ethereum_address);
+    return resp;
+}
+//-----------------------------------------------------------------------------------------------
+aggregateExitResponse core::aggregate_exit_request(const std::string& bls_key) {
+    const auto resp = m_bls_aggregator->aggregateExit(bls_key);
+    return resp;
+}
+//-----------------------------------------------------------------------------------------------
+aggregateExitResponse core::aggregate_liquidation_request(const std::string& bls_key) {
+    const auto resp = m_bls_aggregator->aggregateLiquidation(bls_key);
     return resp;
 }
 //-----------------------------------------------------------------------------------------------

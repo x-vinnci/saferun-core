@@ -88,3 +88,91 @@ aggregateWithdrawalResponse BLSAggregator::aggregateRewards(const std::string& a
     const auto sig_str = bls_utils::SignatureToHex(aggSig);
     return aggregateWithdrawalResponse{lower_eth_address, amount, height, signed_message, signers, sig_str};
 }
+
+aggregateExitResponse BLSAggregator::aggregateExit(const std::string& bls_key) {
+    bls::Signature aggSig;
+    aggSig.clear();
+    std::vector<std::string> signers;
+    std::mutex signers_mutex;
+    std::string signed_message = "";
+    bool initial_data_set = false;
+
+    processNodes(
+        "bls.get_exit",
+        [this, &aggSig, &signers, &signers_mutex, &bls_key, &signed_message, &initial_data_set](bool success, std::vector<std::string> data) {
+            if (success) {
+                if (data[0] == "200") {
+
+                    // Data contains -> status, bls_pubkey (signer), bls_pubkey (node being removed), signed message, signature
+                    if (!initial_data_set) {
+                        signed_message = data[3];
+                        initial_data_set = true;
+                    } 
+                    if (data[1] != bls_key || data[3] != signed_message) {
+                        // Log if the current data doesn't match the first set
+                        oxen::log::warning(logcat, "Mismatch in data from node with bls pubkey {}. Expected bls_key: {}, signed message: {}. Received bls_key: {}, signed_message: {}.", data[2], bls_key, signed_message, data[1], data[3]);
+                    } else {
+                        bls::Signature external_signature;
+                        external_signature.setStr(data[4]);
+                        std::lock_guard<std::mutex> lock(signers_mutex);
+                        aggSig.add(external_signature);
+                        signers.push_back(data[2]);
+                    
+                    }
+                } else {
+                    oxen::log::warning(logcat, "Error message received when requesting exit {} : {}", data[0], data[1]);
+                }
+            } else {
+                oxen::log::warning(logcat, "OMQ not successful when requesting exit");
+            }
+        },
+        []{}, // No post processing for this call
+        bls_key
+    );
+    const auto sig_str = bls_utils::SignatureToHex(aggSig);
+    return aggregateExitResponse{bls_key, signed_message, signers, sig_str};
+}
+
+aggregateExitResponse BLSAggregator::aggregateLiquidation(const std::string& bls_key) {
+    bls::Signature aggSig;
+    aggSig.clear();
+    std::vector<std::string> signers;
+    std::mutex signers_mutex;
+    std::string signed_message = "";
+    bool initial_data_set = false;
+
+    processNodes(
+        "bls.get_liquidation",
+        [this, &aggSig, &signers, &signers_mutex, &bls_key, &signed_message, &initial_data_set](bool success, std::vector<std::string> data) {
+            if (success) {
+                if (data[0] == "200") {
+
+                    // Data contains -> status, bls_pubkey (signer), bls_pubkey (node being removed), signed message, signature
+                    if (!initial_data_set) {
+                        signed_message = data[3];
+                        initial_data_set = true;
+                    } 
+                    if (data[1] != bls_key || data[3] != signed_message) {
+                        // Log if the current data doesn't match the first set
+                        oxen::log::warning(logcat, "Mismatch in data from node with bls pubkey {}. Expected bls_key: {}, signed message: {}. Received bls_key: {}, signed_message: {}.", data[2], bls_key, signed_message, data[1], data[3]);
+                    } else {
+                        bls::Signature external_signature;
+                        external_signature.setStr(data[4]);
+                        std::lock_guard<std::mutex> lock(signers_mutex);
+                        aggSig.add(external_signature);
+                        signers.push_back(data[2]);
+                    
+                    }
+                } else {
+                    oxen::log::warning(logcat, "Error message received when requesting liquidation {} : {}", data[0], data[1]);
+                }
+            } else {
+                oxen::log::warning(logcat, "OMQ not successful when requesting liquidation");
+            }
+        },
+        []{}, // No post processing for this call
+        bls_key
+    );
+    const auto sig_str = bls_utils::SignatureToHex(aggSig);
+    return aggregateExitResponse{bls_key, signed_message, signers, sig_str};
+}

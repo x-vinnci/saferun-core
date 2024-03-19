@@ -492,8 +492,12 @@ void parse_request(BLS_REWARDS_REQUEST& cmd, rpc_input in) {
     get_values( in, "address", required{cmd.request.address});
 }
 
-void parse_request(BLS_WITHDRAWAL_REQUEST& cmd, rpc_input in) {
-    get_values( in, "address", required{cmd.request.address});
+void parse_request(BLS_EXIT_REQUEST& cmd, rpc_input in) {
+    get_values( in, "bls_key", required{cmd.request.bls_key});
+}
+
+void parse_request(BLS_LIQUIDATION_REQUEST& cmd, rpc_input in) {
+    get_values( in, "bls_key", required{cmd.request.bls_key});
 }
 
 void parse_request(BLS_REGISTRATION& cmd, rpc_input in) {

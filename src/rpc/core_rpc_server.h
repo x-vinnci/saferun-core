@@ -184,7 +184,8 @@ class core_rpc_server {
             GET_SERVICE_NODE_BLACKLISTED_KEY_IMAGES& get_service_node_blacklisted_key_images,
             rpc_context context);
     void invoke(BLS_REWARDS_REQUEST& bls_rewards_request, rpc_context context);
-    void invoke(BLS_WITHDRAWAL_REQUEST& bls_withdrawal_request, rpc_context context);
+    void invoke(BLS_EXIT_REQUEST& bls_withdrawal_request, rpc_context context);
+    void invoke(BLS_LIQUIDATION_REQUEST& bls_withdrawal_request, rpc_context context);
     void invoke(BLS_PUBKEYS& bls_pubkey_request, rpc_context context);
     void invoke(BLS_REGISTRATION& bls_registration_request, rpc_context context);
     void invoke(RELAY_TX& relay_tx, rpc_context context);
