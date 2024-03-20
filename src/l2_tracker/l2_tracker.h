@@ -25,12 +25,14 @@ struct TransactionReviewSession {
     std::vector<NewServiceNodeTx> new_service_nodes;
     std::vector<ServiceNodeLeaveRequestTx> leave_requests;
     std::vector<ServiceNodeDeregisterTx> deregs;
+    std::vector<ServiceNodeExitTx> exits;
 
     TransactionReviewSession(uint64_t min_height, uint64_t max_height)
         : review_block_height_min(min_height), review_block_height_max(max_height) {}
 
     bool processNewServiceNodeTx(const crypto::bls_public_key& bls_key, const crypto::eth_address& eth_address, const std::string& service_node_pubkey, std::string& fail_reason);
     bool processServiceNodeLeaveRequestTx(const crypto::bls_public_key& bls_key, std::string& fail_reason);
+    bool processServiceNodeExitTx(const crypto::eth_address& eth_address, const uint64_t amount, const crypto::bls_public_key& bls_key, std::string& fail_reason);
     bool processServiceNodeDeregisterTx(const crypto::bls_public_key& bls_key, std::string& fail_reason);
 
     bool finalize_review();

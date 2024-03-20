@@ -1975,6 +1975,10 @@ void Blockchain::add_ethereum_transactions_to_tx_pool() {
                 tx.type = txtype::ethereum_service_node_leave_request;
                 tx_extra_ethereum_service_node_leave_request leave_request = { 0, arg.bls_key };
                 cryptonote::add_service_node_leave_request_to_tx_extra(tx.extra, leave_request);
+            } else if constexpr (std::is_same_v<T, ServiceNodeExitTx>) {
+                tx.type = txtype::ethereum_service_node_exit;
+                tx_extra_ethereum_service_node_exit exit_data = { 0, arg.eth_address, arg.amount, arg.bls_key };
+                cryptonote::add_service_node_exit_to_tx_extra(tx.extra, exit_data);
             } else if constexpr (std::is_same_v<T, ServiceNodeDeregisterTx>) {
                 tx.type = txtype::ethereum_service_node_deregister;
                 tx_extra_ethereum_service_node_deregister deregister = { 0, arg.bls_key };
@@ -4107,6 +4111,15 @@ bool Blockchain::check_tx_inputs(
 			if (!ethereum::validate_ethereum_service_node_leave_request_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason) ||
                 !ethereum_transaction_review_session->processServiceNodeLeaveRequestTx(entry.bls_key, fail_reason)) {
 				log::error(log::Cat("verify"), "Failed to validate Ethereum Service Node Leave Request TX reason: {}", fail_reason);
+				tvc.m_verbose_error = std::move(fail_reason);
+				return false;
+			}
+		} else if (tx.type == txtype::ethereum_service_node_exit) {
+			cryptonote::tx_extra_ethereum_service_node_exit entry = {};
+			std::string fail_reason;
+			if (!ethereum::validate_ethereum_service_node_exit_tx(hf_version, get_current_blockchain_height(), tx, entry, &fail_reason) ||
+                !ethereum_transaction_review_session->processServiceNodeExitTx(entry.eth_address, entry.amount, entry.bls_key, fail_reason)) {
+				log::error(log::Cat("verify"), "Failed to validate Ethereum Service Node Exit TX reason: {}", fail_reason);
 				tvc.m_verbose_error = std::move(fail_reason);
 				return false;
 			}

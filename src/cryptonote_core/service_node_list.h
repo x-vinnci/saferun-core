@@ -826,6 +826,11 @@ class service_node_list {
                 cryptonote::hf hf_version,
                 uint64_t block_height,
                 const cryptonote::transaction& tx);
+        bool process_ethereum_exit_tx(
+                cryptonote::network_type nettype,
+                cryptonote::hf hf_version,
+                uint64_t block_height,
+                const cryptonote::transaction& tx);
         bool process_ethereum_deregister_tx(
                 cryptonote::network_type nettype,
                 cryptonote::hf hf_version,

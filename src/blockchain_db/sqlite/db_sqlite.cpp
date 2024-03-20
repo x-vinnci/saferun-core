@@ -649,6 +649,35 @@ bool BlockchainSQLite::add_block(
     return true;
 }
 
+bool BlockchainSQLite::return_staked_amount_to_user(const crypto::eth_address& eth_address, const uint64_t amount) {
+    log::trace(logcat, "BlockchainDB_SQLITE::{} called", __func__);
+
+    std::vector<cryptonote::batch_sn_payment> payments;
+
+
+    try {
+        SQLite::Transaction transaction{db, SQLite::TransactionBehavior::IMMEDIATE};
+
+
+        //TODO sean basic checks here
+        //if (amount > max_staked amount)
+            //throw std::logic_error{"Invalid payment: staked returned is too large"};
+
+        std::lock_guard a_s_lock{address_str_cache_mutex};
+
+        payments.emplace_back(eth_address, amount);
+
+        if (!add_sn_rewards(payments))
+            return false;
+
+        transaction.commit();
+    } catch (std::exception& e) {
+        log::error(logcat, "Error returning stakes: {}", e.what());
+        return false;
+    }
+    return true;
+}
+
 bool BlockchainSQLite::pop_block(
         const cryptonote::block& block,
         const service_nodes::service_node_list::state_t& service_nodes_state) {

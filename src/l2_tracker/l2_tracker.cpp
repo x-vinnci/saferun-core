@@ -140,6 +140,8 @@ void L2Tracker::populate_review_transactions(std::shared_ptr<TransactionReviewSe
                         session->new_service_nodes.push_back(arg);
                     } else if constexpr (std::is_same_v<T, ServiceNodeLeaveRequestTx>) {
                         session->leave_requests.push_back(arg);
+                    } else if constexpr (std::is_same_v<T, ServiceNodeExitTx>) {
+                        session->exits.push_back(arg);
                     } else if constexpr (std::is_same_v<T, ServiceNodeDeregisterTx>) {
                         session->deregs.push_back(arg);
                     }
@@ -219,6 +221,26 @@ bool TransactionReviewSession::processServiceNodeLeaveRequestTx(const crypto::bl
     return false;
 }
 
+bool TransactionReviewSession::processServiceNodeExitTx(const crypto::eth_address& eth_address, const uint64_t amount, const crypto::bls_public_key& bls_key, std::string& fail_reason) {
+    if (!service_node)
+        return true;
+    if (review_block_height_max == 0) {
+        fail_reason = "Review not initialized";
+        oxen::log::error(logcat, "Failed to process service node exit tx height {}", review_block_height_max);
+        return false;
+    }
+
+    for (auto it = exits.begin(); it != exits.end(); ++it) {
+        if (it->bls_key == bls_key && it->eth_address == eth_address && it->amount == amount) {
+            exits.erase(it);
+            return true;
+        }
+    }
+
+    fail_reason = "Exit Transaction not found bls_key: " + tools::type_to_hex(bls_key);
+    return false;
+}
+
 bool TransactionReviewSession::processServiceNodeDeregisterTx(const crypto::bls_public_key& bls_key, std::string& fail_reason) {
     if (!service_node)
         return true;
@@ -242,7 +264,7 @@ bool TransactionReviewSession::processServiceNodeDeregisterTx(const crypto::bls_
 bool TransactionReviewSession::finalize_review() {
     if (!service_node)
         return true;
-    if (new_service_nodes.empty() && leave_requests.empty() && deregs.empty()) {
+    if (new_service_nodes.empty() && leave_requests.empty() && deregs.empty() && exits.empty()) {
         review_block_height_min = review_block_height_max + 1;
         review_block_height_max = 0;
         return true;

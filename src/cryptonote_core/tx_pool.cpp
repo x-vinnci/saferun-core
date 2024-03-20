@@ -258,6 +258,16 @@ bool tx_memory_pool::have_duplicated_non_standard_tx(
                     get_transaction_hash(tx));
             return true;
         }
+    } else if (tx.type == txtype::ethereum_service_node_exit) {
+        cryptonote::tx_extra_ethereum_service_node_exit data = {};
+        if (!cryptonote::get_field_from_tx_extra(tx.extra, data)) {
+            log::error(
+                    logcat,
+                    "Could not get ethereum service node exit data from tx: {}, tx to add is possibly "
+                    "invalid, rejecting",
+                    get_transaction_hash(tx));
+            return true;
+        }
     } else if (tx.type == txtype::ethereum_service_node_deregister) {
         cryptonote::tx_extra_ethereum_service_node_deregister data = {};
         if (!cryptonote::get_field_from_tx_extra(tx.extra, data)) {

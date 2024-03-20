@@ -57,6 +57,7 @@ constexpr uint8_t TX_EXTRA_TAG_PADDING = 0x00, TX_EXTRA_TAG_PUBKEY = 0x01, TX_EX
                   TX_EXTRA_TAG_ETHEREUM_NEW_SERVICE_NODE = 0x7C,
                   TX_EXTRA_TAG_ETHEREUM_SERVICE_NODE_LEAVE_REQUEST= 0x7D,
                   TX_EXTRA_TAG_ETHEREUM_SERVICE_NODE_DEREGISTER = 0x7E,
+                  TX_EXTRA_TAG_ETHEREUM_SERVICE_NODE_EXIT = 0x7F,
 
                   TX_EXTRA_MYSTERIOUS_MINERGATE_TAG = 0xDE;
 
@@ -663,6 +664,20 @@ struct tx_extra_ethereum_service_node_leave_request {
     END_SERIALIZE()
 };
 
+struct tx_extra_ethereum_service_node_exit {
+    uint8_t version = 0;
+    crypto::eth_address eth_address;
+    uint64_t amount;
+    crypto::bls_public_key bls_key;
+
+    BEGIN_SERIALIZE()
+        FIELD(version)
+        FIELD(eth_address)
+        FIELD(amount)
+        FIELD(bls_key)
+    END_SERIALIZE()
+};
+
 struct tx_extra_ethereum_service_node_deregister {
     uint8_t version = 0;
     crypto::bls_public_key bls_key;
@@ -701,6 +716,7 @@ using tx_extra_field = std::variant<
         tx_extra_ethereum_address_notification,
         tx_extra_ethereum_new_service_node,
         tx_extra_ethereum_service_node_leave_request,
+        tx_extra_ethereum_service_node_exit,
         tx_extra_ethereum_service_node_deregister,
         tx_extra_padding>;
 }  // namespace cryptonote
@@ -745,5 +761,7 @@ BINARY_VARIANT_TAG(
         cryptonote::tx_extra_ethereum_new_service_node, cryptonote::TX_EXTRA_TAG_ETHEREUM_NEW_SERVICE_NODE);
 BINARY_VARIANT_TAG(
         cryptonote::tx_extra_ethereum_service_node_leave_request, cryptonote::TX_EXTRA_TAG_ETHEREUM_SERVICE_NODE_LEAVE_REQUEST);
+BINARY_VARIANT_TAG(
+        cryptonote::tx_extra_ethereum_service_node_exit, cryptonote::TX_EXTRA_TAG_ETHEREUM_SERVICE_NODE_EXIT);
 BINARY_VARIANT_TAG(
         cryptonote::tx_extra_ethereum_service_node_deregister, cryptonote::TX_EXTRA_TAG_ETHEREUM_SERVICE_NODE_DEREGISTER);

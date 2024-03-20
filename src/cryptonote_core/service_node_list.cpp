@@ -1089,6 +1089,26 @@ bool service_node_list::state_t::process_ethereum_deregister_tx(
     return true;
 }
 
+bool service_node_list::state_t::process_ethereum_exit_tx(
+        cryptonote::network_type nettype,
+        cryptonote::hf hf_version,
+        uint64_t block_height,
+        const cryptonote::transaction& tx) {
+
+    cryptonote::tx_extra_ethereum_service_node_exit exit_data;
+    if (!cryptonote::get_field_from_tx_extra(tx.extra, exit_data)) {
+        log::info(
+                logcat,
+                "Unlock TX: couldnt process exit, rejected on height: {} "
+                "for tx: {}",
+                block_height,
+                cryptonote::get_transaction_hash(tx));
+        return false;
+    }
+
+    return sn_list->m_blockchain.sqlite_db()->return_staked_amount_to_user(exit_data.eth_address, exit_data.amount);
+}
+
 bool service_node_list::state_t::process_key_image_unlock_tx(
         cryptonote::network_type nettype,
         cryptonote::hf hf_version,
@@ -2825,6 +2845,8 @@ void service_node_list::state_t::update_from_block(
             process_ethereum_registration_tx(nettype, block, tx, index, my_keys);
         } else if (tx.type == cryptonote::txtype::ethereum_service_node_leave_request) {
             process_ethereum_unlock_tx(nettype, hf_version, block_height, tx);
+        } else if (tx.type == cryptonote::txtype::ethereum_service_node_exit) {
+            process_ethereum_exit_tx(nettype, hf_version, block_height, tx);
         } else if (tx.type == cryptonote::txtype::ethereum_service_node_deregister) {
             process_ethereum_deregister_tx(nettype, hf_version, block_height, tx, my_keys);
             

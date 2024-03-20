@@ -19,9 +19,13 @@ TransactionType RewardsLogEntry::getLogType() const {
     // keccak256('ServiceNodeRemovalRequest(uint64,address,(uint256,uint256))')
     } else if (topics[0] == "0x89477e9f4ddcb5eb9f30353ab22c31ef9a91ab33fd1ffef09aadb3458be7775d") {
         return TransactionType::ServiceNodeLeaveRequest;
+    // TODO sean the deregister should be something that the l2 tracker makes if it detects rollbacks, liquidations use the normal exit log but have a lower amount paid back to user
     // keccak256('ServiceNodeLiquidated(uint64,address,(uint256,uint256))')
-    } else if (topics[0] == "0x0bfb12191b00293af29126b1c5489f8daeb4a4af82db2960b7f8353c3105cd7c") {
-        return TransactionType::ServiceNodeDeregister;
+    //} else if (topics[0] == "0x0bfb12191b00293af29126b1c5489f8daeb4a4af82db2960b7f8353c3105cd7c") {
+        //return TransactionType::ServiceNodeDeregister;
+    // keccak256('ServiceNodeRemoval(uint64,address,uint256,(uint256,uint256))')
+    } else if (topics[0] == "0x130a7be04ef1f87b2b436f68f389bf863ee179b95399a3a8444196fab7a4e54c") {
+        return TransactionType::ServiceNodeExit;
     }
     return TransactionType::Other;
 }
@@ -69,6 +73,23 @@ std::optional<TransactionStateChangeVariant> RewardsLogEntry::getLogTransaction(
             crypto::bls_public_key bls_key;
             tools::hex_to_type(bls_key_str, bls_key);
             return ServiceNodeDeregisterTx(bls_key);
+        }
+        case TransactionType::ServiceNodeExit: {
+            // event ServiceNodeRemoval(uint64 indexed serviceNodeID, address recipient, uint256 returnedAmount, BN256G1.G1Point pubkey);
+            // address is 32 bytes, amount is 32 bytes and pubkey is 64 bytes
+            //
+            // The address is in 32 bytes, but actually only uses 20 bytes and the first 12 are padding
+            std::string eth_address_str = data.substr(2 + 24, 40);
+            crypto::eth_address eth_address;
+            tools::hex_to_type(eth_address_str, eth_address);
+            // from position 64 (32 bytes -> 64 characters) + 2 for '0x' pull 32 bytes (64 characters)
+            std::string amount_str = data.substr(64 + 2, 64);
+            uint64_t amount = utils::fromHexStringToUint64(amount_str);
+            // pull 64 bytes (128 characters)
+            std::string bls_key_str = data.substr(64 + 64 + 2, 128);
+            crypto::bls_public_key bls_key;
+            tools::hex_to_type(bls_key_str, bls_key);
+            return ServiceNodeExitTx(eth_address, amount, bls_key);
         }
         default:
             return std::nullopt;

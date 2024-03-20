@@ -229,7 +229,6 @@ class SNNetwork:
                 exit["result"]["bls_key"],
                 exit["result"]["signature"],
                 self.servicenodecontract.getNonSigners(exit["result"]["signers_bls_pubkeys"]))
-        vprint(result)
         vprint("Submitted transaction to exit service node : {}".format(ethereum_add_bls_args["bls_pubkey"]))
         vprint("exited node: number of service nodes in contract {}".format(self.servicenodecontract.numberServiceNodes()))
 

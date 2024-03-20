@@ -12,6 +12,7 @@ enum class TransactionType {
     NewServiceNode,
     ServiceNodeLeaveRequest,
     ServiceNodeDeregister,
+    ServiceNodeExit,
     Other
 };
 
@@ -42,7 +43,17 @@ public:
         : bls_key(_bls_key) {}
 };
 
-using TransactionStateChangeVariant = std::variant<NewServiceNodeTx, ServiceNodeLeaveRequestTx, ServiceNodeDeregisterTx>;
+class ServiceNodeExitTx {
+public:
+    crypto::eth_address eth_address;
+    uint64_t amount;
+    crypto::bls_public_key bls_key;
+
+    ServiceNodeExitTx(const crypto::eth_address& _eth_address, const uint64_t _amount, const crypto::bls_public_key& _bls_key)
+        : eth_address(_eth_address), amount(_amount), bls_key(_bls_key) {}
+};
+
+using TransactionStateChangeVariant = std::variant<NewServiceNodeTx, ServiceNodeLeaveRequestTx, ServiceNodeDeregisterTx, ServiceNodeExitTx>;
 
 
 class RewardsLogEntry : public LogEntry {

@@ -758,6 +758,11 @@ namespace {
         void operator()(const tx_extra_ethereum_service_node_leave_request& x) {
             set("bls_key", tools::type_to_hex(x.bls_key));
         }
+        void operator()(const tx_extra_ethereum_service_node_exit& x) {
+            set("eth_address", tools::type_to_hex(x.eth_address));
+            set("amount", x.amount);
+            set("bls_key", tools::type_to_hex(x.bls_key));
+        }
         void operator()(const tx_extra_ethereum_service_node_deregister& x) {
             set("bls_key", tools::type_to_hex(x.bls_key));
         }
