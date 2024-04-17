@@ -61,11 +61,12 @@ bls::Signature BLSSigner::signHash(const std::array<unsigned char, 32>& hash) {
     return sig;
 }
 
-std::string BLSSigner::proofOfPossession() {
-    //TODO sean put constants somewhere, source them
-
+std::string BLSSigner::proofOfPossession(const std::string& senderEthAddress, const std::string& serviceNodePubkey) {
     std::string fullTag = buildTag(proofOfPossessionTag, chainID, contractAddress);
-    std::string message = "0x" + fullTag + getPublicKeyHex();
+    std::string senderAddressOutput = senderEthAddress;
+    if (senderAddressOutput.substr(0, 2) == "0x")
+        senderAddressOutput = senderAddressOutput.substr(2);  // remove "0x"
+    std::string message = "0x" + fullTag + getPublicKeyHex() + senderAddressOutput + utils::padTo32Bytes(serviceNodePubkey, utils::PaddingDirection::LEFT);
 
     const std::array<unsigned char, 32> hash = BLSSigner::hash(message); // Get the hash of the publickey
     bls::Signature sig;

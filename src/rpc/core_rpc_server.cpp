@@ -754,6 +754,14 @@ namespace {
             set("eth_address", tools::type_to_hex(x.eth_address));
             set("service_node_pubkey", tools::view_guts(x.service_node_pubkey));
             set("signature", tools::view_guts(x.signature));
+            set("fee", tools::view_guts(x.fee));
+            auto contributors = json::array();
+            for (auto& contributor : x.contributors) {
+                auto& c = contributors.emplace_back();
+                c["address"] = tools::type_to_hex(contributor.address);
+                c["amount"] = contributor.amount;
+            }
+            set("contributors", contributors);
         }
         void operator()(const tx_extra_ethereum_service_node_leave_request& x) {
             set("bls_key", tools::type_to_hex(x.bls_key));

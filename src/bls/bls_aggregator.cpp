@@ -29,8 +29,8 @@ std::vector<std::pair<std::string, std::string>> BLSAggregator::getPubkeys() {
     return pubkeys;
 }
 
-blsRegistrationResponse BLSAggregator::registration() const {
-    return blsRegistrationResponse{bls_signer->getPublicKeyHex(), bls_signer->proofOfPossession(), "","",""};
+blsRegistrationResponse BLSAggregator::registration(const std::string& senderEthAddress, const std::string& serviceNodePubkey) const {
+    return blsRegistrationResponse{bls_signer->getPublicKeyHex(), bls_signer->proofOfPossession(senderEthAddress, serviceNodePubkey), senderEthAddress, serviceNodePubkey, ""};
 }
 
 aggregateWithdrawalResponse BLSAggregator::aggregateRewards(const std::string& address) {

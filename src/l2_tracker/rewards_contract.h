@@ -16,15 +16,25 @@ enum class TransactionType {
     Other
 };
 
+struct Contributor {
+    crypto::eth_address addr;
+    uint64_t amount;
+
+    Contributor(const crypto::eth_address& address, uint64_t amt)
+        : addr(address), amount(amt) {}
+};
+
 class NewServiceNodeTx {
 public:
     crypto::bls_public_key bls_key;
     crypto::eth_address eth_address;
     std::string service_node_pubkey;
     std::string signature;
+    uint64_t fee;
+    std::vector<Contributor> contributors;
 
-    NewServiceNodeTx(const crypto::bls_public_key& _bls_key, const crypto::eth_address& _eth_address, const std::string& _service_node_pubkey, const std::string& _signature)
-        : bls_key(_bls_key), eth_address(_eth_address), service_node_pubkey(_service_node_pubkey), signature(_signature) {}
+    NewServiceNodeTx(const crypto::bls_public_key& _bls_key, const crypto::eth_address& _eth_address, const std::string& _service_node_pubkey, const std::string& _signature, const uint64_t _fee, const std::vector<Contributor>& _contributors)
+        : bls_key(_bls_key), eth_address(_eth_address), service_node_pubkey(_service_node_pubkey), signature(_signature), fee(_fee), contributors(_contributors) {}
 };
 
 class ServiceNodeLeaveRequestTx {

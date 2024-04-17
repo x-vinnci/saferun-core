@@ -376,17 +376,16 @@ std::optional<registration_details> eth_reg_tx_extract_fields(hf hf_version, con
     reg.service_node_pubkey = registration.service_node_pubkey;
     reg.bls_key = registration.bls_key;
 
-    // TODO sean this needs to be thought out
-    auto& [addr, amount] = reg.eth_contributions.emplace_back();
-    addr = registration.eth_address;
-    // TODO sean SOMETHING BETTER HERE
-    amount = 100'000'000'000;
-    //amount = registration.amount;
+    for (const auto& contributor : registration.contributors) {
+        auto& [addr, amount] = reg.eth_contributions.emplace_back();
+        addr = contributor.address;
+        amount = contributor.amount;
+    }
 
     reg.hf = static_cast<uint64_t>(hf_version);
     reg.uses_portions = false;
 
-    reg.fee = 0;
+    reg.fee = registration.fee;
     reg.signature = registration.signature;
 
     return reg;
@@ -1470,9 +1469,9 @@ std::pair<crypto::public_key, std::shared_ptr<service_node_info>> validate_and_g
     auto& reg = *maybe_reg;
 
     uint64_t staking_requirement = get_staking_requirement(nettype, block_height);
+
     validate_registration(hf_version, nettype, staking_requirement, block_timestamp, reg);
-    // TODO sean bring this signature verification back
-    //validate_registration_signature(reg);
+    validate_registration_signature(reg);
 
     info->staking_requirement = staking_requirement;
     info->operator_ethereum_address = reg.eth_contributions[0].first;

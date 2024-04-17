@@ -2793,13 +2793,20 @@ std::vector<std::pair<std::string, uint64_t>> core::get_bls_pubkeys() const {
     return bls_pubkeys_and_amounts;
 }
 //-----------------------------------------------------------------------------------------------
-blsRegistrationResponse core::bls_registration(const std::string& ethereum_address) const {
-    auto resp = m_bls_aggregator->registration();
-    const auto& pubkey = get_service_keys().pub;
-    resp.address = ethereum_address;
-    resp.service_node_pubkey = tools::type_to_hex(pubkey);
-    // TODO sean sign this somehow
-    resp.service_node_signature = "";
+blsRegistrationResponse core::bls_registration(const std::string& ethereum_address, const uint64_t fee) const {
+    const auto& keys = get_service_keys();
+    auto resp = m_bls_aggregator->registration(ethereum_address, tools::type_to_hex(keys.pub));
+
+    auto height = get_current_blockchain_height();
+    auto hf_version = get_network_version(m_nettype, height);
+    service_nodes::registration_details reg{};
+    reg.service_node_pubkey = keys.pub;
+    reg.hf = static_cast<uint64_t>(hf_version);
+    reg.uses_portions = false;
+    reg.fee = fee;
+    auto hash = get_registration_hash(reg);
+    resp.service_node_signature = tools::type_to_hex(crypto::generate_signature(hash, keys.pub, keys.key));
+
     return resp;
 }
 //-----------------------------------------------------------------------------------------------

@@ -100,6 +100,7 @@ bool validate_ethereum_new_service_node_tx(
 
     {
         // TODO sean: Add specific validation logic for BLS Key, Ethereum Address, and Service Node Public Key
+        // contributor.amount sums to required staking amount
     }
 
     return true;

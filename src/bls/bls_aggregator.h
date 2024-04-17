@@ -64,7 +64,7 @@ public:
     aggregateWithdrawalResponse aggregateRewards(const std::string& address);
     aggregateExitResponse aggregateExit(const std::string& bls_key);
     aggregateExitResponse aggregateLiquidation(const std::string& bls_key);
-    blsRegistrationResponse registration() const;
+    blsRegistrationResponse registration(const std::string& senderEthAddress, const std::string& serviceNodePubkey) const;
 
 private:
     // Goes out to the nodes on the network and makes oxenmq requests to all of them, when getting the reply

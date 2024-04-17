@@ -638,12 +638,28 @@ struct tx_extra_ethereum_address_notification {
     END_SERIALIZE()
 };
 
+struct tx_extra_ethereum_contributor {
+    crypto::eth_address address;
+    uint64_t amount;
+
+    tx_extra_ethereum_contributor() = default;
+    tx_extra_ethereum_contributor(const crypto::eth_address& addr, uint64_t amt)
+        : address(addr), amount(amt) {}
+
+    BEGIN_SERIALIZE()
+        FIELD(address)
+        FIELD(amount)
+    END_SERIALIZE()
+};
+
 struct tx_extra_ethereum_new_service_node {
     uint8_t version = 0;
     crypto::bls_public_key bls_key;
     crypto::eth_address eth_address;
     crypto::public_key service_node_pubkey;
     crypto::signature signature;
+    uint64_t fee;
+    std::vector<tx_extra_ethereum_contributor> contributors;
 
     BEGIN_SERIALIZE()
         FIELD(version)
@@ -651,6 +667,8 @@ struct tx_extra_ethereum_new_service_node {
         FIELD(eth_address)
         FIELD(service_node_pubkey)
         FIELD(signature)
+        FIELD(fee)
+        FIELD(contributors)
     END_SERIALIZE()
 };
 

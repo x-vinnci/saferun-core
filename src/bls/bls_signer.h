@@ -33,7 +33,7 @@ public:
     ~BLSSigner();
 
     bls::Signature signHash(const std::array<unsigned char, 32>& hash);
-    std::string proofOfPossession();
+    std::string proofOfPossession(const std::string& senderEthAddress, const std::string& serviceNodePubkey);
     std::string getPublicKeyHex();
     bls::PublicKey getPublicKey();
 

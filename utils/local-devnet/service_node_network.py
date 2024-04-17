@@ -224,13 +224,13 @@ class SNNetwork:
         # time.sleep(155)
 
         # Exit Node
-        exit = self.ethsns[0].get_exit_request(ethereum_add_bls_args["bls_pubkey"])
-        result = self.servicenodecontract.removeBLSPublicKeyWithSignature(
-                exit["result"]["bls_key"],
-                exit["result"]["signature"],
-                self.servicenodecontract.getNonSigners(exit["result"]["signers_bls_pubkeys"]))
-        vprint("Submitted transaction to exit service node : {}".format(ethereum_add_bls_args["bls_pubkey"]))
-        vprint("exited node: number of service nodes in contract {}".format(self.servicenodecontract.numberServiceNodes()))
+        # exit = self.ethsns[0].get_exit_request(ethereum_add_bls_args["bls_pubkey"])
+        # result = self.servicenodecontract.removeBLSPublicKeyWithSignature(
+                # exit["result"]["bls_key"],
+                # exit["result"]["signature"],
+                # self.servicenodecontract.getNonSigners(exit["result"]["signers_bls_pubkeys"]))
+        # vprint("Submitted transaction to exit service node : {}".format(ethereum_add_bls_args["bls_pubkey"]))
+        # vprint("exited node: number of service nodes in contract {}".format(self.servicenodecontract.numberServiceNodes()))
 
         # Liquidate Node
         # exit = self.ethsns[0].get_liquidation_request(ethereum_add_bls_args["bls_pubkey"])

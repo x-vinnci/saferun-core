@@ -1965,10 +1965,13 @@ void Blockchain::add_ethereum_transactions_to_tx_pool() {
                 tx.type = txtype::ethereum_new_service_node;
                 crypto::public_key service_node_pubkey = {};
                 tools::hex_to_type(arg.service_node_pubkey, service_node_pubkey);
-                // TODO sean need to actually get the signature
                 crypto::signature signature = {};
                 tools::hex_to_type(arg.signature, signature);
-                tx_extra_ethereum_new_service_node new_service_node = { 0, arg.bls_key, arg.eth_address, service_node_pubkey, signature };
+                std::vector<tx_extra_ethereum_contributor> contributors;
+                for (const auto& contributor: arg.contributors)
+                    contributors.emplace_back(contributor.addr, contributor.amount);
+
+                tx_extra_ethereum_new_service_node new_service_node = { 0, arg.bls_key, arg.eth_address, service_node_pubkey, signature, arg.fee, contributors};
                 cryptonote::add_new_service_node_to_tx_extra(tx.extra, new_service_node);
 
             } else if constexpr (std::is_same_v<T, ServiceNodeLeaveRequestTx>) {
