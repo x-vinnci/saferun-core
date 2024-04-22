@@ -425,7 +425,7 @@ void validate_registration(
                                           : oxen::MAX_CONTRIBUTORS_V1;
 
     std::vector<uint64_t> extracted_amounts;
-    if (hf_version >= hf::hf20) {
+    if (hf_version >= hf::hf20 && nettype != cryptonote::network_type::FAKECHAIN) {
         if (reg.eth_contributions.empty())
             throw invalid_registration{"No operator contribution given"};
         if (!reg.reserved.empty())

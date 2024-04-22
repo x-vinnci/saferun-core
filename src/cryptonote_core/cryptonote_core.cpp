@@ -258,7 +258,6 @@ core::core() :
         m_last_storage_server_ping(0),
         m_last_lokinet_ping(0),
         m_pad_transactions(false),
-        m_bls_signer(std::make_shared<BLSSigner>(m_nettype)),
         ss_version{0},
         lokinet_version{0} {
     m_checkpoints_updating.clear();
@@ -781,6 +780,7 @@ bool core::init(
     if (!ons_db)
         return false;
 
+    m_bls_signer = std::make_shared<BLSSigner>(m_nettype);
     init_oxenmq(vm);
     m_bls_aggregator = std::make_unique<BLSAggregator>(m_service_node_list, m_omq, m_bls_signer);
 

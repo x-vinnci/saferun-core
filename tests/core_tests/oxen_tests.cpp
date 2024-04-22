@@ -747,7 +747,7 @@ bool oxen_core_block_rewards_lrc6::generate(std::vector<test_event_entry>& event
 
 bool oxen_core_test_deregister_preferred::generate(std::vector<test_event_entry> &events)
 {
-  auto hard_forks = oxen_generate_hard_fork_table();
+  auto hard_forks = oxen_generate_hard_fork_table(hf::hf19_reward_batching);
   oxen_chain_generator gen(events, hard_forks);
   const auto miner                 = gen.first_miner();
   const auto alice                 = gen.add_account();
@@ -3532,14 +3532,14 @@ bool oxen_pulse_chain_split_with_no_checkpoints::generate(std::vector<test_event
 bool oxen_batch_sn_rewards::generate(std::vector<test_event_entry> &events)
 {
   constexpr auto& conf = cryptonote::get_config(cryptonote::network_type::FAKECHAIN);
-  auto hard_forks = oxen_generate_hard_fork_table();
+  auto hard_forks = oxen_generate_hard_fork_table(hf::hf19_reward_batching);
   oxen_chain_generator gen(events, hard_forks);
   const auto miner                      = gen.first_miner();
   const auto alice                      = gen.add_account();
   size_t alice_account_base_event_index = gen.event_index();
   auto min_service_nodes = service_nodes::pulse_min_service_nodes(cryptonote::network_type::FAKECHAIN);
 
-  gen.add_blocks_until_version(hard_forks.back().version);
+  gen.add_blocks_until_version(cryptonote::hf::hf19_reward_batching);
   gen.add_n_blocks(10);
   gen.add_mined_money_unlock_blocks();
 
@@ -3643,14 +3643,14 @@ bool oxen_batch_sn_rewards_bad_amount::generate(std::vector<test_event_entry> &e
 {
 
   constexpr auto& conf = cryptonote::get_config(cryptonote::network_type::FAKECHAIN);
-  auto hard_forks = oxen_generate_hard_fork_table();
+  auto hard_forks = oxen_generate_hard_fork_table(hf::hf19_reward_batching);
   oxen_chain_generator gen(events, hard_forks);
   const auto miner                      = gen.first_miner();
   const auto alice                      = gen.add_account();
   size_t alice_account_base_event_index = gen.event_index();
   auto min_service_nodes = service_nodes::pulse_min_service_nodes(cryptonote::network_type::FAKECHAIN);
 
-  gen.add_blocks_until_version(hard_forks.back().version);
+  gen.add_blocks_until_version(cryptonote::hf::hf19_reward_batching);
   gen.add_n_blocks(10);
   gen.add_mined_money_unlock_blocks();
 
@@ -3690,14 +3690,14 @@ bool oxen_batch_sn_rewards_bad_address::generate(std::vector<test_event_entry> &
 {
   cryptonote::keypair const txkey{hw::get_device("default")};
   constexpr auto& conf = cryptonote::get_config(cryptonote::network_type::FAKECHAIN);
-  auto hard_forks = oxen_generate_hard_fork_table();
+  auto hard_forks = oxen_generate_hard_fork_table(hf::hf19_reward_batching);
   oxen_chain_generator gen(events, hard_forks);
   const auto miner                      = gen.first_miner();
   const auto alice                      = gen.add_account();
   size_t alice_account_base_event_index = gen.event_index();
   auto min_service_nodes = service_nodes::pulse_min_service_nodes(cryptonote::network_type::FAKECHAIN);
 
-  gen.add_blocks_until_version(hard_forks.back().version);
+  gen.add_blocks_until_version(cryptonote::hf::hf19_reward_batching);
   gen.add_n_blocks(10);
   gen.add_mined_money_unlock_blocks();
 
@@ -3745,14 +3745,14 @@ bool oxen_batch_sn_rewards_bad_address::generate(std::vector<test_event_entry> &
 bool oxen_batch_sn_rewards_pop_blocks::generate(std::vector<test_event_entry> &events)
 {
   constexpr auto& conf = cryptonote::get_config(cryptonote::network_type::FAKECHAIN);
-  auto hard_forks = oxen_generate_hard_fork_table();
+  auto hard_forks = oxen_generate_hard_fork_table(hf::hf19_reward_batching);
   oxen_chain_generator gen(events, hard_forks);
   const auto miner                      = gen.first_miner();
   const auto alice                      = gen.add_account();
   size_t alice_account_base_event_index = gen.event_index();
   auto min_service_nodes = service_nodes::pulse_min_service_nodes(cryptonote::network_type::FAKECHAIN);
 
-  gen.add_blocks_until_version(hard_forks.back().version);
+  gen.add_blocks_until_version(cryptonote::hf::hf19_reward_batching);
   gen.add_n_blocks(10);
   gen.add_mined_money_unlock_blocks();
 
@@ -3830,14 +3830,14 @@ bool oxen_batch_sn_rewards_pop_blocks_after_big_cycle::generate(std::vector<test
 {
 
   constexpr auto& conf = cryptonote::get_config(cryptonote::network_type::FAKECHAIN);
-  auto hard_forks = oxen_generate_hard_fork_table();
+  auto hard_forks = oxen_generate_hard_fork_table(hf::hf19_reward_batching);
   oxen_chain_generator gen(events, hard_forks);
   const auto miner                      = gen.first_miner();
   const cryptonote::account_base alice  = gen.add_account();
   size_t alice_account_base_event_index = gen.event_index();
   auto min_service_nodes = service_nodes::pulse_min_service_nodes(cryptonote::network_type::FAKECHAIN);
 
-  gen.add_blocks_until_version(hard_forks.back().version);
+  gen.add_blocks_until_version(cryptonote::hf::hf19_reward_batching);
   gen.add_n_blocks(10);
   gen.add_mined_money_unlock_blocks();
 
