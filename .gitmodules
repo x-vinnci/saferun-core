@@ -49,7 +49,7 @@
 	branch = stable
 [submodule "external/ethyl"]
 	path = external/ethyl
-	url = git@github.com:oxen-io/ethyl.git
+	url = https://github.com/oxen-io/ethyl.git
 [submodule "external/bls"]
 	path = external/bls
-	url = git@github.com:herumi/bls.git
+	url = https://github.com/herumi/bls.git
