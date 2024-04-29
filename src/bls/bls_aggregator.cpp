@@ -8,9 +8,6 @@ BLSAggregator::BLSAggregator(service_nodes::service_node_list& _snl, std::shared
     : service_node_list(_snl), omq(std::move(_omq)), bls_signer(std::move(_bls_signer)) {
 }
 
-BLSAggregator::~BLSAggregator() {
-}
-
 std::vector<std::pair<std::string, std::string>> BLSAggregator::getPubkeys() {
     std::vector<std::pair<std::string, std::string>> pubkeys;
     std::mutex pubkeys_mutex;

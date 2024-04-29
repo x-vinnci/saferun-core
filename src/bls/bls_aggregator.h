@@ -58,7 +58,6 @@ private:
 
 public:
     BLSAggregator(service_nodes::service_node_list& _snl, std::shared_ptr<oxenmq::OxenMQ> _omq, std::shared_ptr<BLSSigner> _bls_signer);
-    ~BLSAggregator();
 
     std::vector<std::pair<std::string, std::string>> getPubkeys();
     aggregateWithdrawalResponse aggregateRewards(const std::string& address);
