@@ -58,12 +58,16 @@ aggregateWithdrawalResponse BLSAggregator::aggregateRewards(const std::string& a
                     // Data contains -> status, address, amount, height, bls_pubkey, signed message, signature
                     uint64_t current_amount = std::stoull(data[2]);
                     uint64_t current_height = std::stoull(data[3]);
+
+                    signers_mutex.lock();
                     if (!initial_data_set) {
                         amount = current_amount;
                         height = current_height;
                         signed_message = data[5];
                         initial_data_set = true;
                     } 
+                    signers_mutex.unlock();
+
                     if (data[1] != lower_eth_address || current_amount != amount || current_height != height || data[5] != signed_message) {
                         // Log if the current data doesn't match the first set
                         oxen::log::warning(logcat, "Mismatch in data from node with bls pubkey {}. Expected address: {}, amount: {}, height: {} signed message: {}. Received address: {} amount: {}, height: {} signed_message: {}.", data[4], lower_eth_address, amount, height, signed_message, data[1], current_amount, current_height, data[5]);
@@ -104,10 +108,12 @@ aggregateExitResponse BLSAggregator::aggregateExit(const std::string& bls_key) {
                 if (data[0] == "200") {
 
                     // Data contains -> status, bls_pubkey (signer), bls_pubkey (node being removed), signed message, signature
+                    signers_mutex.lock();
                     if (!initial_data_set) {
                         signed_message = data[3];
                         initial_data_set = true;
                     } 
+                    signers_mutex.unlock();
                     if (data[1] != bls_key || data[3] != signed_message) {
                         // Log if the current data doesn't match the first set
                         oxen::log::warning(logcat, "Mismatch in data from node with bls pubkey {}. Expected bls_key: {}, signed message: {}. Received bls_key: {}, signed_message: {}.", data[2], bls_key, signed_message, data[1], data[3]);
@@ -148,10 +154,13 @@ aggregateExitResponse BLSAggregator::aggregateLiquidation(const std::string& bls
                 if (data[0] == "200") {
 
                     // Data contains -> status, bls_pubkey (signer), bls_pubkey (node being removed), signed message, signature
+                    signers_mutex.lock();
                     if (!initial_data_set) {
                         signed_message = data[3];
                         initial_data_set = true;
                     } 
+                    signers_mutex.unlock();
+
                     if (data[1] != bls_key || data[3] != signed_message) {
                         // Log if the current data doesn't match the first set
                         oxen::log::warning(logcat, "Mismatch in data from node with bls pubkey {}. Expected bls_key: {}, signed message: {}. Received bls_key: {}, signed_message: {}.", data[2], bls_key, signed_message, data[1], data[3]);
