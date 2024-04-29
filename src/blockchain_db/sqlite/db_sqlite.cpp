@@ -185,8 +185,7 @@ void BlockchainSQLite::upgrade_schema() {
         log::info(logcat, "Adding eth mapping table to batching db");
         auto& netconf = get_config(m_nettype);
         SQLite::Transaction transaction{db, SQLite::TransactionBehavior::IMMEDIATE};
-        db.exec(fmt::format(
-                R"(
+        db.exec(R"(
         CREATE TABLE eth_mapping(
           oxen_address VARCHAR NOT NULL,
           eth_address VARCHAR NOT NULL,
@@ -196,7 +195,7 @@ void BlockchainSQLite::upgrade_schema() {
         );
 
         CREATE INDEX eth_mapping_eth_address_idx ON eth_mapping(eth_address);
-        )"));
+        )");
     }
 
     const auto archive_table_count = prepared_get<int64_t>(
