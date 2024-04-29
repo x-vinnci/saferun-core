@@ -181,7 +181,7 @@ void BlockchainSQLite::upgrade_schema() {
     const auto eth_mapping_table_count = prepared_get<int64_t>(
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND "
             "name='eth_mapping';");
-    if (!eth_mapping_table_count == 0) {
+    if (eth_mapping_table_count == 0) {
         log::info(logcat, "Adding eth mapping table to batching db");
         auto& netconf = get_config(m_nettype);
         SQLite::Transaction transaction{db, SQLite::TransactionBehavior::IMMEDIATE};
