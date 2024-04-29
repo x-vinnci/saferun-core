@@ -1020,7 +1020,7 @@ uint64_t BlockchainLMDB::add_transaction_data(
                                  .c_str()));
     } else if (result != MDB_NOTFOUND) {
         throw1(DB_ERROR(lmdb_error(
-                "error checking if tx index exists for tx hash " + tools::type_to_hex(tx_hash) +
+                "Error checking if tx index exists for tx hash " + tools::type_to_hex(tx_hash) +
                         ": ",
                 result)));
     }
@@ -1137,7 +1137,7 @@ void BlockchainLMDB::remove_transaction_data(const crypto::hash& tx_hash, const 
         result = mdb_cursor_del(m_cur_txs_prunable_tip, 0);
         if (result)
             throw1(DB_ERROR(
-                    lmdb_error("error adding removal of tx id to db transaction", result).c_str()));
+                    lmdb_error("Error adding removal of tx id to db transaction", result).c_str()));
     }
 
     if (tx.version >= cryptonote::txversion::v2_ringct) {
@@ -1310,12 +1310,12 @@ void BlockchainLMDB::remove_output(const uint64_t amount, const uint64_t& out_in
         throw0(DB_ERROR("Unexpected: global output index not found in m_output_txs"));
     } else if (result) {
         throw1(DB_ERROR(
-                lmdb_error("error adding removal of output tx to db transaction", result).c_str()));
+                lmdb_error("Error adding removal of output tx to db transaction", result).c_str()));
     }
     result = mdb_cursor_del(m_cur_output_txs, 0);
     if (result)
         throw0(DB_ERROR(lmdb_error(
-                                std::string("error deleting output index ")
+                                std::string("Error deleting output index ")
                                         .append(std::to_string(out_index).append(": "))
                                         .c_str(),
                                 result)
@@ -1325,7 +1325,7 @@ void BlockchainLMDB::remove_output(const uint64_t amount, const uint64_t& out_in
     result = mdb_cursor_del(m_cur_output_amounts, 0);
     if (result)
         throw0(DB_ERROR(lmdb_error(
-                                std::string("error deleting amount for output index ")
+                                std::string("Error deleting amount for output index ")
                                         .append(std::to_string(out_index).append(": "))
                                         .c_str(),
                                 result)
@@ -1347,7 +1347,7 @@ void BlockchainLMDB::prune_outputs(uint64_t amount) {
     if (result == MDB_NOTFOUND)
         return;
     if (result)
-        throw0(DB_ERROR(lmdb_error("error looking up outputs: ", result).c_str()));
+        throw0(DB_ERROR(lmdb_error("Error looking up outputs: ", result).c_str()));
 
     // gather output ids
     mdb_size_t num_elems;
@@ -1363,23 +1363,23 @@ void BlockchainLMDB::prune_outputs(uint64_t amount) {
         if (result == MDB_NOTFOUND)
             break;
         if (result)
-            throw0(DB_ERROR(lmdb_error("error counting outputs: ", result).c_str()));
+            throw0(DB_ERROR(lmdb_error("Error counting outputs: ", result).c_str()));
     }
     if (output_ids.size() != num_elems)
         throw0(DB_ERROR("Unexpected number of outputs"));
 
     result = mdb_cursor_del(m_cur_output_amounts, MDB_NODUPDATA);
     if (result)
-        throw0(DB_ERROR(lmdb_error("error deleting outputs: ", result).c_str()));
+        throw0(DB_ERROR(lmdb_error("Error deleting outputs: ", result).c_str()));
 
     for (uint64_t output_id : output_ids) {
         MDB_val_set(v, output_id);
         result = mdb_cursor_get(m_cur_output_txs, (MDB_val*)&zerokval, &v, MDB_GET_BOTH);
         if (result)
-            throw0(DB_ERROR(lmdb_error("error looking up output: ", result).c_str()));
+            throw0(DB_ERROR(lmdb_error("Error looking up output: ", result).c_str()));
         result = mdb_cursor_del(m_cur_output_txs, 0);
         if (result)
-            throw0(DB_ERROR(lmdb_error("error deleting output: ", result).c_str()));
+            throw0(DB_ERROR(lmdb_error("Error deleting output: ", result).c_str()));
     }
 }
 
@@ -1395,7 +1395,7 @@ void BlockchainLMDB::add_spent_key(const crypto::key_image& k_image) {
         if (result == MDB_KEYEXIST)
             throw1(KEY_IMAGE_EXISTS("Attempting to add spent key image that's already in the db"));
         else
-            throw1(DB_ERROR(lmdb_error("error adding spent key image to db transaction: ", result)
+            throw1(DB_ERROR(lmdb_error("Error adding spent key image to db transaction: ", result)
                                     .c_str()));
     }
 }
@@ -1410,12 +1410,12 @@ void BlockchainLMDB::remove_spent_key(const crypto::key_image& k_image) {
     MDB_val k = {sizeof(k_image), (void*)&k_image};
     auto result = mdb_cursor_get(m_cur_spent_keys, (MDB_val*)&zerokval, &k, MDB_GET_BOTH);
     if (result != 0 && result != MDB_NOTFOUND)
-        throw1(DB_ERROR(lmdb_error("error finding spent key to remove", result).c_str()));
+        throw1(DB_ERROR(lmdb_error("Error finding spent key to remove", result).c_str()));
     if (!result) {
         result = mdb_cursor_del(m_cur_spent_keys, 0);
         if (result)
             throw1(DB_ERROR(
-                    lmdb_error("error adding removal of key image to db transaction", result)
+                    lmdb_error("Error adding removal of key image to db transaction", result)
                             .c_str()));
     }
 }
@@ -2001,18 +2001,18 @@ void BlockchainLMDB::add_txpool_tx(
             throw1(DB_ERROR("Attempting to add txpool tx metadata that's already in the db"));
         else
             throw1(DB_ERROR(
-                    lmdb_error("error adding txpool tx metadata to db transaction: ", result)
+                    lmdb_error("Error adding txpool tx metadata to db transaction: ", result)
                             .c_str()));
     }
     MDB_val_sized(blob_val, blob);
     if (blob_val.mv_size == 0)
-        throw1(DB_ERROR("error adding txpool tx blob: tx is present, but data is empty"));
+        throw1(DB_ERROR("Error adding txpool tx blob: tx is present, but data is empty"));
     if (auto result = mdb_cursor_put(m_cur_txpool_blob, &k, &blob_val, MDB_NODUPDATA)) {
         if (result == MDB_KEYEXIST)
             throw1(DB_ERROR("Attempting to add txpool tx blob that's already in the db"));
         else
             throw1(DB_ERROR(
-                    lmdb_error("error adding txpool tx blob to db transaction: ", result).c_str()));
+                    lmdb_error("Error adding txpool tx blob to db transaction: ", result).c_str()));
     }
 }
 
@@ -2028,11 +2028,11 @@ void BlockchainLMDB::update_txpool_tx(const crypto::hash& txid, const txpool_tx_
     MDB_val v;
     auto result = mdb_cursor_get(m_cur_txpool_meta, &k, &v, MDB_SET);
     if (result != 0)
-        throw1(DB_ERROR(lmdb_error("error finding txpool tx meta to update: ", result).c_str()));
+        throw1(DB_ERROR(lmdb_error("Error finding txpool tx meta to update: ", result).c_str()));
     result = mdb_cursor_del(m_cur_txpool_meta, 0);
     if (result)
         throw1(DB_ERROR(
-                lmdb_error("error adding removal of txpool tx metadata to db transaction: ", result)
+                lmdb_error("Error adding removal of txpool tx metadata to db transaction: ", result)
                         .c_str()));
     v = MDB_val({sizeof(meta), (void*)&meta});
     if ((result = mdb_cursor_put(m_cur_txpool_meta, &k, &v, MDB_NODUPDATA)) != 0) {
@@ -2040,7 +2040,7 @@ void BlockchainLMDB::update_txpool_tx(const crypto::hash& txid, const txpool_tx_
             throw1(DB_ERROR("Attempting to add txpool tx metadata that's already in the db"));
         else
             throw1(DB_ERROR(
-                    lmdb_error("error adding txpool tx metadata to db transaction: ", result)
+                    lmdb_error("Error adding txpool tx metadata to db transaction: ", result)
                             .c_str()));
     }
 }
@@ -2096,7 +2096,7 @@ bool BlockchainLMDB::txpool_has_tx(const crypto::hash& txid) const {
     MDB_val k = {sizeof(txid), (void*)&txid};
     auto result = mdb_cursor_get(m_cur_txpool_meta, &k, NULL, MDB_SET);
     if (result != 0 && result != MDB_NOTFOUND)
-        throw1(DB_ERROR(lmdb_error("error finding txpool tx meta: ", result).c_str()));
+        throw1(DB_ERROR(lmdb_error("Error finding txpool tx meta: ", result).c_str()));
     return result != MDB_NOTFOUND;
 }
 
@@ -2111,24 +2111,24 @@ void BlockchainLMDB::remove_txpool_tx(const crypto::hash& txid) {
     MDB_val k = {sizeof(txid), (void*)&txid};
     auto result = mdb_cursor_get(m_cur_txpool_meta, &k, NULL, MDB_SET);
     if (result != 0 && result != MDB_NOTFOUND)
-        throw1(DB_ERROR(lmdb_error("error finding txpool tx meta to remove: ", result).c_str()));
+        throw1(DB_ERROR(lmdb_error("Error finding txpool tx meta to remove: ", result).c_str()));
     if (!result) {
         result = mdb_cursor_del(m_cur_txpool_meta, 0);
         if (result)
             throw1(DB_ERROR(lmdb_error(
-                                    "error adding removal of txpool tx metadata to db "
+                                    "Error adding removal of txpool tx metadata to db "
                                     "transaction: ",
                                     result)
                                     .c_str()));
     }
     result = mdb_cursor_get(m_cur_txpool_blob, &k, NULL, MDB_SET);
     if (result != 0 && result != MDB_NOTFOUND)
-        throw1(DB_ERROR(lmdb_error("error finding txpool tx blob to remove: ", result).c_str()));
+        throw1(DB_ERROR(lmdb_error("Error finding txpool tx blob to remove: ", result).c_str()));
     if (!result) {
         result = mdb_cursor_del(m_cur_txpool_blob, 0);
         if (result)
             throw1(DB_ERROR(
-                    lmdb_error("error adding removal of txpool tx blob to db transaction: ", result)
+                    lmdb_error("Error adding removal of txpool tx blob to db transaction: ", result)
                             .c_str()));
     }
 }
@@ -2146,7 +2146,7 @@ bool BlockchainLMDB::get_txpool_tx_meta(const crypto::hash& txid, txpool_tx_meta
     if (result == MDB_NOTFOUND)
         return false;
     if (result != 0)
-        throw1(DB_ERROR(lmdb_error("error finding txpool tx meta: ", result).c_str()));
+        throw1(DB_ERROR(lmdb_error("Error finding txpool tx meta: ", result).c_str()));
 
     meta = *(const txpool_tx_meta_t*)v.mv_data;
     return true;
@@ -2165,10 +2165,10 @@ bool BlockchainLMDB::get_txpool_tx_blob(const crypto::hash& txid, std::string& b
     if (result == MDB_NOTFOUND)
         return false;
     if (result != 0)
-        throw1(DB_ERROR(lmdb_error("error finding txpool tx blob: ", result).c_str()));
+        throw1(DB_ERROR(lmdb_error("Error finding txpool tx blob: ", result).c_str()));
 
     if (v.mv_size == 0)
-        throw1(DB_ERROR("error finding txpool tx blob: tx is present, but data is empty"));
+        throw1(DB_ERROR("Error finding txpool tx blob: tx is present, but data is empty"));
 
     bd.assign(reinterpret_cast<const char*>(v.mv_data), v.mv_size);
     return true;
@@ -2395,7 +2395,7 @@ bool BlockchainLMDB::prune_worker(int mode, uint32_t pruning_seed) {
                     result = mdb_cursor_get(c_txs_prunable_tip, &kp, &vp, MDB_SET);
                     if (result && result != MDB_NOTFOUND)
                         throw0(DB_ERROR(
-                                lmdb_error("error looking for transaction prunable data: ", result)
+                                lmdb_error("Error looking for transaction prunable data: ", result)
                                         .c_str()));
                     if (result == MDB_NOTFOUND)
                         log::error(
@@ -2409,7 +2409,7 @@ bool BlockchainLMDB::prune_worker(int mode, uint32_t pruning_seed) {
                     result = mdb_cursor_put(c_txs_prunable_tip, &kp, &vp, 0);
                     if (result && result != MDB_NOTFOUND)
                         throw0(DB_ERROR(
-                                lmdb_error("error looking for transaction prunable data: ", result)
+                                lmdb_error("Error looking for transaction prunable data: ", result)
                                         .c_str()));
                 }
             }
@@ -2419,7 +2419,7 @@ bool BlockchainLMDB::prune_worker(int mode, uint32_t pruning_seed) {
                 result = mdb_cursor_get(c_txs_prunable, &kp, &v, MDB_SET);
                 if (result && result != MDB_NOTFOUND)
                     throw0(DB_ERROR(
-                            lmdb_error("error looking for transaction prunable data: ", result)
+                            lmdb_error("Error looking for transaction prunable data: ", result)
                                     .c_str()));
                 if (mode == prune_mode_check) {
                     if (result != MDB_NOTFOUND)
@@ -2457,7 +2457,7 @@ bool BlockchainLMDB::prune_worker(int mode, uint32_t pruning_seed) {
                     result = mdb_cursor_get(c_txs_prunable, &kp, &v, MDB_SET);
                     if (result && result != MDB_NOTFOUND)
                         throw0(DB_ERROR(
-                                lmdb_error("error looking for transaction prunable data: ", result)
+                                lmdb_error("Error looking for transaction prunable data: ", result)
                                         .c_str()));
                     if (result == MDB_NOTFOUND)
                         log::error(
@@ -2756,7 +2756,7 @@ T BlockchainLMDB::get_and_convert_block_blob_from_height(uint64_t height) const 
                                  .append(" failed -- block not in db")
                                  .c_str()));
     else if (get_result)
-        throw0(DB_ERROR("error attempting to retrieve a block from the db"));
+        throw0(DB_ERROR("Error attempting to retrieve a block from the db"));
 
     std::string_view blob{reinterpret_cast<const char*>(value.mv_data), value.mv_size};
 
@@ -2801,7 +2801,7 @@ uint64_t BlockchainLMDB::get_block_height(const crypto::hash& h) const {
                 "Attempted to retrieve non-existent block height from hash " +
                 tools::type_to_hex(h)));
     else if (get_result)
-        throw0(DB_ERROR("error attempting to retrieve a block height from the db"));
+        throw0(DB_ERROR("Error attempting to retrieve a block height from the db"));
 
     blk_height* bhp = (blk_height*)key.mv_data;
     uint64_t ret = bhp->bh_height;
@@ -2834,7 +2834,7 @@ uint64_t BlockchainLMDB::get_block_timestamp(const uint64_t& height) const {
                                  .append(" failed -- timestamp not in db")
                                  .c_str()));
     } else if (get_result)
-        throw0(DB_ERROR("error attempting to retrieve a timestamp from the db"));
+        throw0(DB_ERROR("Error attempting to retrieve a timestamp from the db"));
 
     mdb_block_info* bi = (mdb_block_info*)result.mv_data;
     uint64_t ret = bi->bi_timestamp;
@@ -2893,7 +2893,7 @@ std::vector<uint64_t> BlockchainLMDB::get_block_cumulative_rct_outputs(
             }
             if (result)
                 throw0(DB_ERROR(lmdb_error(
-                                        "error attempting to retrieve rct distribution from the "
+                                        "Error attempting to retrieve rct distribution from the "
                                         "db: ",
                                         result)
                                         .c_str()));
@@ -2934,7 +2934,7 @@ size_t BlockchainLMDB::get_block_weight(const uint64_t& height) const {
                                  .append(" failed -- block size not in db")
                                  .c_str()));
     } else if (get_result)
-        throw0(DB_ERROR("error attempting to retrieve a block size from the db"));
+        throw0(DB_ERROR("Error attempting to retrieve a block size from the db"));
 
     mdb_block_info* bi = (mdb_block_info*)result.mv_data;
     size_t ret = bi->bi_weight;
@@ -2985,7 +2985,7 @@ std::vector<uint64_t> BlockchainLMDB::get_block_info_64bit_fields(
             }
             if (result)
                 throw0(DB_ERROR(
-                        lmdb_error("error attempting to retrieve block_info from the db: ", result)
+                        lmdb_error("Error attempting to retrieve block_info from the db: ", result)
                                 .c_str()));
         }
         ret.push_back(
@@ -3069,7 +3069,7 @@ difficulty_type BlockchainLMDB::get_block_cumulative_difficulty(const uint64_t& 
                                  .append(" failed -- difficulty not in db")
                                  .c_str()));
     } else if (get_result)
-        throw0(DB_ERROR("error attempting to retrieve a cumulative difficulty from the db"));
+        throw0(DB_ERROR("Error attempting to retrieve a cumulative difficulty from the db"));
 
     mdb_block_info* bi = (mdb_block_info*)result.mv_data;
     difficulty_type ret = bi->bi_diff;
@@ -3106,7 +3106,7 @@ uint64_t BlockchainLMDB::get_block_already_generated_coins(const uint64_t& heigh
                                  .append(" failed -- block size not in db")
                                  .c_str()));
     } else if (get_result)
-        throw0(DB_ERROR("error attempting to retrieve a total generated coins from the db"));
+        throw0(DB_ERROR("Error attempting to retrieve a total generated coins from the db"));
 
     mdb_block_info* bi = (mdb_block_info*)result.mv_data;
     uint64_t ret = bi->bi_coins;
@@ -3128,7 +3128,7 @@ uint64_t BlockchainLMDB::get_block_long_term_weight(const uint64_t& height) cons
                                  .append(" failed -- block info not in db")
                                  .c_str()));
     } else if (get_result)
-        throw0(DB_ERROR("error attempting to retrieve a long term block weight from the db"));
+        throw0(DB_ERROR("Error attempting to retrieve a long term block weight from the db"));
 
     mdb_block_info* bi = (mdb_block_info*)result.mv_data;
     uint64_t ret = bi->bi_long_term_block_weight;
@@ -3151,7 +3151,7 @@ crypto::hash BlockchainLMDB::get_block_hash_from_height(const uint64_t& height) 
                                  .c_str()));
     } else if (get_result)
         throw0(DB_ERROR(
-                lmdb_error("error attempting to retrieve a block hash from the db: ", get_result)
+                lmdb_error("Error attempting to retrieve a block hash from the db: ", get_result)
                         .c_str()));
 
     mdb_block_info* bi = (mdb_block_info*)result.mv_data;
@@ -3571,7 +3571,7 @@ output_data_t BlockchainLMDB::get_output_key(
                                   std::to_string(amount) + ", index " + std::to_string(index))
                                   .c_str()));
     else if (get_result)
-        throw0(DB_ERROR("error attempting to retrieve an output pubkey from the db"));
+        throw0(DB_ERROR("Error attempting to retrieve an output pubkey from the db"));
 
     output_data_t ret;
     if (amount == 0) {
@@ -4498,7 +4498,7 @@ void BlockchainLMDB::get_output_key(
         } else if (get_result)
             throw0(DB_ERROR(
                     lmdb_error(
-                            "error attempting to retrieve an output pubkey from the db", get_result)
+                            "Error attempting to retrieve an output pubkey from the db", get_result)
                             .c_str()));
 
         if (amount == 0) {
@@ -4538,7 +4538,7 @@ void BlockchainLMDB::get_output_tx_and_index(
             throw1(OUTPUT_DNE("Attempting to get output by index, but key does not exist"));
         else if (get_result)
             throw0(DB_ERROR(
-                    lmdb_error("error attempting to retrieve an output from the db", get_result)
+                    lmdb_error("Error attempting to retrieve an output from the db", get_result)
                             .c_str()));
 
         const outkey* okp = (const outkey*)v.mv_data;
@@ -4785,7 +4785,7 @@ void BlockchainLMDB::add_alt_block(
         if (result == MDB_KEYEXIST)
             throw1(DB_ERROR("Attempting to add alternate block that's already in the db"));
         else
-            throw1(DB_ERROR(lmdb_error("error adding alternate block to db transaction: ", result)
+            throw1(DB_ERROR(lmdb_error("Error adding alternate block to db transaction: ", result)
                                     .c_str()));
     }
 }
@@ -4809,7 +4809,7 @@ bool BlockchainLMDB::get_alt_block(
 
     if (result)
         throw0(DB_ERROR(lmdb_error(
-                                "error attempting to retrieve alternate block " +
+                                "Error attempting to retrieve alternate block " +
                                         tools::type_to_hex(blkid) + " from the db: ",
                                 result)
                                 .c_str()));
@@ -4830,14 +4830,14 @@ void BlockchainLMDB::remove_alt_block(const crypto::hash& blkid) {
     int result = mdb_cursor_get(m_cur_alt_blocks, &k, &v, MDB_SET);
     if (result)
         throw0(DB_ERROR(lmdb_error(
-                                "error locating alternate block " + tools::type_to_hex(blkid) +
+                                "Error locating alternate block " + tools::type_to_hex(blkid) +
                                         " in the db: ",
                                 result)
                                 .c_str()));
     result = mdb_cursor_del(m_cur_alt_blocks, 0);
     if (result)
         throw0(DB_ERROR(lmdb_error(
-                                "error deleting alternate block " + tools::type_to_hex(blkid) +
+                                "Error deleting alternate block " + tools::type_to_hex(blkid) +
                                         " from the db: ",
                                 result)
                                 .c_str()));
@@ -4869,7 +4869,7 @@ void BlockchainLMDB::drop_alt_blocks() {
 
     auto result = mdb_drop(*txn_ptr, m_alt_blocks, 0);
     if (result)
-        throw1(DB_ERROR(lmdb_error("error dropping alternative blocks: ", result).c_str()));
+        throw1(DB_ERROR(lmdb_error("Error dropping alternative blocks: ", result).c_str()));
 
     TXN_POSTFIX_SUCCESS();
 }
@@ -4878,7 +4878,7 @@ bool BlockchainLMDB::is_read_only() const {
     unsigned int flags;
     auto result = mdb_env_get_flags(m_env, &flags);
     if (result)
-        throw0(DB_ERROR(lmdb_error("error getting database environment info: ", result).c_str()));
+        throw0(DB_ERROR(lmdb_error("Error getting database environment info: ", result).c_str()));
 
     if (flags & MDB_RDONLY)
         return true;
@@ -6794,10 +6794,10 @@ bool BlockchainLMDB::remove_service_node_proof(const crypto::public_key& pubkey)
     if (result == MDB_NOTFOUND)
         return false;
     if (result != MDB_SUCCESS)
-        throw0(DB_ERROR(lmdb_error("error finding service node proof to remove", result)));
+        throw0(DB_ERROR(lmdb_error("Error finding service node proof to remove", result)));
     result = mdb_cursor_del(m_cursors->service_node_proofs, 0);
     if (result)
-        throw0(DB_ERROR(lmdb_error("error remove service node proof", result)));
+        throw0(DB_ERROR(lmdb_error("Error remove service node proof", result)));
     return true;
 }
 
