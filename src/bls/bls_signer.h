@@ -17,6 +17,7 @@
 #include <memory>
 #include <oxenmq/oxenmq.h>
 #include "cryptonote_config.h"
+#include "common/fs.h"
 
 class BLSSigner {
 private:
@@ -28,9 +29,7 @@ private:
     void initCurve();
 
 public:
-    BLSSigner(const cryptonote::network_type nettype);
-    BLSSigner(const cryptonote::network_type nettype, bls::SecretKey _secretKey);
-    ~BLSSigner();
+    BLSSigner(const cryptonote::network_type nettype, fs::path key_filepath);
 
     bls::Signature signHash(const std::array<unsigned char, 32>& hash);
     std::string proofOfPossession(const std::string& senderEthAddress, const std::string& serviceNodePubkey);

@@ -619,6 +619,9 @@ bool core::init(
     }
     auto sqliteDB = std::make_shared<cryptonote::BlockchainSQLite>(m_nettype, sqlite_db_file_path);
 
+    auto bls_key_file_path = folder / "bls.key";
+    m_bls_signer = std::make_shared<BLSSigner>(m_nettype, bls_key_file_path);
+
     folder /= db->get_db_name();
     log::info(logcat, "Loading blockchain from folder {} ...", folder);
 
@@ -780,7 +783,6 @@ bool core::init(
     if (!ons_db)
         return false;
 
-    m_bls_signer = std::make_shared<BLSSigner>(m_nettype);
     init_oxenmq(vm);
     m_bls_aggregator = std::make_unique<BLSAggregator>(m_service_node_list, m_omq, m_bls_signer);
 

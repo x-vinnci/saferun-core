@@ -4,27 +4,32 @@
 #include "crypto/keccak.h"
 #include <oxenc/hex.h>
 #include "ethyl/utils.hpp"
+#include <fstream>
+#include <fmt/core.h>
 
 static auto logcat = oxen::log::Cat("bls_signer");
 
-BLSSigner::BLSSigner(const cryptonote::network_type nettype) {
+BLSSigner::BLSSigner(const cryptonote::network_type nettype, fs::path key_filepath) {
     initCurve();
+    const auto config = get_config(nettype);
+    chainID = config.ETHEREUM_CHAIN_ID;
+    contractAddress = config.ETHEREUM_REWARDS_CONTRACT;
     // This init function generates a secret key calling blsSecretKeySetByCSPRNG
     secretKey.init();
-    const auto config = get_config(nettype);
-    chainID = config.ETHEREUM_CHAIN_ID;
-    contractAddress = config.ETHEREUM_REWARDS_CONTRACT;
-}
+    if (fs::exists(key_filepath)) {
+        oxen::log::info(logcat, "Loading bls key from: {}", key_filepath.string());
+        fs::ifstream in{key_filepath, std::ios::in};
+        if (!in.good())
+            throw std::runtime_error(fmt::format("Failed to open input file for bls key {}", key_filepath.string()));
+        in >> secretKey;
+    } else {
+        oxen::log::info(logcat, "No bls key found, saving new key to: {}", key_filepath.string());
+        fs::ofstream out{key_filepath, std::ios::out};
+        if (!out.good())
+            throw std::runtime_error(fmt::format("Failed to open output file for bls key {}", key_filepath.string()));
+        out << secretKey;
+    }
 
-BLSSigner::BLSSigner(const cryptonote::network_type nettype, bls::SecretKey _secretKey) {
-    initCurve();
-    secretKey = _secretKey;
-    const auto config = get_config(nettype);
-    chainID = config.ETHEREUM_CHAIN_ID;
-    contractAddress = config.ETHEREUM_REWARDS_CONTRACT;
-}
-
-BLSSigner::~BLSSigner() {
 }
 
 void BLSSigner::initCurve() {
