@@ -326,8 +326,8 @@ bool BlockchainSQLite::update_sn_rewards_address(const std::string& oxen_address
             "UPDATE batched_payments_accrued SET address = ? WHERE address = ?"
             " ON CONFLICT (address) DO UPDATE SET amount = amount + excluded.amount"
             );
-    db::exec_query(update_address, tools::type_to_hex(eth_address), oxen_address);
-    return true;
+    bool result = db::exec_query(update_address, tools::type_to_hex(eth_address), oxen_address) > 0;
+    return result;
 }
 
 bool BlockchainSQLite::add_sn_rewards(const std::vector<cryptonote::batch_sn_payment>& payments) {
