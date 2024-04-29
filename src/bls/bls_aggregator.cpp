@@ -2,6 +2,20 @@
 
 #include "logging/oxen_logger.h"
 
+#define BLS_ETH
+#define MCLBN_FP_UNIT_SIZE 4
+#define MCLBN_FR_UNIT_SIZE 4
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#include <bls/bls.hpp>
+#include <mcl/bn.hpp>
+#undef MCLBN_NO_AUTOLINK
+#pragma GCC diagnostic pop
+
 static auto logcat = oxen::log::Cat("bls_aggregator");
 
 BLSAggregator::BLSAggregator(service_nodes::service_node_list& _snl, std::shared_ptr<oxenmq::OxenMQ> _omq, std::shared_ptr<BLSSigner> _bls_signer)
