@@ -28,13 +28,12 @@ std::vector<std::pair<std::string, std::string>> BLSAggregator::getPubkeys() {
 
     processNodes(
         "bls.pubkey_request",
-        [this, &pubkeys, &pubkeys_mutex](bool success, std::vector<std::string> data) {
+        [this, &pubkeys, &pubkeys_mutex](bool success, const std::vector<std::string>& data) {
             if (success) {
                 std::lock_guard<std::mutex> lock(pubkeys_mutex);
                 pubkeys.emplace_back(data[0], data[1]);
             }
-        },
-        [](){}
+        }
     );
 
     return pubkeys;
@@ -42,6 +41,86 @@ std::vector<std::pair<std::string, std::string>> BLSAggregator::getPubkeys() {
 
 blsRegistrationResponse BLSAggregator::registration(const std::string& senderEthAddress, const std::string& serviceNodePubkey) const {
     return blsRegistrationResponse{bls_signer->getPublicKeyHex(), bls_signer->proofOfPossession(senderEthAddress, serviceNodePubkey), senderEthAddress, serviceNodePubkey, ""};
+}
+
+void BLSAggregator::processNodes(std::string_view request_name, std::function<void(bool, const std::vector<std::string>&)> callback, const std::optional<std::string>& message) {
+    std::mutex connection_mutex;
+    std::condition_variable cv;
+    size_t active_connections = 0;
+    const size_t MAX_CONNECTIONS = 900;
+
+    // TODO sean, change this so instead of using an iterator do a for_each_service_node_info_and proof and pass a lambda
+    auto it = service_node_list.get_first_pubkey_iterator();
+    auto end_it = service_node_list.get_end_pubkey_iterator();
+    crypto::x25519_public_key x_pkey{0};
+    uint32_t ip = 0;
+    uint16_t port = 0;
+
+    while (it != end_it) {
+        service_node_list.access_proof(it->first, [&x_pkey, &ip, &port](auto& proof) {
+            x_pkey = proof.pubkey_x25519;
+            ip = proof.proof->public_ip;
+            port = proof.proof->qnet_port;
+        });
+        
+        //{
+            //std::unique_lock<std::mutex> connection_lock(connection_mutex);
+            //cv.wait(connection_lock, [&active_connections] { return active_connections < MAX_CONNECTIONS; });
+        //}
+        // TODO sean epee is always little, this will not work on big endian host
+        boost::asio::ip::address_v4 address(oxenc::host_to_big(ip));
+        oxenmq::address addr{"tcp://{}:{}"_format(address.to_string(), port), tools::view_guts(x_pkey)};
+
+        {
+            std::lock_guard<std::mutex> connection_lock(connection_mutex);
+            ++active_connections;
+        }
+        
+        auto conn = omq->connect_remote(
+            addr,
+            [](oxenmq::ConnectionID c) {
+                // Successfully connected
+            },
+            [](oxenmq::ConnectionID c, std::string_view err) {
+                // Failed to connect
+            },
+            oxenmq::AuthLevel::basic
+        );
+
+        if (message) {
+            omq->request(
+                conn,
+                request_name,
+                [this, &connection_mutex, &active_connections, &cv, &conn, callback](bool success, std::vector<std::string> data) {
+                    callback(success, data);
+                    std::lock_guard<std::mutex> connection_lock(connection_mutex);
+                    --active_connections;
+                    cv.notify_all();
+                    //omq->disconnect(c);
+                },
+                *message
+            );
+        } else {
+            omq->request(
+                conn,
+                request_name,
+                [this, &connection_mutex, &active_connections, &cv, &conn, callback](bool success, std::vector<std::string> data) {
+                    callback(success, data);
+                    std::lock_guard<std::mutex> connection_lock(connection_mutex);
+                    --active_connections;
+                    cv.notify_all();
+                    //omq->disconnect(c);
+                }
+            );
+        }
+
+        it = service_node_list.get_next_pubkey_iterator(it);
+    }
+
+    std::unique_lock<std::mutex> connection_lock(connection_mutex);
+    cv.wait(connection_lock, [&active_connections] {
+        return active_connections == 0;
+    });
 }
 
 aggregateWithdrawalResponse BLSAggregator::aggregateRewards(const std::string& address) {
@@ -62,7 +141,7 @@ aggregateWithdrawalResponse BLSAggregator::aggregateRewards(const std::string& a
 
     processNodes(
         "bls.get_reward_balance",
-        [this, &aggSig, &signers, &signers_mutex, &lower_eth_address, &amount, &height, &signed_message, &initial_data_set](bool success, std::vector<std::string> data) {
+        [this, &aggSig, &signers, &signers_mutex, &lower_eth_address, &amount, &height, &signed_message, &initial_data_set](bool success, const std::vector<std::string>& data) {
             if (success) {
                 if (data[0] == "200") {
 
@@ -97,7 +176,6 @@ aggregateWithdrawalResponse BLSAggregator::aggregateRewards(const std::string& a
                 oxen::log::warning(logcat, "OMQ not successful when getting reward balance");
             }
         },
-        []{}, // No post processing for this call
         lower_eth_address
     );
     const auto sig_str = bls_utils::SignatureToHex(aggSig);
@@ -114,7 +192,7 @@ aggregateExitResponse BLSAggregator::aggregateExit(const std::string& bls_key) {
 
     processNodes(
         "bls.get_exit",
-        [this, &aggSig, &signers, &signers_mutex, &bls_key, &signed_message, &initial_data_set](bool success, std::vector<std::string> data) {
+        [this, &aggSig, &signers, &signers_mutex, &bls_key, &signed_message, &initial_data_set](bool success, const std::vector<std::string>& data) {
             if (success) {
                 if (data[0] == "200") {
 
@@ -143,7 +221,6 @@ aggregateExitResponse BLSAggregator::aggregateExit(const std::string& bls_key) {
                 oxen::log::warning(logcat, "OMQ not successful when requesting exit");
             }
         },
-        []{}, // No post processing for this call
         bls_key
     );
     const auto sig_str = bls_utils::SignatureToHex(aggSig);
@@ -160,7 +237,7 @@ aggregateExitResponse BLSAggregator::aggregateLiquidation(const std::string& bls
 
     processNodes(
         "bls.get_liquidation",
-        [this, &aggSig, &signers, &signers_mutex, &bls_key, &signed_message, &initial_data_set](bool success, std::vector<std::string> data) {
+        [this, &aggSig, &signers, &signers_mutex, &bls_key, &signed_message, &initial_data_set](bool success, const std::vector<std::string>& data) {
             if (success) {
                 if (data[0] == "200") {
 
@@ -190,7 +267,6 @@ aggregateExitResponse BLSAggregator::aggregateLiquidation(const std::string& bls
                 oxen::log::warning(logcat, "OMQ not successful when requesting liquidation");
             }
         },
-        []{}, // No post processing for this call
         bls_key
     );
     const auto sig_str = bls_utils::SignatureToHex(aggSig);
