@@ -28,6 +28,7 @@
 
 add_library(l2_tracker
   rewards_contract.cpp
+  pool_contract.cpp
   l2_tracker.cpp
   )
 

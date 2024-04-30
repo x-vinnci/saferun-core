@@ -411,6 +411,7 @@ namespace config {
     // Details of the ethereum smart contract managing rewards and chain its kept on
     inline constexpr uint32_t ETHEREUM_CHAIN_ID = 31337;
     inline constexpr std::string_view ETHEREUM_REWARDS_CONTRACT = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
+    inline constexpr std::string_view ETHEREUM_POOL_CONTRACT = "0xe7f1725E7734CE288F8367e1Bb143E90bb3F0512";
 
     namespace testnet {
         inline constexpr uint64_t HEIGHT_ESTIMATE_HEIGHT = 339767;
@@ -549,6 +550,7 @@ struct network_config {
 
     uint32_t ETHEREUM_CHAIN_ID;
     std::string_view ETHEREUM_REWARDS_CONTRACT;
+    std::string_view ETHEREUM_POOL_CONTRACT;
 
     inline constexpr std::string_view governance_wallet_address(hf hard_fork_version) const {
         const auto wallet_switch =
@@ -587,6 +589,7 @@ inline constexpr network_config mainnet_config{
         config::STORE_LONG_TERM_STATE_INTERVAL,
         config::ETHEREUM_CHAIN_ID,
         config::ETHEREUM_REWARDS_CONTRACT,
+        config::ETHEREUM_POOL_CONTRACT,
 };
 inline constexpr network_config testnet_config{
         network_type::TESTNET,
@@ -617,6 +620,7 @@ inline constexpr network_config testnet_config{
         config::STORE_LONG_TERM_STATE_INTERVAL,
         config::ETHEREUM_CHAIN_ID,
         config::ETHEREUM_REWARDS_CONTRACT,
+        config::ETHEREUM_POOL_CONTRACT,
 };
 inline constexpr network_config devnet_config{
         network_type::DEVNET,
@@ -647,6 +651,7 @@ inline constexpr network_config devnet_config{
         config::STORE_LONG_TERM_STATE_INTERVAL,
         config::ETHEREUM_CHAIN_ID,
         config::ETHEREUM_REWARDS_CONTRACT,
+        config::ETHEREUM_POOL_CONTRACT,
 };
 inline constexpr network_config fakenet_config{
         network_type::FAKECHAIN,
@@ -677,6 +682,7 @@ inline constexpr network_config fakenet_config{
         config::STORE_LONG_TERM_STATE_INTERVAL,
         config::ETHEREUM_CHAIN_ID,
         config::ETHEREUM_REWARDS_CONTRACT,
+        config::ETHEREUM_POOL_CONTRACT,
 };
 
 inline constexpr const network_config& get_config(network_type nettype) {

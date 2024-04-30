@@ -12,7 +12,8 @@ L2Tracker::L2Tracker() {
 }
 
 L2Tracker::L2Tracker(const cryptonote::network_type nettype, const std::shared_ptr<Provider>& _provider) 
-    : rewards_contract(std::make_shared<RewardsContract>(get_contract_address(nettype), _provider)),
+    : rewards_contract(std::make_shared<RewardsContract>(get_rewards_contract_address(nettype), _provider)),
+      pool_contract(std::make_shared<PoolContract>(get_pool_contract_address(nettype), _provider)),
       stop_thread(false) {
     update_thread = std::thread(&L2Tracker::update_state_thread, this);
 }
@@ -126,8 +127,12 @@ std::shared_ptr<TransactionReviewSession> L2Tracker::initialize_mempool_review()
     return session;
 }
 
-std::string L2Tracker::get_contract_address(const cryptonote::network_type nettype) {
+std::string L2Tracker::get_rewards_contract_address(const cryptonote::network_type nettype) {
     return std::string(get_config(nettype).ETHEREUM_REWARDS_CONTRACT);
+}
+
+std::string L2Tracker::get_pool_contract_address(const cryptonote::network_type nettype) {
+    return std::string(get_config(nettype).ETHEREUM_POOL_CONTRACT);
 }
 
 void L2Tracker::populate_review_transactions(std::shared_ptr<TransactionReviewSession> session) {

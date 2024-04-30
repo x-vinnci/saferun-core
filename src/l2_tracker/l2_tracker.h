@@ -1,6 +1,7 @@
 #pragma once
 
 #include "rewards_contract.h"
+#include "pool_contract.h"
 #include "l2_tracker.h"
 #include "crypto/hash.h"
 
@@ -43,6 +44,7 @@ struct TransactionReviewSession {
 class L2Tracker {
 private:
     std::shared_ptr<RewardsContract> rewards_contract;
+    std::shared_ptr<PoolContract> pool_contract;
     std::vector<State> state_history;
     std::unordered_map<uint64_t, uint64_t> oxen_to_ethereum_block_heights; // Maps Oxen block height to Ethereum block height
     uint64_t latest_oxen_block;
@@ -77,7 +79,8 @@ public:
     std::vector<TransactionStateChangeVariant> get_block_transactions();
 
 private:
-    static std::string get_contract_address(const cryptonote::network_type nettype);
+    static std::string get_rewards_contract_address(const cryptonote::network_type nettype);
+    static std::string get_pool_contract_address(const cryptonote::network_type nettype);
     void get_review_transactions();
     void populate_review_transactions(std::shared_ptr<TransactionReviewSession> session);
     bool service_node = true;

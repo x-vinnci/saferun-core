@@ -16,8 +16,7 @@ TransactionType RewardsLogEntry::getLogType() const {
     // keccak256('NewServiceNode(uint64,address,(uint256,uint256),(uint256,uint256,uint256,uint16),(address,uint256)[])')
     if (topics[0] == "0xe82ed1bfc15e6602fba1a19273171c8a63c1d40b0e0117be4598167b8655498f") {
         return TransactionType::NewServiceNode;
-    // keccak256('ServiceNodeRemovalRequest(uint64,address,(uint256,uint256))')
-    } else if (topics[0] == "0x89477e9f4ddcb5eb9f30353ab22c31ef9a91ab33fd1ffef09aadb3458be7775d") {
+    // keccak256('ServiceNodeRemovalRequest(uint64,address,(uint256,uint256))') } else if (topics[0] == "0x89477e9f4ddcb5eb9f30353ab22c31ef9a91ab33fd1ffef09aadb3458be7775d") {
         return TransactionType::ServiceNodeLeaveRequest;
     // keccak256('ServiceNodeRemoval(uint64,address,uint256,(uint256,uint256))')
     } else if (topics[0] == "0x130a7be04ef1f87b2b436f68f389bf863ee179b95399a3a8444196fab7a4e54c") {
