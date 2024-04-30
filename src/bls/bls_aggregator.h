@@ -5,12 +5,7 @@
 
 #include "cryptonote_core/service_node_list.h"
 #include "bls_signer.h"
-#include "bls_utils.h"
 #include <oxenmq/oxenmq.h>
-
-#include <boost/asio.hpp>
-#include <oxenc/endian.h>
-#include "common/string_util.h"
 
 struct aggregateExitResponse {
     std::string bls_key;
@@ -36,6 +31,13 @@ struct blsRegistrationResponse  {
     std::string service_node_signature;
 };
 
+struct BLSRequestResult {
+    crypto::x25519_public_key x_pkey;
+    uint32_t                  ip;
+    uint32_t                  port;
+    bool                      success;
+};
+
 class BLSAggregator {
 private:
     std::shared_ptr<BLSSigner> bls_signer;
@@ -56,6 +58,8 @@ private:
   // reply `callback` will be called to process their reply
   void processNodes(
           std::string_view request_name,
-          std::function<void(bool success, const std::vector<std::string>& data)> callback,
+          std::function<void(
+                  const BLSRequestResult& request_result, const std::vector<std::string>& data)>
+                  callback,
           const std::optional<std::string>& message = std::nullopt);
 };
