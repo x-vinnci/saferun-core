@@ -78,26 +78,12 @@ void BLSAggregator::processNodes(std::string_view request_name, std::function<vo
             //std::unique_lock<std::mutex> connection_lock(connection_mutex);
             //cv.wait(connection_lock, [&active_connections] { return active_connections < MAX_CONNECTIONS; });
         //}
-        // TODO sean epee is always little, this will not work on big endian host
-        std::string ip_string = epee::string_tools::get_ip_string_from_int32(request_result.ip);
-        oxenmq::address addr{"tcp://{}:{}"_format(ip_string, request_result.port), tools::view_guts(request_result.x_pkey)};
-
         {
             std::lock_guard<std::mutex> connection_lock(connection_mutex);
             ++active_connections;
         }
-        
-        auto conn = omq->connect_remote(
-            addr,
-            [](oxenmq::ConnectionID c) {
-                // Successfully connected
-            },
-            [](oxenmq::ConnectionID c, std::string_view err) {
-                // Failed to connect
-            },
-            oxenmq::AuthLevel::basic
-        );
 
+        auto conn = omq->connect_sn(tools::view_guts(request_result.x_pkey), oxenmq::AuthLevel::basic);
         if (message) {
             omq->request(
                 conn,
