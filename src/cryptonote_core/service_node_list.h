@@ -199,6 +199,13 @@ struct pulse_sort_key {
     END_SERIALIZE()
 };
 
+struct service_node_address
+{
+    crypto::x25519_public_key x_pkey;
+    uint32_t                  ip;
+    uint16_t                  port;
+};
+
 struct service_node_info  // registration information
 {
     enum class version_t : uint8_t {
@@ -529,10 +536,6 @@ class service_node_list {
     // Returns a pubkey of a random service node in the service node list
     crypto::public_key get_random_pubkey();
 
-    service_nodes::service_nodes_infos_t::iterator get_first_pubkey_iterator();
-    service_nodes::service_nodes_infos_t::iterator get_next_pubkey_iterator(service_nodes::service_nodes_infos_t::iterator current_it);
-    service_nodes::service_nodes_infos_t::iterator get_end_pubkey_iterator();
-
     /// Initializes the x25519 map from current pubkey state; called during initialization
     void initialize_x25519_map();
 
@@ -571,6 +574,27 @@ class service_node_list {
                 continue;
             if (const auto& x2_pk = it->second.pubkey_x25519)
                 *out++ = std::string{reinterpret_cast<const char*>(&x2_pk), sizeof(x2_pk)};
+        }
+    }
+
+    /// Copies `service_node_addresses` of all currently active SNs into the given output
+    /// iterator
+    template <typename OutputIt>
+    void copy_active_service_node_addresses(OutputIt out) const {
+        std::lock_guard lock{m_sn_mutex};
+        for (const auto& pk_info : m_state.service_nodes_infos) {
+            if (!pk_info.second->is_active())
+                continue;
+            auto it = proofs.find(pk_info.first);
+            if (it == proofs.end())
+                continue;
+            if (const auto& x2_pk = it->second.pubkey_x25519) {
+                service_node_address address = {};
+                address.x_pkey = x2_pk;
+                address.ip = it->second.proof   ? it->second.proof->public_ip : 0;
+                address.port = it->second.proof ? it->second.proof->qnet_port : 0;
+                *out++ = address;
+            }
         }
     }
 

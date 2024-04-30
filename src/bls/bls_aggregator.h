@@ -32,10 +32,8 @@ struct blsRegistrationResponse  {
 };
 
 struct BLSRequestResult {
-    crypto::x25519_public_key x_pkey;
-    uint32_t                  ip;
-    uint32_t                  port;
-    bool                      success;
+    service_nodes::service_node_address sn_address;
+    bool                                success;
 };
 
 class BLSAggregator {

@@ -4203,27 +4203,6 @@ crypto::public_key service_node_list::get_random_pubkey() {
     }
 }
 
-// Function to get an iterator for the first service node info
-service_nodes::service_nodes_infos_t::iterator service_node_list::get_first_pubkey_iterator() {
-    std::lock_guard lock{m_sn_mutex};
-    return m_state.service_nodes_infos.begin();
-}
-
-// Function to get the next iterator in the list
-service_nodes::service_nodes_infos_t::iterator service_node_list::get_next_pubkey_iterator(service_nodes::service_nodes_infos_t::iterator current_it) {
-    std::lock_guard lock{m_sn_mutex};
-    if (current_it != m_state.service_nodes_infos.end()) {
-        return ++current_it;
-    } else {
-        return current_it;
-    }
-}
-
-service_nodes::service_nodes_infos_t::iterator service_node_list::get_end_pubkey_iterator() {
-    std::lock_guard lock{m_sn_mutex};
-    return m_state.service_nodes_infos.end();
-}
-
 void service_node_list::initialize_x25519_map() {
     auto locks = tools::unique_locks(m_sn_mutex, m_x25519_map_mutex);
 

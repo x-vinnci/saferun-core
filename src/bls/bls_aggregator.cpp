@@ -47,12 +47,12 @@ blsRegistrationResponse BLSAggregator::registration(const std::string& senderEth
 
 static void logNetworkRequestFailedWarning(const BLSRequestResult& result, std::string_view omq_cmd)
 {
-    std::string ip_string = epee::string_tools::get_ip_string_from_int32(result.ip);
+    std::string ip_string = epee::string_tools::get_ip_string_from_int32(result.sn_address.ip);
     oxen::log::warning(
             logcat,
             "OMQ network request to {} ({}:{}) failed when executing '{}'",
             ip_string,
-            std::to_string(result.ip),
+            std::to_string(result.sn_address.port),
             omq_cmd);
 }
 
@@ -62,28 +62,22 @@ void BLSAggregator::processNodes(std::string_view request_name, std::function<vo
     size_t active_connections = 0;
     const size_t MAX_CONNECTIONS = 900;
 
-    // TODO sean, change this so instead of using an iterator do a for_each_service_node_info_and proof and pass a lambda
-    auto it = service_node_list.get_first_pubkey_iterator();
-    auto end_it = service_node_list.get_end_pubkey_iterator();
-    while (it != end_it) {
+    std::vector<service_nodes::service_node_address> sn_nodes = {};
+    service_node_list.copy_active_service_node_addresses(std::back_inserter(sn_nodes));
 
-        BLSRequestResult request_result = {};
-        service_node_list.access_proof(it->first, [&request_result](auto& proof) {
-            request_result.x_pkey = proof.pubkey_x25519;
-            request_result.ip     = proof.proof->public_ip;
-            request_result.port   = proof.proof->qnet_port;
-        });
-
-        //{
-            //std::unique_lock<std::mutex> connection_lock(connection_mutex);
-            //cv.wait(connection_lock, [&active_connections] { return active_connections < MAX_CONNECTIONS; });
-        //}
-        {
+    for (const service_nodes::service_node_address& sn_address : sn_nodes) {
+        if (1) {
             std::lock_guard<std::mutex> connection_lock(connection_mutex);
             ++active_connections;
+        } else {
+            // TODO(doyle): Rate limit
+            std::unique_lock<std::mutex> connection_lock(connection_mutex);
+            cv.wait(connection_lock, [&active_connections] { return active_connections < MAX_CONNECTIONS; });
         }
 
-        auto conn = omq->connect_sn(tools::view_guts(request_result.x_pkey), oxenmq::AuthLevel::basic);
+        BLSRequestResult request_result = {};
+        request_result.sn_address = sn_address;
+        auto conn = omq->connect_sn(tools::view_guts(sn_address.x_pkey), oxenmq::AuthLevel::basic);
         if (message) {
             omq->request(
                 conn,
@@ -112,8 +106,6 @@ void BLSAggregator::processNodes(std::string_view request_name, std::function<vo
                 }
             );
         }
-
-        it = service_node_list.get_next_pubkey_iterator(it);
     }
 
     std::unique_lock<std::mutex> connection_lock(connection_mutex);
