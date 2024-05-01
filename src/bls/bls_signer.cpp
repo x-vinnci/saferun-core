@@ -1,32 +1,38 @@
 #include "bls_signer.h"
 #include "bls_utils.h"
+#include "common/file.h"
+#include "common/string_util.h"
 #include "logging/oxen_logger.h"
 #include <oxenc/hex.h>
-#include <fstream>
 #include <fmt/core.h>
 #include <ethyl/utils.hpp>
+#include <epee/memwipe.h>
 
 static auto logcat = oxen::log::Cat("bls_signer");
 
-BLSSigner::BLSSigner(const cryptonote::network_type nettype, fs::path key_filepath) {
+BLSSigner::BLSSigner(const cryptonote::network_type nettype, const fs::path& key_filepath) {
     initCurve();
     const auto config = get_config(nettype);
     chainID = config.ETHEREUM_CHAIN_ID;
     contractAddress = config.ETHEREUM_REWARDS_CONTRACT;
-    // This init function generates a secret key calling blsSecretKeySetByCSPRNG
-    secretKey.init();
     if (fs::exists(key_filepath)) {
         oxen::log::info(logcat, "Loading bls key from: {}", key_filepath.string());
-        fs::ifstream in{key_filepath, std::ios::in};
-        if (!in.good())
-            throw std::runtime_error(fmt::format("Failed to open input file for bls key {}", key_filepath.string()));
-        in >> secretKey;
+
+        std::string key_bytes;
+        bool r = tools::slurp_file(key_filepath, key_bytes);
+        secretKey.setStr(key_bytes);
+        memwipe(key_bytes.data(), key_bytes.size());
+        if (!r)
+            throw std::runtime_error(
+                    fmt::format("Failed to read BLS key at: {}", key_filepath.string()));
     } else {
+        // This init function generates a secret key calling blsSecretKeySetByCSPRNG
+        secretKey.init();
         oxen::log::info(logcat, "No bls key found, saving new key to: {}", key_filepath.string());
-        fs::ofstream out{key_filepath, std::ios::out};
-        if (!out.good())
-            throw std::runtime_error(fmt::format("Failed to open output file for bls key {}", key_filepath.string()));
-        out << secretKey;
+        bool r = tools::dump_file(key_filepath, tools::view_guts(secretKey));
+        if (!r)
+            throw std::runtime_error(
+                    fmt::format("Failed to write BLS key to: {}", key_filepath.string()));
     }
 }
 

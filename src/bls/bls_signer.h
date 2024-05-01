@@ -27,7 +27,7 @@ private:
     void initCurve();
 
 public:
-    BLSSigner(const cryptonote::network_type nettype, fs::path key_filepath);
+    BLSSigner(const cryptonote::network_type nettype, const fs::path& key_filepath);
 
     bls::Signature signHash(const crypto::bytes<32>& hash);
     std::string proofOfPossession(std::string_view senderEthAddress, std::string_view serviceNodePubkey);
