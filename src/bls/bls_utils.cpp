@@ -1,12 +1,26 @@
 #include "bls_utils.h"
 #include <oxenc/hex.h>
-#include "ethyl/utils.hpp"
+#include <cstring>
 
-std::string bls_utils::SignatureToHex(bls::Signature sig) {
-    mclSize serializedSignatureSize = 32;
-    std::vector<unsigned char> serialized_signature(serializedSignatureSize*4);
-    uint8_t *dst = serialized_signature.data();
-    const blsSignature* blssig = sig.getPtr();  
+#define BLS_ETH
+#define MCLBN_FP_UNIT_SIZE 4
+#define MCLBN_FR_UNIT_SIZE 4
+
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wshadow"
+#pragma GCC diagnostic ignored "-Wconversion"
+#pragma GCC diagnostic ignored "-Wsign-conversion"
+#include <bls/bls.hpp>
+#include <mcl/bn.hpp>
+#undef MCLBN_NO_AUTOLINK
+#pragma GCC diagnostic pop
+
+std::string bls_utils::SignatureToHex(const bls::Signature& sig) {
+    const mclSize serializedSignatureSize = 32;
+    std::array<char, serializedSignatureSize * 4> serialized_signature = {};
+    char* dst = serialized_signature.data();
+    const blsSignature* blssig = sig.getPtr();
     const mcl::bn::G2* g2Point = reinterpret_cast<const mcl::bn::G2*>(&blssig->v);
     mcl::bn::G2 g2Point2 = *g2Point;
     g2Point2.normalize();
@@ -21,19 +35,30 @@ std::string bls_utils::SignatureToHex(bls::Signature sig) {
     return oxenc::to_hex(serialized_signature.begin(), serialized_signature.end());
 }
 
-std::string bls_utils::PublicKeyToHex(bls::PublicKey publicKey) {
-    mclSize serializedPublicKeySize = 32;
-    std::vector<unsigned char> serialized_pubkey(serializedPublicKeySize*2);
-    uint8_t *dst = serialized_pubkey.data();
-    const blsPublicKey* pub = publicKey.getPtr();  
-    const mcl::bn::G1* g1Point = reinterpret_cast<const mcl::bn::G1*>(&pub->v);
-    mcl::bn::G1 g1Point2 = *g1Point;
-    g1Point2.normalize();
-    if (g1Point2.x.serialize(dst, serializedPublicKeySize, mcl::IoSerialize | mcl::IoBigEndian) == 0)
+std::string bls_utils::PublicKeyToHex(const bls::PublicKey& publicKey) {
+    const mclSize                                     KEY_SIZE         = 32;
+    std::array<char, KEY_SIZE * 2 /*X, Y component*/> serializedKeyHex = {};
+
+    char*               dst     = serializedKeyHex.data();
+    const blsPublicKey* rawKey  = publicKey.getPtr();
+
+    mcl::bn::G1 g1Point = {};
+    g1Point.clear();
+
+    // NOTE: const_cast is legal because the original g1Point was not declared
+    // const
+    static_assert(sizeof(*g1Point.x.getUnit()) * g1Point.x.maxSize == sizeof(rawKey->v.x.d),
+                  "We memcpy the key X,Y,Z component into G1 point's X,Y,Z component, hence, the sizes must match");
+    std::memcpy(const_cast<uint64_t*>(g1Point.x.getUnit()), rawKey->v.x.d, sizeof(rawKey->v.x.d));
+    std::memcpy(const_cast<uint64_t*>(g1Point.y.getUnit()), rawKey->v.y.d, sizeof(rawKey->v.y.d));
+    std::memcpy(const_cast<uint64_t*>(g1Point.z.getUnit()), rawKey->v.z.d, sizeof(rawKey->v.z.d));
+    g1Point.normalize();
+
+    if (g1Point.x.serialize(dst, KEY_SIZE, mcl::IoSerialize | mcl::IoBigEndian) == 0)
         throw std::runtime_error("size of x is zero");
-    if (g1Point2.y.serialize(dst + serializedPublicKeySize, serializedPublicKeySize, mcl::IoSerialize | mcl::IoBigEndian) == 0)
+    if (g1Point.y.serialize(dst + KEY_SIZE, KEY_SIZE, mcl::IoSerialize | mcl::IoBigEndian) == 0)
         throw std::runtime_error("size of y is zero");
 
-    return utils::toHexString(serialized_pubkey);
+    std::string result = oxenc::to_hex(serializedKeyHex.begin(), serializedKeyHex.end());
+    return result;
 }
-
