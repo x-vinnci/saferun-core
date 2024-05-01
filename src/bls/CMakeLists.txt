@@ -35,10 +35,10 @@ add_library(oxen_bls
 target_link_libraries(oxen_bls
   PUBLIC
     bls::bls256
-  PRIVATE
     cncrypto
-    common
     cryptonote_basic
+  PRIVATE
+    common
     logging
     ethyl
     extra)
