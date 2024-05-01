@@ -4255,22 +4255,20 @@ std::string service_node_list::remote_lookup(std::string_view xpk) {
     return "tcp://" + epee::string_tools::get_ip_string_from_int32(ip) + ":" + std::to_string(port);
 }
 
-crypto::public_key service_node_list::bls_public_key_lookup(crypto::bls_public_key bls_key) {
-    std::vector<crypto::public_key> sn_pks;
-    auto sns = get_service_node_list_state();
-    sn_pks.reserve(sns.size());
-    for (const auto& sni : sns)
-        sn_pks.push_back(sni.pubkey);
+crypto::public_key service_node_list::bls_public_key_lookup(const crypto::bls_public_key& bls_key) const {
     bool found = false;
     crypto::public_key found_pk;
-    for_each_service_node_info_and_proof(
-        sn_pks.begin(), sn_pks.end(), [&bls_key, &found, &found_pk](auto& pk, auto& sni, auto& proof) {
-            if (tools::view_guts(sni.bls_public_key) == tools::view_guts(bls_key)) {
-                found = true;
-                found_pk = pk;
+    {
+        std::lock_guard lock{m_sn_mutex};
+        for (auto it : m_state.service_nodes_infos) {
+            const service_node_info *sn_info = it.second.get();
+            if (tools::view_guts(sn_info->bls_public_key) == tools::view_guts(bls_key)) {
+                found    = true;
+                found_pk = it.first;
+                break;
             }
         }
-    );
+    }
 
     if (!found) {
         log::error(logcat, "Could not find bls key: {}", tools::type_to_hex(bls_key));
