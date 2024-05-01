@@ -1105,12 +1105,11 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                         "Bad request: BLS rewards command should have one data part containing the address"
                         "(received " +
                         std::to_string(m.data.size()) + ")");
-                std::string eth_address = std::string(m.data[0]);
-                if (eth_address.substr(0, 2) != "0x") {
+
+                std::string eth_address = tools::lowercase_ascii_string(m.data[0]);
+                if (!tools::starts_with(eth_address, "0x")) {
                     eth_address = "0x" + eth_address;
                 }
-                std::transform(eth_address.begin(), eth_address.end(), eth_address.begin(),
-                    [](unsigned char c){ return std::tolower(c); });
                 auto [batchdb_height, amount] = get_blockchain_storage().sqlite_db()->get_accrued_earnings(eth_address);
                 if (amount == 0)
                     m.send_reply("400", "Address has a zero balance in the database");
