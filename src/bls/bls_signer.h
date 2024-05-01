@@ -40,9 +40,9 @@ public:
     static crypto::bytes<32> hash(std::string_view in);
     static crypto::bytes<32> hashModulus(std::string_view message);
 
-    static constexpr std::string_view proofOfPossessionTag = "BLS_SIG_TRYANDINCREMENT_POP"sv;
-    static constexpr std::string_view rewardTag = "BLS_SIG_TRYANDINCREMENT_REWARD"sv;
-    static constexpr std::string_view removalTag = "BLS_SIG_TRYANDINCREMENT_REMOVE"sv;
-    static constexpr std::string_view liquidateTag = "BLS_SIG_TRYANDINCREMENT_LIQUIDATE"sv;
+    static constexpr inline std::string_view proofOfPossessionTag = "BLS_SIG_TRYANDINCREMENT_POP";
+    static constexpr inline std::string_view rewardTag = "BLS_SIG_TRYANDINCREMENT_REWARD";
+    static constexpr inline std::string_view removalTag = "BLS_SIG_TRYANDINCREMENT_REMOVE";
+    static constexpr inline std::string_view liquidateTag = "BLS_SIG_TRYANDINCREMENT_LIQUIDATE";
 };
 

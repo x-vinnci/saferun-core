@@ -2,9 +2,9 @@
 #include "bls_utils.h"
 #include "logging/oxen_logger.h"
 #include <oxenc/hex.h>
-#include "ethyl/utils.hpp"
 #include <fstream>
 #include <fmt/core.h>
+#include <ethyl/utils.hpp>
 
 static auto logcat = oxen::log::Cat("bls_signer");
 
