@@ -78,6 +78,8 @@ public:
     std::pair<uint64_t, crypto::hash> latest_state();
     std::vector<TransactionStateChangeVariant> get_block_transactions();
 
+    uint64_t get_pool_block_reward(uint64_t timestamp, uint64_t ethereum_block_height);
+
 private:
     static std::string get_rewards_contract_address(const cryptonote::network_type nettype);
     static std::string get_pool_contract_address(const cryptonote::network_type nettype);

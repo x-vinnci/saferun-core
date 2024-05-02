@@ -279,3 +279,7 @@ bool TransactionReviewSession::finalize_review() {
 }
 
 
+uint64_t L2Tracker::get_pool_block_reward(uint64_t timestamp, uint64_t ethereum_block_height) {
+    const auto response = pool_contract->RewardRate(timestamp, ethereum_block_height);
+    return response.reward;
+}

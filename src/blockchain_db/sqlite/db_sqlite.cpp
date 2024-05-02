@@ -513,8 +513,9 @@ bool BlockchainSQLite::reward_handler(
         throw std::logic_error{"Reward distribution amount is too large"};
 
     uint64_t block_reward = block.reward * BATCH_REWARD_FACTOR;
-    uint64_t service_node_reward =
+    uint64_t service_node_reward = block.major_version >= hf::hf20 ? block_reward :
             cryptonote::service_node_reward_formula(0, block.major_version) * BATCH_REWARD_FACTOR;
+
 
     std::vector<cryptonote::batch_sn_payment> payments;
 
@@ -563,8 +564,7 @@ bool BlockchainSQLite::reward_handler(
     }
 
     // Step 3: Add Governance reward to the list
-    // TODO sean governance ethereum address
-    if (m_nettype != cryptonote::network_type::FAKECHAIN) {
+    if (m_nettype != cryptonote::network_type::FAKECHAIN && block.major_version < hf::hf20) {
         if (parsed_governance_addr.first != block.major_version) {
             cryptonote::get_account_address_from_str(
                     parsed_governance_addr.second,

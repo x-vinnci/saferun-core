@@ -1531,7 +1531,7 @@ bool Blockchain::validate_miner_transaction(
 
     if (money_in_use > max_money_in_use) {
         log::error(
-                log::Cat("verify"),
+                logcat,
                 "coinbase transaction spends too much money ({}). Maximum block reward is {} (= {} "
                 "base + {} fees)",
                 print_money(money_in_use),
@@ -1549,17 +1549,31 @@ bool Blockchain::validate_miner_transaction(
 
     //TODO sean check here that L2 height is reasonable (doesnt go backwards, isn't in future assuming eth blocks issued once every 6 seconds)
 
-    if (b.reward >
-        reward_parts.base_miner + reward_parts.miner_fee + reward_parts.service_node_total) {
-        log::error(
-                log::Cat("verify"),
-                "block reward to be batched spends too much money ({}). Maximum block reward is {} "
-                "(= {} base + {} fees)",
-                print_money(b.reward),
-                print_money(max_money_in_use),
-                print_money(max_base_reward),
-                print_money(reward_parts.miner_fee));
-        return false;
+
+
+    if (version <= hf::hf19_reward_batching) {
+        if (b.reward >
+            reward_parts.base_miner + reward_parts.miner_fee + reward_parts.service_node_total) {
+            log::error(
+                    logcat,
+                    "block reward to be batched spends too much money ({}). Maximum block reward is {} "
+                    "(= {} base + {} fees)",
+                    print_money(b.reward),
+                    print_money(max_money_in_use),
+                    print_money(max_base_reward),
+                    print_money(reward_parts.miner_fee));
+            return false;
+        }
+    } else {
+        const auto pool_block_reward = m_l2_tracker->get_pool_block_reward(b.timestamp, b.l2_height);
+        if (b.reward != pool_block_reward) {
+            log::error(
+                    logcat,
+                    "block reward to be batched is incorrect({}). Block reward is {}, should be {}",
+                    print_money(b.reward),
+                    print_money(pool_block_reward));
+            return false;
+        }
     }
 
 
@@ -1769,7 +1783,6 @@ bool Blockchain::create_block_template_internal(
     size_t txs_weight;
     uint64_t fee;
 
-    //TODO sean
     if (hf_version >= cryptonote::feature::ETH_BLS)
         std::tie(b.l2_height, b.l2_state) = m_l2_tracker->latest_state();
 
@@ -1827,7 +1840,7 @@ bool Blockchain::create_block_template_internal(
     CHECK_AND_ASSERT_MES(r, false, "Failed to construct miner tx, first chance");
     size_t cumulative_weight = txs_weight + get_transaction_weight(b.miner_tx);
     for (size_t try_count = 0; try_count != 10; ++try_count) {
-        auto [r, block_rewards] = construct_miner_tx(
+        std::tie(r, block_rewards) = construct_miner_tx(
                 height,
                 median_weight,
                 already_generated_coins,
@@ -1894,6 +1907,10 @@ bool Blockchain::create_block_template_internal(
             b.service_node_winner_key = miner_tx_context.pulse_block_producer.key;
         else
             b.service_node_winner_key = crypto::null<crypto::public_key>;
+
+        if (hf_version >= cryptonote::feature::ETH_BLS) {
+            block_rewards = m_l2_tracker->get_pool_block_reward(b.timestamp, b.l2_height);
+        }
 
         b.reward = block_rewards;
         b.height = height;
