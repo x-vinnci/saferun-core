@@ -582,13 +582,6 @@ bool core::init(
     bool keep_alt_blocks = command_line::get_arg(vm, arg_keep_alt_blocks);
     bool keep_fakechain = command_line::get_arg(vm, arg_keep_fakechain);
 
-    r = init_service_keys();
-    CHECK_AND_ASSERT_MES(r, false, "Failed to create or load service keys");
-    if (m_service_node) {
-        // Only use our service keys for our service node if we are running in SN mode:
-        m_service_node_list.set_my_service_node_keys(&m_service_keys);
-    }
-
     auto folder = m_config_folder;
     if (m_nettype == network_type::FAKECHAIN)
         folder /= "fake";
@@ -601,6 +594,13 @@ bool core::init(
                 "Failed to create directory " + folder.u8string() +
                         (ec ? ": " + ec.message() : ""s));
         return false;
+    }
+
+    r = init_service_keys();
+    CHECK_AND_ASSERT_MES(r, false, "Failed to create or load service keys");
+    if (m_service_node) {
+        // Only use our service keys for our service node if we are running in SN mode:
+        m_service_node_list.set_my_service_node_keys(&m_service_keys);
     }
 
     std::unique_ptr<BlockchainDB> db(new_db());
