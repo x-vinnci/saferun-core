@@ -15,12 +15,15 @@ BLSSigner::BLSSigner(const cryptonote::network_type nettype, const fs::path& key
     const auto config = get_config(nettype);
     chainID = config.ETHEREUM_CHAIN_ID;
     contractAddress = config.ETHEREUM_REWARDS_CONTRACT;
+
+    // NOTE: ioMode is taken from bls::SecretKey operator<< implementation
+    int blsIoMode = 16|bls::IoPrefix;
     if (fs::exists(key_filepath)) {
         oxen::log::info(logcat, "Loading bls key from: {}", key_filepath.string());
 
         std::string key_bytes;
         bool r = tools::slurp_file(key_filepath, key_bytes);
-        secretKey.setStr(key_bytes);
+        secretKey.setStr(key_bytes, blsIoMode);
         memwipe(key_bytes.data(), key_bytes.size());
         if (!r)
             throw std::runtime_error(
@@ -29,7 +32,8 @@ BLSSigner::BLSSigner(const cryptonote::network_type nettype, const fs::path& key
         // This init function generates a secret key calling blsSecretKeySetByCSPRNG
         secretKey.init();
         oxen::log::info(logcat, "No bls key found, saving new key to: {}", key_filepath.string());
-        bool r = tools::dump_file(key_filepath, tools::view_guts(secretKey));
+
+        bool r = tools::dump_file(key_filepath, secretKey.getStr(blsIoMode));
         if (!r)
             throw std::runtime_error(
                     fmt::format("Failed to write BLS key to: {}", key_filepath.string()));
