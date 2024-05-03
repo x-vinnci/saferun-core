@@ -3,6 +3,8 @@
 from daemons import Daemon, Wallet
 from ethereum import ServiceNodeRewardContract
 
+import pathlib
+import argparse
 import random
 import time
 import shutil
@@ -47,7 +49,7 @@ def vprint(*args, timestamp=True, **kwargs):
 
 
 class SNNetwork:
-    def __init__(self, datadir, *, binpath='../../build/bin', sns=12, nodes=3):
+    def __init__(self, datadir, *, binpath, sns=12, nodes=3):
         self.datadir = datadir
         if not os.path.exists(self.datadir):
             os.makedirs(self.datadir)
@@ -57,7 +59,7 @@ class SNNetwork:
 
         vprint("Using '{}' for data files and logs".format(datadir))
 
-        nodeopts = dict(oxend=self.binpath+'/oxend', datadir=datadir)
+        nodeopts = dict(oxend=str(self.binpath / 'oxend'), datadir=datadir)
 
         self.ethsns = [Daemon(service_node=True, **nodeopts) for _ in range(1)]
         self.sns = [Daemon(service_node=True, **nodeopts) for _ in range(sns)]
@@ -70,7 +72,7 @@ class SNNetwork:
             self.wallets.append(Wallet(
                 node=self.nodes[len(self.wallets) % len(self.nodes)],
                 name=name,
-                rpc_wallet=self.binpath+'/oxen-wallet-rpc',
+                rpc_wallet=str(self.binpath/'oxen-wallet-rpc'),
                 datadir=datadir))
 
         self.alice, self.bob, self.mike = self.wallets
@@ -80,7 +82,7 @@ class SNNetwork:
             self.extrawallets.append(Wallet(
                 node=self.nodes[len(self.extrawallets) % len(self.nodes)],
                 name="extrawallet-"+str(name),
-                rpc_wallet=self.binpath+'/oxen-wallet-rpc',
+                rpc_wallet=str(self.binpath/'oxen-wallet-rpc'),
                 datadir=datadir))
 
         # Interconnections
@@ -151,6 +153,7 @@ class SNNetwork:
         self.sync_nodes(self.mine(256), timeout=120)
         vprint("Submitting first round of service node registrations: ", end="", flush=True)
         # time.sleep(40)
+        self.mike.refresh()
         for sn in self.sns[0:5]:
             self.mike.register_sn(sn)
             vprint(".", end="", flush=True, timestamp=False)
@@ -352,12 +355,19 @@ class SNNetwork:
 snn = None
 
 def run():
+    arg_parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    arg_parser.add_argument('--bin-path',
+                            help=f'Set the directory where `oxend` is located',
+                            default="../../build/bin",
+                            type=pathlib.Path)
+    args = arg_parser.parse_args();
+
     global snn, verbose
     if not snn:
         if path.isdir(datadirectory+'/'):
             shutil.rmtree(datadirectory+'/', ignore_errors=False, onerror=None)
         vprint("new SNN")
-        snn = SNNetwork(datadir=datadirectory+'/')
+        snn = SNNetwork(binpath=args.bin_path, datadir=datadirectory+'/')
     else:
         vprint("reusing SNN")
         snn.alice.new_wallet()

@@ -76,7 +76,7 @@ struct json_archiver : public serializer {
     struct nested_value {
         json_archiver& ar;
         ~nested_value() {
-            assert(ar.stack_.size() >= 2);
+            assert(ar.stack_.size() >= 1);
             ar.stack_.pop_back();
         }
 

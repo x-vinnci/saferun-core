@@ -1,22 +1,13 @@
 #pragma once
 
-#define BLS_ETH
-#define MCLBN_FP_UNIT_SIZE 4
-#define MCLBN_FR_UNIT_SIZE 4
+#include <string>
 
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wold-style-cast"
-#pragma GCC diagnostic ignored "-Wshadow"
-#pragma GCC diagnostic ignored "-Wconversion"
-#pragma GCC diagnostic ignored "-Wsign-conversion"
-#include <bls/bls.hpp>
-#include <mcl/bn.hpp>
-#undef MCLBN_NO_AUTOLINK
-#pragma GCC diagnostic pop
+namespace bls {
+class PublicKey;
+class Signature;
+};  // namespace bls
 
-namespace bls_utils
-{
-    std::string PublicKeyToHex(bls::PublicKey publicKey);
-    std::string SignatureToHex(bls::Signature sig);
-// END
-}
+namespace bls_utils {
+std::string PublicKeyToHex(const bls::PublicKey& publicKey);
+std::string SignatureToHex(const bls::Signature& sig);
+}  // namespace bls_utils

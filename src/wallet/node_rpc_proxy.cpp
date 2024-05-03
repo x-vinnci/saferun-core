@@ -116,7 +116,6 @@ bool NodeRPCProxy::get_info() const {
             auto it_immutable_height = res.find("immutable_height");
             if (it_immutable_height != res.end())
                 m_immutable_height = res.at("immutable_height").get<uint64_t>();
-            else
             m_get_info_time = now;
             m_height_time = now;
         } catch (const std::exception& e) {

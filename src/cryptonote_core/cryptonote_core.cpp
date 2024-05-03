@@ -582,13 +582,6 @@ bool core::init(
     bool keep_alt_blocks = command_line::get_arg(vm, arg_keep_alt_blocks);
     bool keep_fakechain = command_line::get_arg(vm, arg_keep_fakechain);
 
-    r = init_service_keys();
-    CHECK_AND_ASSERT_MES(r, false, "Failed to create or load service keys");
-    if (m_service_node) {
-        // Only use our service keys for our service node if we are running in SN mode:
-        m_service_node_list.set_my_service_node_keys(&m_service_keys);
-    }
-
     auto folder = m_config_folder;
     if (m_nettype == network_type::FAKECHAIN)
         folder /= "fake";
@@ -601,6 +594,13 @@ bool core::init(
                 "Failed to create directory " + folder.u8string() +
                         (ec ? ": " + ec.message() : ""s));
         return false;
+    }
+
+    r = init_service_keys();
+    CHECK_AND_ASSERT_MES(r, false, "Failed to create or load service keys");
+    if (m_service_node) {
+        // Only use our service keys for our service node if we are running in SN mode:
+        m_service_node_list.set_my_service_node_keys(&m_service_keys);
     }
 
     std::unique_ptr<BlockchainDB> db(new_db());
@@ -1105,12 +1105,11 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                         "Bad request: BLS rewards command should have one data part containing the address"
                         "(received " +
                         std::to_string(m.data.size()) + ")");
-                std::string eth_address = std::string(m.data[0]);
-                if (eth_address.substr(0, 2) != "0x") {
+
+                std::string eth_address = tools::lowercase_ascii_string(m.data[0]);
+                if (!tools::starts_with(eth_address, "0x")) {
                     eth_address = "0x" + eth_address;
                 }
-                std::transform(eth_address.begin(), eth_address.end(), eth_address.begin(),
-                    [](unsigned char c){ return std::tolower(c); });
                 auto [batchdb_height, amount] = get_blockchain_storage().sqlite_db()->get_accrued_earnings(eth_address);
                 if (amount == 0)
                     m.send_reply("400", "Address has a zero balance in the database");
