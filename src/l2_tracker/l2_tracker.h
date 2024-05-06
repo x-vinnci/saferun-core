@@ -56,12 +56,7 @@ public:
     L2Tracker(const cryptonote::network_type nettype, const std::shared_ptr<Provider>& client);
     ~L2Tracker();
 
-    void update_state_thread();
     void update_state();
-    void insert_in_order(State&& new_state);
-
-    void process_logs_for_state(State& state);
-
     bool check_state_in_history(uint64_t height, const crypto::hash& state_root);
     bool check_state_in_history(uint64_t height, const std::string& state_root);
 
@@ -81,8 +76,12 @@ public:
     uint64_t get_pool_block_reward(uint64_t timestamp, uint64_t ethereum_block_height);
 
 private:
-    static std::string get_rewards_contract_address(const cryptonote::network_type nettype);
-    static std::string get_pool_contract_address(const cryptonote::network_type nettype);
+    void insert_in_order(State&& new_state);
+    void process_logs_for_state(State& state);
+
+    std::mutex mutex;
+    static std::string_view get_rewards_contract_address(const cryptonote::network_type nettype);
+    static std::string_view get_pool_contract_address(const cryptonote::network_type nettype);
     void get_review_transactions();
     void populate_review_transactions(std::shared_ptr<TransactionReviewSession> session);
     bool service_node = true;
