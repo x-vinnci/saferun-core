@@ -1124,6 +1124,18 @@ bool oxen_chain_generator::block_begin(oxen_blockchain_entry &entry, oxen_create
     }
   }
 
+  // TODO(doyle): Pre-cursor work I started on to test some BLS features. However this is incorrect,
+  // the block reward has to be derived from the reward pool contract. This howver requires
+  // connecting L2 tracker to a Ethereum blockchain (like `hardhat node`). This makes running tests
+  // a lot more cumbersome. We should either mock the contract into the L2 tracker or startup a
+  // suitable testing environment for the core tests.
+  //
+  // Core tests are more like unit-tests however, so I'd lean more towards implementing a mock
+  // contract.
+  if (blk.major_version >= cryptonote::feature::ETH_BLS) {
+      block_rewards = 0;
+  }
+
   blk.reward = block_rewards;
   entry.txs = tx_list;
   uint64_t block_reward, block_reward_unpenalized;
