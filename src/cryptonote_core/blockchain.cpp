@@ -1569,7 +1569,7 @@ bool Blockchain::validate_miner_transaction(
         if (b.reward != pool_block_reward) {
             log::error(
                     logcat,
-                    "block reward to be batched is incorrect({}). Block reward is {}, should be {}",
+                    "block reward to be batched is incorrect. Block reward is {}, should be {}",
                     print_money(b.reward),
                     print_money(pool_block_reward));
             return false;
