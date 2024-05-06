@@ -12,25 +12,23 @@ L2Tracker::L2Tracker() {
 }
 
 L2Tracker::L2Tracker(const cryptonote::network_type nettype, const std::shared_ptr<Provider>& _provider) 
-    : rewards_contract(std::make_shared<RewardsContract>(get_rewards_contract_address(nettype), _provider)),
-      pool_contract(std::make_shared<PoolContract>(get_pool_contract_address(nettype), _provider)),
+    : rewards_contract(std::make_shared<RewardsContract>(std::string(get_rewards_contract_address(nettype)), _provider)),
+      pool_contract(std::make_shared<PoolContract>(std::string(get_pool_contract_address(nettype)), _provider)),
       stop_thread(false) {
-    update_thread = std::thread(&L2Tracker::update_state_thread, this);
+    update_thread = std::thread([this] {
+        while (!stop_thread.load()) {
+            update_state();
+            std::this_thread::sleep_for(std::chrono::seconds(10));
+        }
+    });
 }
-        
+
 L2Tracker::~L2Tracker() {
     stop_thread.store(true);
     if (update_thread.joinable()) {
         update_thread.join();
     }
 }
-void L2Tracker::update_state_thread() {
-    while (!stop_thread.load()) {
-        update_state();
-        std::this_thread::sleep_for(std::chrono::seconds(10));
-    }
-}
-
 void L2Tracker::insert_in_order(State&& new_state) {
     // Check if the state with the same height already exists
     auto it = std::find_if(state_history.begin(), state_history.end(),
@@ -60,6 +58,7 @@ void L2Tracker::process_logs_for_state(State& state) {
 }
 
 void L2Tracker::update_state() {
+    std::lock_guard lock{mutex};
     try {
         State new_state(rewards_contract->State());
         process_logs_for_state(new_state);
@@ -86,6 +85,7 @@ std::pair<uint64_t, crypto::hash> L2Tracker::latest_state() {
         oxen::log::error(logcat, "L2 tracker doesnt have a provider and cant query state");
         throw std::runtime_error("Non Service node doesn't keep track of state");
     }
+    std::lock_guard lock{mutex};
     if(state_history.empty()) {
         oxen::log::error(logcat, "L2 tracker doesnt have any state history to query");
         throw std::runtime_error("Internal error getting latest state from l2 tracker");
@@ -104,6 +104,7 @@ bool L2Tracker::check_state_in_history(uint64_t height, const crypto::hash& stat
 bool L2Tracker::check_state_in_history(uint64_t height, const std::string& state_root) {
     if (!service_node)
         return true;
+    std::lock_guard lock{mutex};
     auto it = std::find_if(state_history.begin(), state_history.end(),
         [height, &state_root](const State& state) {
             return state.height == height && state.state == state_root;
@@ -115,6 +116,7 @@ std::shared_ptr<TransactionReviewSession> L2Tracker::initialize_transaction_revi
     auto session = std::make_shared<TransactionReviewSession>(oxen_to_ethereum_block_heights[latest_oxen_block], ethereum_height);
     if (!service_node)
         session->service_node = false;
+    std::lock_guard lock{mutex};
     populate_review_transactions(session);
     return session;
 }
@@ -123,16 +125,19 @@ std::shared_ptr<TransactionReviewSession> L2Tracker::initialize_mempool_review()
     auto session = std::make_shared<TransactionReviewSession>(oxen_to_ethereum_block_heights[latest_oxen_block], std::numeric_limits<uint64_t>::max());
     if (!service_node)
         session->service_node = false;
+    std::lock_guard lock{mutex};
     populate_review_transactions(session);
     return session;
 }
 
-std::string L2Tracker::get_rewards_contract_address(const cryptonote::network_type nettype) {
-    return std::string(get_config(nettype).ETHEREUM_REWARDS_CONTRACT);
+std::string_view L2Tracker::get_rewards_contract_address(const cryptonote::network_type nettype) {
+    std::string_view result = get_config(nettype).ETHEREUM_REWARDS_CONTRACT;
+    return result;
 }
 
-std::string L2Tracker::get_pool_contract_address(const cryptonote::network_type nettype) {
-    return std::string(get_config(nettype).ETHEREUM_POOL_CONTRACT);
+std::string_view L2Tracker::get_pool_contract_address(const cryptonote::network_type nettype) {
+    std::string_view result = get_config(nettype).ETHEREUM_POOL_CONTRACT;
+    return result;
 }
 
 void L2Tracker::populate_review_transactions(std::shared_ptr<TransactionReviewSession> session) {
@@ -163,6 +168,7 @@ void L2Tracker::populate_review_transactions(std::shared_ptr<TransactionReviewSe
 std::vector<TransactionStateChangeVariant> L2Tracker::get_block_transactions() {
     if (!service_node)
         throw std::runtime_error("Non Service node doesn't keep track of state");
+    std::lock_guard lock{mutex};
     std::vector<TransactionStateChangeVariant> all_transactions;
     const auto begin_height = oxen_to_ethereum_block_heights[latest_oxen_block];
     for (const auto& state : state_history) {
@@ -180,6 +186,7 @@ std::vector<TransactionStateChangeVariant> L2Tracker::get_block_transactions() {
 }
 
 void L2Tracker::record_block_height_mapping(uint64_t oxen_block_height, uint64_t ethereum_block_height) {
+    std::lock_guard lock{mutex};
     oxen_to_ethereum_block_heights[oxen_block_height] = ethereum_block_height;
     latest_oxen_block = oxen_block_height;
 }

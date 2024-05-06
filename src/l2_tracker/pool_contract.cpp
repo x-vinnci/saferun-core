@@ -4,8 +4,8 @@
 
 static auto logcat = oxen::log::Cat("l2_tracker");
 
-PoolContract::PoolContract(const std::string& _contractAddress, std::shared_ptr<Provider> _provider)
-        : contractAddress(_contractAddress), provider(std::move(_provider)) {}
+PoolContract::PoolContract(std::string _contractAddress, std::shared_ptr<Provider> _provider)
+        : contractAddress(std::move(_contractAddress)), provider(std::move(_provider)) {}
 
 RewardRateResponse PoolContract::RewardRate(uint64_t timestamp, uint64_t ethereum_block_height) {
     ReadCallData callData;
