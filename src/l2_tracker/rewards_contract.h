@@ -91,6 +91,15 @@ struct StateResponse {
     std::string state;
 };
 
+struct ContractServiceNode {
+    uint64_t                      next;
+    uint64_t                      prev;
+    std::array<unsigned char, 20> recipient;
+    std::string                   pubkey;
+    uint64_t                      leaveRequestTimestamp;
+    std::string                   deposit;
+};
+
 class RewardsContract {
   public:
     // Constructor
@@ -100,6 +109,8 @@ class RewardsContract {
     StateResponse State(uint64_t height);
 
     std::vector<RewardsLogEntry> Logs(uint64_t height);
+    ContractServiceNode serviceNodes(uint64_t index);
+    std::vector<uint64_t> getNonSigners(const std::vector<std::string>& bls_public_keys);
 
   private:
     std::string contractAddress;

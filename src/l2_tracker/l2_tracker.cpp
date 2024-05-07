@@ -333,3 +333,7 @@ uint64_t L2Tracker::get_pool_block_reward(uint64_t timestamp, uint64_t ethereum_
     const auto response = pool_contract->RewardRate(timestamp, ethereum_block_height);
     return response.reward;
 }
+
+std::vector<uint64_t> L2Tracker::get_non_signers(const std::vector<std::string>& bls_public_keys) {
+    return rewards_contract->getNonSigners(bls_public_keys);
+}
