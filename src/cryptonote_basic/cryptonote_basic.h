@@ -421,7 +421,6 @@ struct block : public block_header {
     mutable crypto::hash hash;
     std::vector<service_nodes::quorum_signature> signatures;
     uint64_t l2_height;
-    // TODO sean check that hash is 32 bytes in ethereum side
     crypto::hash l2_state;
 };
 

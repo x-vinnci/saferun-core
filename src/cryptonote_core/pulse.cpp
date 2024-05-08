@@ -1555,8 +1555,7 @@ namespace {
                                                                                   "block template "
                                                                                   "from block "
                                                                                   "producer"));
-            // TODO sean put this back and use a max block
-            //  Fill tx_pool with ethereum transactions before we build the block
+            // Fill tx_pool with ethereum transactions before we build the block
             blockchain.add_ethereum_transactions_to_tx_pool();
 
             if (context.prepare_for_round.participant == sn_type::producer)

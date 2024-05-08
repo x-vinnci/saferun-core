@@ -147,7 +147,6 @@ class rpc_command_executor final {
         return true;
     }
 
-    // TODO sean
     template <typename Response>
     nlohmann::json make_request(nlohmann::json params) {
         return invoke<Response>(params)["response"];
