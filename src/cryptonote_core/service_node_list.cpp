@@ -2334,10 +2334,7 @@ bool service_node_list::pop_batching_rewards_block(const cryptonote::block& bloc
     return m_blockchain.sqlite_db()->pop_block(block, m_state);
 }
 
-bool service_node_list::process_ethereum_transactions(
-        const cryptonote::network_type nettype,
-        const cryptonote::block& block,
-        const std::vector<cryptonote::transaction>& txs) {
+bool service_node_list::process_ethereum_address_notification_transactions(const cryptonote::network_type nettype, const cryptonote::block& block, const std::vector<cryptonote::transaction>& txs) {
     if (block.major_version < cryptonote::feature::ETH_BLS)
         return true;
     uint64_t block_height = cryptonote::get_block_height(block);

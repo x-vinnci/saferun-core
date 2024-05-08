@@ -5332,7 +5332,7 @@ bool Blockchain::handle_block_to_main_chain(
             bvc.m_verifivation_failed = true;
             return false;
         }
-        if (!m_service_node_list.process_ethereum_transactions(m_nettype, bl, only_txs)) {
+        if (!m_service_node_list.process_ethereum_address_notification_transactions(m_nettype, bl, only_txs)) {
             log::info(logcat, fg(fmt::terminal_color::red), "Failed to add ethereum transactions");
             bvc.m_verifivation_failed = true;
             return false;
