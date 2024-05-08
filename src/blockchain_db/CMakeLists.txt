@@ -43,6 +43,7 @@ target_link_libraries(blockchain_db
     filesystem
     Boost::thread
     logging
+    ethyl
     extra)
 
 target_compile_definitions(blockchain_db PRIVATE

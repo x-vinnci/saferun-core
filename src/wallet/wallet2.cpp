@@ -3685,8 +3685,6 @@ void wallet2::pull_and_parse_next_blocks(
                 error = true;
                 break;
             }
-            // TODO sean -> parsed_blocks o_indices is now a nlohmann::json and o_indices is the
-            // struct from the binary bleh
             parsed_blocks[i].o_indices = std::move(o_indices[i]);
         }
 
@@ -9487,6 +9485,7 @@ wallet2::register_service_node_result wallet2::create_register_service_node_tx(
         return {register_service_node_result_status::convert_registration_args_failed,
                 tr("Could not convert registration args: ") + std::string{e.what()}};
     }
+
 
     auto address = registration.reserved[0].first;
     if (!contains_address(address))

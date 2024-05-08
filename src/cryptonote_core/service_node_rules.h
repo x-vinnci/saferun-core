@@ -355,7 +355,7 @@ bool check_service_node_stakes(
         cryptonote::hf hf_version,
         cryptonote::network_type nettype,
         uint64_t staking_requirement,
-        const std::vector<std::pair<cryptonote::account_public_address, uint64_t>>& stakes);
+        const std::vector<uint64_t>& stakes);
 
 crypto::hash generate_request_stake_unlock_hash(uint32_t nonce);
 uint64_t get_locked_key_image_unlock_height(

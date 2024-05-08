@@ -151,7 +151,7 @@ bool check_service_node_stakes(
         hf hf_version,
         cryptonote::network_type nettype,
         uint64_t staking_requirement,
-        const std::vector<std::pair<cryptonote::account_public_address, uint64_t>>& stakes) {
+        const std::vector<uint64_t>& stakes) {
     if (hf_version < hf::hf19_reward_batching) {
         log::info(
                 logcat,
@@ -178,28 +178,28 @@ bool check_service_node_stakes(
                 i == 0 ? operator_requirement
                        : get_min_node_contribution(hf_version, staking_requirement, reserved, i);
 
-        if (stakes[i].second < min_stake) {
+        if (stakes[i] < min_stake) {
             log::info(
                     logcat,
                     "Registration tx rejected: stake {} too small ({} < {})",
                     i,
-                    stakes[i].second,
+                    stakes[i],
                     min_stake);
             return false;
         }
-        if (stakes[i].second > remaining) {
+        if (stakes[i] > remaining) {
             log::info(
                     logcat,
                     "Registration tx rejected: stake {} ({}) exceeds available remaining stake "
                     "({})",
                     i,
-                    stakes[i].second,
+                    stakes[i],
                     remaining);
             return false;
         }
 
-        reserved += stakes[i].second;
-        remaining -= stakes[i].second;
+        reserved += stakes[i];
+        remaining -= stakes[i];
     }
 
     return true;

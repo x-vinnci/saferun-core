@@ -30,6 +30,7 @@ void parse_request(GET_OUTPUTS& get_outputs, rpc_input in);
 void parse_request(GET_OUTPUT_HISTOGRAM& get_output_histogram, rpc_input in);
 void parse_request(GET_PEER_LIST& bh, rpc_input in);
 void parse_request(GET_SERVICE_NODES& sns, rpc_input in);
+void parse_request(GET_SERVICE_NODE_REGISTRATION_CMD& cmd, rpc_input in);
 void parse_request(GET_SERVICE_NODE_REGISTRATION_CMD_RAW& cmd, rpc_input in);
 void parse_request(GET_SN_STATE_CHANGES& get_sn_state_changes, rpc_input in);
 void parse_request(GET_STAKING_REQUIREMENT& get_staking_requirement, rpc_input in);
@@ -53,4 +54,8 @@ void parse_request(SET_LOG_LEVEL& set_log_level, rpc_input in);
 void parse_request(START_MINING& start_mining, rpc_input in);
 void parse_request(STORAGE_SERVER_PING& storage_server_ping, rpc_input in);
 void parse_request(SUBMIT_TRANSACTION& tx, rpc_input in);
+void parse_request(BLS_REWARDS_REQUEST& cmd, rpc_input in);
+void parse_request(BLS_EXIT_REQUEST& cmd, rpc_input in);
+void parse_request(BLS_LIQUIDATION_REQUEST& cmd, rpc_input in);
+void parse_request(BLS_REGISTRATION& cmd, rpc_input in);
 }  // namespace cryptonote::rpc

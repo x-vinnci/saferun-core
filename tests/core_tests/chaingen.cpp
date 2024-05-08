@@ -85,12 +85,12 @@ oxen_generate_hard_fork_table(hf hf_version, uint64_t pos_delay)
   uint64_t version_height = 1;
   // HF15 reduces and HF16+ eliminates miner block rewards, so we need to ensure we have enough
   // HF14 blocks to generate enough LOKI for tests:
-  if (hf_version > hf::hf14_blink) {
-      result.push_back({hf::hf14_blink, 0, version_height});
-      version_height += pos_delay;
+  for (uint8_t version = static_cast<uint8_t>(std::min<hf>(hf_version, hf::hf14_blink)); version <= static_cast<uint8_t>(hf_version); version++)
+  {
+    result.push_back({static_cast<hf>(version), 0, version_height});
+    version_height += pos_delay;
   }
 
-  result.push_back({hf_version, 0, version_height});
   return result;
 }
 
@@ -293,6 +293,7 @@ void oxen_chain_generator::add_blocks_until_version(hf hf_version)
   for (;;)
   {
     oxen_blockchain_entry &entry = create_and_add_next_block();
+
     if (entry.block.major_version == hf_version) return;
   }
 }
@@ -1062,7 +1063,9 @@ bool oxen_chain_generator::block_begin(oxen_blockchain_entry &entry, oxen_create
   }
 
   size_t target_block_weight = txs_weight + get_transaction_weight(blk.miner_tx);
-  auto sn_rwds = sqlite_db_->get_sn_payments(height);
+  std::vector<cryptonote::batch_sn_payment> sn_rwds;
+  if (hf_version_ < hf::hf20)
+    sn_rwds = sqlite_db_->get_sn_payments(height);
   if (hf_version_ < hf::hf19_reward_batching)
     CHECK_AND_ASSERT_MES(sn_rwds.empty(), false, "batch payments should be empty before hf19");
   uint64_t block_rewards = 0;
@@ -1119,6 +1122,18 @@ bool oxen_chain_generator::block_begin(oxen_blockchain_entry &entry, oxen_create
     {
       break;
     }
+  }
+
+  // TODO(doyle): Pre-cursor work I started on to test some BLS features. However this is incorrect,
+  // the block reward has to be derived from the reward pool contract. This howver requires
+  // connecting L2 tracker to a Ethereum blockchain (like `hardhat node`). This makes running tests
+  // a lot more cumbersome. We should either mock the contract into the L2 tracker or startup a
+  // suitable testing environment for the core tests.
+  //
+  // Core tests are more like unit-tests however, so I'd lean more towards implementing a mock
+  // contract.
+  if (blk.major_version >= cryptonote::feature::ETH_BLS) {
+      block_rewards = 0;
   }
 
   blk.reward = block_rewards;

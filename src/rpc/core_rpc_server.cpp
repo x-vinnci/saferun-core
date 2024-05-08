@@ -745,6 +745,36 @@ namespace {
             _load_owner(ons, "owner", x.owner);
             _load_owner(ons, "backup_owner", x.backup_owner);
         }
+        void operator()(const tx_extra_ethereum_address_notification& x) {
+            set("eth_address", tools::type_to_hex(x.eth_address));
+            set("signature", tools::view_guts(x.signature));
+        }
+        void operator()(const tx_extra_ethereum_new_service_node& x) {
+            set("bls_key", tools::type_to_hex(x.bls_key));
+            set("eth_address", tools::type_to_hex(x.eth_address));
+            set("service_node_pubkey", tools::view_guts(x.service_node_pubkey));
+            set("signature", tools::view_guts(x.signature));
+            set("fee", tools::view_guts(x.fee));
+            auto contributors = json::array();
+            for (auto& contributor : x.contributors) {
+                auto& c = contributors.emplace_back();
+                c["address"] = tools::type_to_hex(contributor.address);
+                c["amount"] = contributor.amount;
+            }
+            set("contributors", contributors);
+        }
+        void operator()(const tx_extra_ethereum_service_node_leave_request& x) {
+            set("bls_key", tools::type_to_hex(x.bls_key));
+        }
+        void operator()(const tx_extra_ethereum_service_node_exit& x) {
+            set("eth_address", tools::type_to_hex(x.eth_address));
+            set("amount", x.amount);
+            set("bls_key", tools::type_to_hex(x.bls_key));
+        }
+        void operator()(const tx_extra_ethereum_service_node_deregister& x) {
+            set("bls_key", tools::type_to_hex(x.bls_key));
+        }
+
 
         // Ignore these fields:
         void operator()(const tx_extra_padding&) {}
@@ -1465,6 +1495,8 @@ void core_rpc_server::fill_block_header_response(
                               cryptonote::get_service_node_winner_from_tx_extra(blk.miner_tx.extra))
                     : tools::type_to_hex(blk.service_node_winner_key);
     response.coinbase_payouts = get_block_reward(blk);
+    response.l2_state = tools::type_to_hex(blk.l2_state);
+    response.l2_height = blk.l2_height;
     if (blk.miner_tx.vout.size() > 0)
         response.miner_tx_hash = tools::type_to_hex(cryptonote::get_transaction_hash(blk.miner_tx));
     if (get_tx_hashes) {
@@ -2457,9 +2489,14 @@ void core_rpc_server::invoke(
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
-GET_SERVICE_NODE_REGISTRATION_CMD::response core_rpc_server::invoke(
-        GET_SERVICE_NODE_REGISTRATION_CMD::request&& req, rpc_context context) {
-    GET_SERVICE_NODE_REGISTRATION_CMD::response res{};
+void core_rpc_server::invoke(
+        GET_SERVICE_NODE_REGISTRATION_CMD& get_service_node_registration_cmd,
+        rpc_context context) {
+    if (!m_core.service_node())
+        throw rpc_error{
+                ERROR_WRONG_PARAM,
+                "Daemon has not been started in service node mode, please relaunch with "
+                "--service-node flag."};
 
     std::vector<std::string> args;
 
@@ -2470,29 +2507,40 @@ GET_SERVICE_NODE_REGISTRATION_CMD::response core_rpc_server::invoke(
     {
         try {
             args.emplace_back(
-                    std::to_string(service_nodes::percent_to_basis_points(req.operator_cut)));
+                    std::to_string(service_nodes::percent_to_basis_points(get_service_node_registration_cmd.request.operator_cut)));
         } catch (const std::exception& e) {
-            res.status = "Invalid value: "s + e.what();
-            log::error(logcat, res.status);
-            return res;
+            get_service_node_registration_cmd.response["status"] = "Invalid value: "s + e.what();
+            log::error(logcat, get_service_node_registration_cmd.response["status"]);
+            return;
         }
     }
 
-    for (const auto& [address, amount] : req.contributions) {
-        args.push_back(address);
-        args.push_back(std::to_string(amount));
+    auto& addresses = get_service_node_registration_cmd.request.contributor_addresses;
+    auto& amounts = get_service_node_registration_cmd.request.contributor_amounts;
+
+    if (addresses.size() != amounts.size()) {
+        throw std::runtime_error("Mismatch in sizes of addresses and amounts");
     }
 
-    GET_SERVICE_NODE_REGISTRATION_CMD_RAW req_old{};
+    for (size_t i = 0; i < addresses.size(); ++i) {
+        args.push_back(addresses[i]);
+        args.push_back(std::to_string(amounts[i]));
+    }
 
-    req_old.request.staking_requirement = req.staking_requirement;
-    req_old.request.args = std::move(args);
-    req_old.request.make_friendly = false;
+    std::string registration_cmd;
+    if (!service_nodes::make_registration_cmd(
+                m_core.get_nettype(),
+                hf_version,
+                staking_requirement,
+                args,
+                m_core.get_service_keys(),
+                registration_cmd,
+                false /*Make friendly*/))
+        throw rpc_error{ERROR_INTERNAL, "Failed to make registration command"};
 
-    invoke(req_old, context);
-    res.status = req_old.response["status"];
-    res.registration_cmd = req_old.response["registration_cmd"];
-    return res;
+    get_service_node_registration_cmd.response["registration_cmd"] = registration_cmd;
+    get_service_node_registration_cmd.response["status"] = STATUS_OK;
+    return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void core_rpc_server::invoke(
@@ -2502,6 +2550,56 @@ void core_rpc_server::invoke(
 
     get_service_node_blacklisted_key_images.response["status"] = STATUS_OK;
     get_service_node_blacklisted_key_images.response["blacklist"] = blacklist;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke(BLS_REWARDS_REQUEST& bls_rewards_request, rpc_context context) {
+    const aggregateWithdrawalResponse bls_withdrawal_signature_response = m_core.aggregate_withdrawal_request(bls_rewards_request.request.address);
+    bls_rewards_request.response["status"] = STATUS_OK;
+    bls_rewards_request.response["address"] = bls_withdrawal_signature_response.address;
+    bls_rewards_request.response["height"] = bls_withdrawal_signature_response.height;
+    bls_rewards_request.response["amount"] = bls_withdrawal_signature_response.amount;
+    bls_rewards_request.response["signed_message"] = bls_withdrawal_signature_response.signed_message;
+    bls_rewards_request.response["signature"] = bls_withdrawal_signature_response.signature;
+    bls_rewards_request.response["signers_bls_pubkeys"] = bls_withdrawal_signature_response.signers_bls_pubkeys;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke(BLS_EXIT_REQUEST& bls_withdrawal_request, rpc_context context) {
+    const aggregateExitResponse bls_withdrawal_signature_response = m_core.aggregate_exit_request(bls_withdrawal_request.request.bls_key);
+    bls_withdrawal_request.response["status"] = STATUS_OK;
+    bls_withdrawal_request.response["bls_key"] = bls_withdrawal_signature_response.bls_key;
+    bls_withdrawal_request.response["signed_message"] = bls_withdrawal_signature_response.signed_message;
+    bls_withdrawal_request.response["signature"] = bls_withdrawal_signature_response.signature;
+    bls_withdrawal_request.response["signers_bls_pubkeys"] = bls_withdrawal_signature_response.signers_bls_pubkeys;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke(BLS_LIQUIDATION_REQUEST& bls_withdrawal_request, rpc_context context) {
+    const aggregateExitResponse bls_withdrawal_signature_response = m_core.aggregate_liquidation_request(bls_withdrawal_request.request.bls_key);
+    bls_withdrawal_request.response["status"] = STATUS_OK;
+    bls_withdrawal_request.response["bls_key"] = bls_withdrawal_signature_response.bls_key;
+    bls_withdrawal_request.response["signed_message"] = bls_withdrawal_signature_response.signed_message;
+    bls_withdrawal_request.response["signature"] = bls_withdrawal_signature_response.signature;
+    bls_withdrawal_request.response["signers_bls_pubkeys"] = bls_withdrawal_signature_response.signers_bls_pubkeys;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke(BLS_PUBKEYS& bls_pubkey_request, rpc_context context) {
+    const std::vector<std::pair<std::string, uint64_t>> nodes = m_core.get_bls_pubkeys();
+    bls_pubkey_request.response["status"] = STATUS_OK;
+    bls_pubkey_request.response["nodes"] = nodes;
+    return;
+}
+//------------------------------------------------------------------------------------------------------------------------------
+void core_rpc_server::invoke(BLS_REGISTRATION& bls_registration_request, rpc_context context) {
+    const blsRegistrationResponse bls_registration = m_core.bls_registration(bls_registration_request.request.address);
+    bls_registration_request.response["status"] = STATUS_OK;
+    bls_registration_request.response["address"] = bls_registration.address;
+    bls_registration_request.response["bls_pubkey"] = bls_registration.bls_pubkey;
+    bls_registration_request.response["proof_of_possession"] = bls_registration.proof_of_possession;
+    bls_registration_request.response["service_node_pubkey"] = bls_registration.service_node_pubkey;
+    bls_registration_request.response["service_node_signature"] = bls_registration.service_node_signature;
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -2601,12 +2699,15 @@ void core_rpc_server::fill_sn_response_entry(
             "operator_fee",
             microportion(info.portions_for_operator),
             "operator_address",
+            info.operator_ethereum_address ? tools::type_to_hex(info.operator_ethereum_address) :
             cryptonote::get_account_address_as_str(
                     m_core.get_nettype(), false /*subaddress*/, info.operator_address),
             "swarm_id",
             info.swarm_id,
             "swarm",
             "{:x}"_format(info.swarm_id),
+            "bls_key",
+            info.bls_public_key ? tools::type_to_hex(info.bls_public_key) : "",
             "registration_hf_version",
             info.registration_hf_version);
 
@@ -2774,8 +2875,9 @@ void core_rpc_server::fill_sn_response_entry(
             auto& c = contributors.emplace_back(json{
                     {"amount", contributor.amount},
                     {"address",
-                     cryptonote::get_account_address_as_str(
-                             m_core.get_nettype(), false /*subaddress*/, contributor.address)}});
+                        contributor.ethereum_address ? tools::type_to_hex(contributor.ethereum_address) :
+                        cryptonote::get_account_address_as_str(
+                            m_core.get_nettype(), false /*subaddress*/, contributor.address)}});
             if (contributor.reserved != contributor.amount)
                 c["reserved"] = contributor.reserved;
             if (want_locked_c) {
@@ -3308,7 +3410,7 @@ void core_rpc_server::invoke(
         for (const auto& address : req.addresses) {
             uint64_t amount = 0;
             if (cryptonote::is_valid_address(address, nettype())) {
-                amount = blockchain.sqlite_db()->get_accrued_earnings(address);
+                const auto [_, amount] = blockchain.sqlite_db()->get_accrued_earnings(address);
                 at_least_one_succeeded = true;
             }
             balances[address] = amount;

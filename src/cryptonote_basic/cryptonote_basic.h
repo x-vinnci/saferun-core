@@ -168,7 +168,7 @@ class transaction_prefix {
 
     bool is_transfer() const {
         return type == txtype::standard || type == txtype::stake ||
-               type == txtype::oxen_name_system;
+               type == txtype::oxen_name_system || type == txtype::ethereum_address_notification;
     }
 
     // not used after version 2, but remains for compatibility
@@ -420,6 +420,10 @@ struct block : public block_header {
     // hash cache
     mutable crypto::hash hash;
     std::vector<service_nodes::quorum_signature> signatures;
+    uint64_t l2_height;
+    //TODO sean check that hash is 32 bytes in ethereum side
+    crypto::hash l2_state;
+    
 };
 
 template <class Archive>
@@ -451,6 +455,10 @@ void serialize_value(Archive& ar, block& b) {
         field_varint(ar, "height", b.height);
         field(ar, "service_node_winner_key", b.service_node_winner_key);
         field(ar, "reward", b.reward);
+    }
+    if (b.major_version >= feature::ETH_BLS) { //HF20
+        field_varint(ar, "l2_height", b.l2_height);
+        field(ar, "l2_state", b.l2_state);
     }
 }
 
@@ -530,7 +538,9 @@ inline txversion transaction_prefix::get_max_version_for_hf(hf hf_version) {
 
 constexpr txtype transaction_prefix::get_max_type_for_hf(hf hf_version) {
     txtype result = txtype::standard;
-    if (hf_version >= hf::hf15_ons)
+    if (hf_version >= cryptonote::feature::ETH_BLS)
+        result = txtype::ethereum_service_node_deregister;
+    else if (hf_version >= hf::hf15_ons)
         result = txtype::oxen_name_system;
     else if (hf_version >= hf::hf14_blink)
         result = txtype::stake;

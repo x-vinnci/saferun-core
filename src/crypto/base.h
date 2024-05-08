@@ -18,8 +18,8 @@ constexpr T null{};
 
 // Base type for fixed-byte quantities (points, scalars, signatures, hashes).  The bool controls
 // whether the type should have ==, !=, std::hash, and to_hex_string.
-template <size_t Bytes, bool MemcmpHashHex = false>
-struct alignas(size_t) bytes {
+template <size_t Bytes, bool MemcmpHashHex = false, typename AlignAs = size_t>
+struct alignas(AlignAs) bytes {
     std::array<unsigned char, Bytes> data_;
 
     unsigned char* data() { return data_.data(); }

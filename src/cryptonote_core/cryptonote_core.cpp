@@ -75,6 +75,8 @@ extern "C" {
 #include "uptime_proof.h"
 #include "version.h"
 
+#include "ethyl/utils.hpp"
+
 DISABLE_VS_WARNINGS(4355)
 
 #define BAD_SEMANTICS_TXES_MAX_SIZE 100
@@ -154,6 +156,11 @@ static const command_line::arg_descriptor<std::string> arg_public_ip = {
         "Public IP address on which this service node's services (such as the Loki "
         "storage server) are accessible. This IP address will be advertised to the "
         "network via the service node uptime proofs. Required if operating as a "
+        "service node."};
+static const command_line::arg_descriptor<std::string> arg_ethereum_provider = {
+        "ethereum-provider",
+        "Provider on which this service node will query the ethereum blockchain "
+        "when tracking the rewards smart contract. Required if operating as a "
         "service node."};
 static const command_line::arg_descriptor<uint16_t> arg_storage_server_port = {
         "storage-server-port", "Deprecated option, ignored.", 0};
@@ -307,6 +314,7 @@ void core::init_options(boost::program_options::options_description& desc) {
     command_line::add_arg(desc, arg_max_txpool_weight);
     command_line::add_arg(desc, arg_service_node);
     command_line::add_arg(desc, arg_public_ip);
+    command_line::add_arg(desc, arg_ethereum_provider);
     command_line::add_arg(desc, arg_storage_server_port);
     command_line::add_arg(desc, arg_quorumnet_port);
 
@@ -390,6 +398,14 @@ bool core::handle_command_line(const boost::program_options::variables_map& vm) 
                     "Please specify an IPv4 public address which the service node & storage server "
                     "is accessible from with: '--{} <ip address>'",
                     arg_public_ip.name);
+            args_okay = false;
+        }
+
+        const std::string ethereum_provider = command_line::get_arg(vm, arg_ethereum_provider);
+        if (!ethereum_provider.size()) {
+            log::error(
+                    logcat,
+                    "Please specify an ethereum provider from which the service node can access");
             args_okay = false;
         }
 
@@ -566,13 +582,6 @@ bool core::init(
     bool keep_alt_blocks = command_line::get_arg(vm, arg_keep_alt_blocks);
     bool keep_fakechain = command_line::get_arg(vm, arg_keep_fakechain);
 
-    r = init_service_keys();
-    CHECK_AND_ASSERT_MES(r, false, "Failed to create or load service keys");
-    if (m_service_node) {
-        // Only use our service keys for our service node if we are running in SN mode:
-        m_service_node_list.set_my_service_node_keys(&m_service_keys);
-    }
-
     auto folder = m_config_folder;
     if (m_nettype == network_type::FAKECHAIN)
         folder /= "fake";
@@ -585,6 +594,13 @@ bool core::init(
                 "Failed to create directory " + folder.u8string() +
                         (ec ? ": " + ec.message() : ""s));
         return false;
+    }
+
+    r = init_service_keys();
+    CHECK_AND_ASSERT_MES(r, false, "Failed to create or load service keys");
+    if (m_service_node) {
+        // Only use our service keys for our service node if we are running in SN mode:
+        m_service_node_list.set_my_service_node_keys(&m_service_keys);
     }
 
     std::unique_ptr<BlockchainDB> db(new_db());
@@ -602,6 +618,9 @@ bool core::init(
         sqlite_db_file_path = ":memory:";
     }
     auto sqliteDB = std::make_shared<cryptonote::BlockchainSQLite>(m_nettype, sqlite_db_file_path);
+
+    auto bls_key_file_path = folder / "bls.key";
+    m_bls_signer = std::make_shared<BLSSigner>(m_nettype, bls_key_file_path);
 
     folder /= db->get_db_name();
     log::info(logcat, "Loading blockchain from folder {} ...", folder);
@@ -765,8 +784,10 @@ bool core::init(
         return false;
 
     init_oxenmq(vm);
+    m_bls_aggregator = std::make_unique<BLSAggregator>(m_service_node_list, m_omq, m_bls_signer);
 
     const difficulty_type fixed_difficulty = command_line::get_arg(vm, arg_fixed_difficulty);
+    const auto ethereum_provider = command_line::get_arg(vm, arg_ethereum_provider);
     r = m_blockchain_storage.init(
             db.release(),
             ons_db,
@@ -775,6 +796,7 @@ bool core::init(
             m_offline,
             regtest ? &regtest_test_options : test_options,
             fixed_difficulty,
+            ethereum_provider,
             get_checkpoints);
     CHECK_AND_ASSERT_MES(r, false, "Failed to initialize blockchain storage");
 
@@ -1035,7 +1057,7 @@ oxenmq::AuthLevel core::omq_allow(
 void core::init_oxenmq(const boost::program_options::variables_map& vm) {
     using namespace oxenmq;
     log::info(omqlogcat, "Starting oxenmq");
-    m_omq = std::make_unique<OxenMQ>(
+    m_omq = std::make_shared<OxenMQ>(
             tools::copy_guts(m_service_keys.pub_x25519),
             tools::copy_guts(m_service_keys.key_x25519),
             m_service_node,
@@ -1056,7 +1078,9 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                 m.send_reply("pong");
             });
 
+
     if (m_service_node) {
+
         // Service nodes always listen for quorumnet data on the p2p IP, quorumnet port
         std::string listen_ip = vm["p2p-bind-ip"].as<std::string>();
         if (listen_ip.empty())
@@ -1071,6 +1095,72 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                 });
 
         m_quorumnet_state = quorumnet_new(*this);
+
+        m_omq->add_category("bls", oxenmq::Access{oxenmq::AuthLevel::none})
+            .add_request_command("get_reward_balance", [&](oxenmq::Message& m) {
+                oxen::log::debug(logcat, "Received omq rewards signature request");
+                if (m.data.size() != 1)
+                    m.send_reply(
+                        "400",
+                        "Bad request: BLS rewards command should have one data part containing the address"
+                        "(received " +
+                        std::to_string(m.data.size()) + ")");
+
+                std::string eth_address = tools::lowercase_ascii_string(m.data[0]);
+                if (!tools::starts_with(eth_address, "0x")) {
+                    eth_address = "0x" + eth_address;
+                }
+                auto [batchdb_height, amount] = get_blockchain_storage().sqlite_db()->get_accrued_earnings(eth_address);
+                if (amount == 0)
+                    m.send_reply("400", "Address has a zero balance in the database");
+                //bytes memory encodedMessage = abi.encodePacked(rewardTag, recipientAddress, recipientAmount);
+                std::string encoded_message = "0x" + m_bls_signer->buildTag(m_bls_signer->rewardTag) + utils::padToNBytes(eth_address.substr(2), 20, utils::PaddingDirection::LEFT) + utils::padTo32Bytes(utils::decimalToHex(amount), utils::PaddingDirection::LEFT);
+                const auto h = m_bls_signer->hash(encoded_message);
+                // Returns status, address, amount, height, bls_pubkey, signed message, signature
+                m.send_reply("200", m.data[0], std::to_string(amount), std::to_string(batchdb_height), m_bls_signer->getPublicKeyHex(), encoded_message, m_bls_signer->signHash(h).getStr());
+            })
+            .add_request_command("get_exit", [&](oxenmq::Message& m) {
+                oxen::log::debug(logcat, "Received omq exit signature request");
+                if (m.data.size() != 1)
+                    m.send_reply(
+                        "400",
+                        "Bad request: BLS exit command should have one data part containing the bls_key"
+                        "(received " +
+                        std::to_string(m.data.size()) + ")");
+                // TODO sean this should actually check here if the bls key can exit, right not its approving everything
+                std::string bls_key_requesting_exit(m.data[0]);
+                //bytes memory encodedMessage = abi.encodePacked(removalTag, blsKey);
+                std::string encoded_message = "0x" + m_bls_signer->buildTag(m_bls_signer->removalTag) + bls_key_requesting_exit;
+                const auto h = m_bls_signer->hash(encoded_message);
+                // Data contains -> status, bls_key, bls_pubkey, signed message, signature
+                m.send_reply("200", m.data[0], m_bls_signer->getPublicKeyHex(), encoded_message, m_bls_signer->signHash(h).getStr());
+            })
+            .add_request_command("get_liquidation", [&](oxenmq::Message& m) {
+                oxen::log::debug(logcat, "Received omq liquidation signature request");
+                if (m.data.size() != 1)
+                    m.send_reply(
+                        "400",
+                        "Bad request: BLS liquidation command should have one data part containing the bls_key"
+                        "(received " +
+                        std::to_string(m.data.size()) + ")");
+                // TODO sean this should actually check here if the bls key can exit, right not its approving everything
+                std::string bls_key_requesting_exit(m.data[0]);
+                //bytes memory encodedMessage = abi.encodePacked(liquidateTag, blsKey);
+                std::string encoded_message = "0x" + m_bls_signer->buildTag(m_bls_signer->liquidateTag) + utils::padToNBytes(bls_key_requesting_exit, 64, utils::PaddingDirection::LEFT);
+                const auto h = m_bls_signer->hash(encoded_message);
+                // Data contains -> status, bls_key, bls_pubkey, signed message, signature
+                m.send_reply("200", m.data[0], m_bls_signer->getPublicKeyHex(), encoded_message, m_bls_signer->signHash(h).getStr());
+            })
+            .add_request_command("pubkey_request", [&](oxenmq::Message& m) {
+                oxen::log::debug(logcat, "Received omq bls pubkey request");
+                if (m.data.size() != 0)
+                    m.send_reply(
+                        "400",
+                        "Bad request: BLS pubkey request must have no data parts"
+                        "(received " +
+                        std::to_string(m.data.size()) + ")");
+                m.send_reply(tools::type_to_hex(m_service_keys.pub), m_bls_signer->getPublicKeyHex());
+            });
     }
 
     quorumnet_init(*this, m_quorumnet_state);
@@ -1320,6 +1410,10 @@ bool core::handle_parsed_txs(
     if (blink_rollback_height)
         *blink_rollback_height = 0;
     tx_pool_options tx_opts;
+    std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session;
+    if (version >= cryptonote::feature::ETH_BLS) {
+        ethereum_transaction_review_session = m_blockchain_storage.m_l2_tracker->initialize_mempool_review();
+    }
     for (size_t i = 0; i < parsed_txs.size(); i++) {
         auto& info = parsed_txs[i];
         if (!info.result) {
@@ -1348,6 +1442,7 @@ bool core::handle_parsed_txs(
                     info.tvc,
                     *local_opts,
                     version,
+                    ethereum_transaction_review_session,
                     blink_rollback_height)) {
             log::debug(logcat, "tx added: {}", info.tx_hash);
         } else {
@@ -2152,8 +2247,10 @@ block_complete_entry get_block_complete_entry(block& b, tx_memory_pool& pool) {
     bce.block = cryptonote::block_to_blob(b);
     for (const auto& tx_hash : b.tx_hashes) {
         std::string txblob;
-        CHECK_AND_ASSERT_THROW_MES(
-                pool.get_transaction(tx_hash, txblob), "Transaction not found in pool");
+        if (!pool.get_transaction(tx_hash, txblob) || txblob.size() == 0) {
+            oxen::log::error(logcat, "Transaction {} not found in pool", tx_hash);
+            throw std::runtime_error("Transaction not found in pool");
+        }
         bce.txs.push_back(txblob);
     }
     return bce;
@@ -2667,6 +2764,51 @@ bool core::is_service_node(const crypto::public_key& pubkey, bool require_active
 const std::vector<service_nodes::key_image_blacklist_entry>&
 core::get_service_node_blacklisted_key_images() const {
     return m_service_node_list.get_blacklisted_key_images();
+}
+//-----------------------------------------------------------------------------------------------
+aggregateWithdrawalResponse core::aggregate_withdrawal_request(const std::string& ethereum_address) {
+    const auto resp = m_bls_aggregator->aggregateRewards(ethereum_address);
+    return resp;
+}
+//-----------------------------------------------------------------------------------------------
+aggregateExitResponse core::aggregate_exit_request(const std::string& bls_key) {
+    const auto resp = m_bls_aggregator->aggregateExit(bls_key);
+    return resp;
+}
+//-----------------------------------------------------------------------------------------------
+aggregateExitResponse core::aggregate_liquidation_request(const std::string& bls_key) {
+    const auto resp = m_bls_aggregator->aggregateLiquidation(bls_key);
+    return resp;
+}
+//-----------------------------------------------------------------------------------------------
+std::vector<std::pair<std::string, uint64_t>> core::get_bls_pubkeys() const {
+    std::vector<std::pair<std::string, uint64_t>> bls_pubkeys_and_amounts;
+    const auto pubkeys = m_bls_aggregator->getPubkeys();
+    for (const auto& node : pubkeys) {
+        std::vector<crypto::public_key> service_node_pubkeys;
+        auto& key = service_node_pubkeys.emplace_back();
+        tools::hex_to_type(node.first, key);
+        const auto infos = m_service_node_list.get_service_node_list_state(service_node_pubkeys);
+        bls_pubkeys_and_amounts.emplace_back(node.second, infos[0].info->total_contributed);
+    }
+    return bls_pubkeys_and_amounts;
+}
+//-----------------------------------------------------------------------------------------------
+blsRegistrationResponse core::bls_registration(const std::string& ethereum_address, const uint64_t fee) const {
+    const auto& keys = get_service_keys();
+    auto resp = m_bls_aggregator->registration(ethereum_address, tools::type_to_hex(keys.pub));
+
+    auto height = get_current_blockchain_height();
+    auto hf_version = get_network_version(m_nettype, height);
+    service_nodes::registration_details reg{};
+    reg.service_node_pubkey = keys.pub;
+    reg.hf = static_cast<uint64_t>(hf_version);
+    reg.uses_portions = false;
+    reg.fee = fee;
+    auto hash = get_registration_hash(reg);
+    resp.service_node_signature = tools::type_to_hex(crypto::generate_signature(hash, keys.pub, keys.key));
+
+    return resp;
 }
 //-----------------------------------------------------------------------------------------------
 std::vector<service_nodes::service_node_pubkey_info> core::get_service_node_list_state(

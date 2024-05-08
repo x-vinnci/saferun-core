@@ -1,7 +1,10 @@
 #!/usr/bin/python3
 
 from daemons import Daemon, Wallet
+from ethereum import ServiceNodeRewardContract
 
+import pathlib
+import argparse
 import random
 import time
 import shutil
@@ -46,28 +49,30 @@ def vprint(*args, timestamp=True, **kwargs):
 
 
 class SNNetwork:
-    def __init__(self, datadir, *, binpath='../../build/bin', sns=12, nodes=3):
+    def __init__(self, datadir, *, binpath, sns=12, nodes=3):
         self.datadir = datadir
         if not os.path.exists(self.datadir):
             os.makedirs(self.datadir)
         self.binpath = binpath
+        self.servicenodecontract = ServiceNodeRewardContract()
 
 
         vprint("Using '{}' for data files and logs".format(datadir))
 
-        nodeopts = dict(oxend=self.binpath+'/oxend', datadir=datadir)
+        nodeopts = dict(oxend=str(self.binpath / 'oxend'), datadir=datadir)
 
+        self.ethsns = [Daemon(service_node=True, **nodeopts) for _ in range(1)]
         self.sns = [Daemon(service_node=True, **nodeopts) for _ in range(sns)]
         self.nodes = [Daemon(**nodeopts) for _ in range(nodes)]
 
-        self.all_nodes = self.sns + self.nodes
+        self.all_nodes = self.sns + self.nodes + self.ethsns
 
         self.wallets = []
         for name in ('Alice', 'Bob', 'Mike'):
             self.wallets.append(Wallet(
                 node=self.nodes[len(self.wallets) % len(self.nodes)],
                 name=name,
-                rpc_wallet=self.binpath+'/oxen-wallet-rpc',
+                rpc_wallet=str(self.binpath/'oxen-wallet-rpc'),
                 datadir=datadir))
 
         self.alice, self.bob, self.mike = self.wallets
@@ -77,7 +82,7 @@ class SNNetwork:
             self.extrawallets.append(Wallet(
                 node=self.nodes[len(self.extrawallets) % len(self.nodes)],
                 name="extrawallet-"+str(name),
-                rpc_wallet=self.binpath+'/oxen-wallet-rpc',
+                rpc_wallet=str(self.binpath/'oxen-wallet-rpc'),
                 datadir=datadir))
 
         # Interconnections
@@ -90,6 +95,9 @@ class SNNetwork:
 
         vprint("Starting new oxend service nodes with RPC on {} ports".format(self.sns[0].listen_ip), end="")
         for sn in self.sns:
+            vprint(" {}".format(sn.rpc_port), end="", flush=True, timestamp=False)
+            sn.start()
+        for sn in self.ethsns:
             vprint(" {}".format(sn.rpc_port), end="", flush=True, timestamp=False)
             sn.start()
         vprint(timestamp=False)
@@ -130,6 +138,9 @@ class SNNetwork:
         with open(configfile, 'w') as filetowrite:
             filetowrite.write('#!/usr/bin/python3\n# -*- coding: utf-8 -*-\nlisten_ip=\"{}\"\nlisten_port=\"{}\"\nwallet_listen_ip=\"{}\"\nwallet_listen_port=\"{}\"\nwallet_address=\"{}\"\nexternal_address=\"{}\"'.format(self.sns[0].listen_ip,self.sns[0].rpc_port,self.mike.listen_ip,self.mike.rpc_port,self.mike.address(),self.bob.address()))
 
+        # TODO sean remove this
+        # input("Press Enter to continue...")
+
         # Mine some blocks; we need 100 per SN registration, and we can nearly 600 on fakenet before
         # it hits HF16 and kills mining rewards.  This lets us submit the first 5 SN registrations a
         # SN (at height 40, which is the earliest we can submit them without getting an occasional
@@ -139,8 +150,10 @@ class SNNetwork:
         # of 18.9, which means each registration requires 6 inputs.  Thus we need a bare minimum of
         # 6(N-5) blocks, plus the 30 lock time on coinbase TXes = 6N more blocks (after the initial
         # 5 registrations).
-        self.mine(200)
+        self.sync_nodes(self.mine(256), timeout=120)
         vprint("Submitting first round of service node registrations: ", end="", flush=True)
+        # time.sleep(40)
+        self.mike.refresh()
         for sn in self.sns[0:5]:
             self.mike.register_sn(sn)
             vprint(".", end="", flush=True, timestamp=False)
@@ -203,6 +216,44 @@ class SNNetwork:
         time.sleep(10)
         for sn in self.sns:
             sn.send_uptime_proof()
+
+        bls_pubkeys = self.ethsns[0].get_bls_pubkeys()
+        self.servicenodecontract.seedPublicKeyList(bls_pubkeys)
+        vprint("Seeded public key list: number of service nodes in contract {}".format(self.servicenodecontract.numberServiceNodes()))
+        ethereum_add_bls_args = self.ethsns[0].get_ethereum_registration_args(self.servicenodecontract.hardhatAccountAddress())
+        vprint("Submitted registration on ethereum for service node with pubkey: {}".format(self.ethsns[0].sn_key()))
+        result = self.servicenodecontract.addBLSPublicKey(ethereum_add_bls_args)
+        vprint("added node: number of service nodes in contract {}".format(self.servicenodecontract.numberServiceNodes()))
+        # time.sleep(155)
+
+        # Exit Node
+        # exit = self.ethsns[0].get_exit_request(ethereum_add_bls_args["bls_pubkey"])
+        # result = self.servicenodecontract.removeBLSPublicKeyWithSignature(
+                # exit["result"]["bls_key"],
+                # exit["result"]["signature"],
+                # self.servicenodecontract.getNonSigners(exit["result"]["signers_bls_pubkeys"]))
+        # vprint("Submitted transaction to exit service node : {}".format(ethereum_add_bls_args["bls_pubkey"]))
+        # vprint("exited node: number of service nodes in contract {}".format(self.servicenodecontract.numberServiceNodes()))
+
+        # Liquidate Node
+        # exit = self.ethsns[0].get_liquidation_request(ethereum_add_bls_args["bls_pubkey"])
+        # result = self.servicenodecontract.liquidateBLSPublicKeyWithSignature(
+                # exit["result"]["bls_key"],
+                # exit["result"]["signature"],
+                # self.servicenodecontract.getNonSigners(exit["result"]["signers_bls_pubkeys"]))
+        # vprint(result)
+        # vprint("Submitted transaction to liquidate service node : {}".format(ethereum_add_bls_args["bls_pubkey"]))
+        # vprint("liquidated node: number of service nodes in contract {}".format(self.servicenodecontract.numberServiceNodes()))
+
+        # Claim rewards for Address
+        # rewards = self.ethsns[0].get_bls_rewards(self.servicenodecontract.hardhatAccountAddress())
+        # vprint(rewards)
+        # result = self.servicenodecontract.updateRewardsBalance(rewards["result"]["address"], rewards["result"]["amount"], rewards["result"]["signature"], [])
+        # result = self.servicenodecontract.claimRewards()
+
+        # Initiate Removeal of BLS Key
+        # result = self.servicenodecontract.initiateRemoveBLSPublicKey(self.servicenodecontract.getServiceNodeID(ethereum_add_bls_args["bls_pubkey"]))
+        # vprint("Submitted transaction to deregister service node id: {}".format(self.servicenodecontract.getServiceNodeID(ethereum_add_bls_args["bls_pubkey"])))
         vprint("Done.")
 
         vprint("Local Devnet SN network setup complete!")
@@ -304,12 +355,19 @@ class SNNetwork:
 snn = None
 
 def run():
+    arg_parser = argparse.ArgumentParser(formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    arg_parser.add_argument('--bin-path',
+                            help=f'Set the directory where `oxend` is located',
+                            default="../../build/bin",
+                            type=pathlib.Path)
+    args = arg_parser.parse_args();
+
     global snn, verbose
     if not snn:
         if path.isdir(datadirectory+'/'):
             shutil.rmtree(datadirectory+'/', ignore_errors=False, onerror=None)
         vprint("new SNN")
-        snn = SNNetwork(datadir=datadirectory+'/')
+        snn = SNNetwork(binpath=args.bin_path, datadir=datadirectory+'/')
     else:
         vprint("reusing SNN")
         snn.alice.new_wallet()

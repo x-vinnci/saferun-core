@@ -95,7 +95,7 @@ class RPCDaemon:
                 }
         if params:
             json["params"] = params
-
+        print(json)
         return requests.post('http://{}:{}/json_rpc'.format(self.listen_ip, self.rpc_port), json=json, timeout=timeout)
 
 
@@ -155,13 +155,15 @@ class Daemon(RPCDaemon):
 
         self.args = [oxend] + list(self.__class__.base_args)
         self.args += (
-                '--data-dir={}/oxen-{}-{}'.format(datadir or '.', self.listen_ip, self.rpc_port),
+                # '--data-dir={}/oxen-{}-{}'.format(datadir or '.', self.listen_ip, self.rpc_port),
+                '--data-dir={}/oxen-{}'.format(datadir or '.', self.rpc_port),
                 '--log-level={}'.format(log_level),
                 '--log-file=oxen.log'.format(self.listen_ip, self.p2p_port),
                 '--p2p-bind-ip={}'.format(self.listen_ip),
                 '--p2p-bind-port={}'.format(self.p2p_port),
                 '--rpc-admin={}:{}'.format(self.listen_ip, self.rpc_port),
                 '--quorumnet-port={}'.format(self.qnet_port),
+                '--ethereum-provider={}'.format("http://127.0.0.1:8545"),
                 )
 
         for d in peers:
@@ -245,6 +247,21 @@ class Daemon(RPCDaemon):
     def sn_status(self):
         return self.json_rpc("get_service_node_status").json()["result"]
 
+    def get_ethereum_registration_args(self, address):
+        return self.json_rpc("bls_registration_request", {"address": address}).json()["result"]
+
+    def get_bls_pubkeys(self):
+        return self.json_rpc("bls_pubkey_request", {}).json()["result"]["nodes"]
+
+    def get_bls_rewards(self, address):
+        return self.json_rpc("bls_rewards_request", {"address": address}).json()
+
+    def get_exit_request(self, bls_key):
+        return self.json_rpc("bls_exit_request", {"bls_key": bls_key}).json()
+
+    def get_liquidation_request(self, bls_key):
+        return self.json_rpc("bls_liquidation_request", {"bls_key": bls_key}).json()
+
 
 
 class Wallet(RPCDaemon):
@@ -260,7 +277,7 @@ class Wallet(RPCDaemon):
             datadir=None,
             listen_ip=None,
             rpc_port=None,
-            log_level=3):
+            log_level=4):
 
         self.listen_ip = listen_ip or LISTEN_IP
         self.rpc_port = rpc_port or next_port()
@@ -269,7 +286,8 @@ class Wallet(RPCDaemon):
         self.name = name or 'wallet@{}'.format(self.rpc_port)
         super().__init__(self.name)
 
-        self.walletdir = '{}/wallet-{}-{}'.format(datadir or '.', self.listen_ip, self.rpc_port)
+        # self.walletdir = '{}/wallet-{}-{}'.format(datadir or '.', self.listen_ip, self.rpc_port)
+        self.walletdir = '{}/wallet-{}'.format(datadir or '.', self.rpc_port)
         self.args = [rpc_wallet] + list(self.__class__.base_args)
         self.args += (
                 '--rpc-bind-ip={}'.format(self.listen_ip),
@@ -363,8 +381,9 @@ class Wallet(RPCDaemon):
 
     def register_sn(self, sn):
         r = sn.json_rpc("get_service_node_registration_cmd", {
+            "contributor_addresses": [self.address()],
+            "contributor_amounts": [100000000000],
             "operator_cut": "100",
-            "contributions": [{"address": self.address(), "amount": 100000000000}],
             "staking_requirement": 100000000000
         }).json()
         if 'error' in r:
@@ -376,8 +395,9 @@ class Wallet(RPCDaemon):
 
     def register_sn_for_contributions(self, sn, cut, amount):
         r = sn.json_rpc("get_service_node_registration_cmd", {
+            "contributor_addresses": [self.address()],
+            "contributor_amounts": [amount],
             "operator_cut": str(cut),
-            "contributions": [{"address": self.address(), "amount": amount}],
             "staking_requirement": 100000000000
         }).json()
         if 'error' in r:

@@ -242,6 +242,7 @@ namespace feature {
     constexpr auto PULSE = hf::hf16_pulse;
     constexpr auto CLSAG = hf::hf16_pulse;
     constexpr auto PROOF_BTENC = hf::hf18;
+    constexpr auto ETH_BLS = hf::hf20;
 }  // namespace feature
 
 enum class network_type : uint8_t { MAINNET = 0, TESTNET, DEVNET, FAKECHAIN, UNDEFINED = 255 };
@@ -407,6 +408,11 @@ namespace config {
     // batching and SNL will save the state every STORE_LONG_TERM_STATE_INTERVAL blocks
     inline constexpr uint64_t STORE_LONG_TERM_STATE_INTERVAL = 10000;
 
+    // Details of the ethereum smart contract managing rewards and chain its kept on
+    inline constexpr uint32_t ETHEREUM_CHAIN_ID = 31337;
+    inline constexpr std::string_view ETHEREUM_REWARDS_CONTRACT = "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707";
+    inline constexpr std::string_view ETHEREUM_POOL_CONTRACT = "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+
     namespace testnet {
         inline constexpr uint64_t HEIGHT_ESTIMATE_HEIGHT = 339767;
         inline constexpr time_t HEIGHT_ESTIMATE_TIMESTAMP = 1595360006;
@@ -542,6 +548,10 @@ struct network_config {
 
     uint64_t STORE_LONG_TERM_STATE_INTERVAL;
 
+    uint32_t ETHEREUM_CHAIN_ID;
+    std::string_view ETHEREUM_REWARDS_CONTRACT;
+    std::string_view ETHEREUM_POOL_CONTRACT;
+
     inline constexpr std::string_view governance_wallet_address(hf hard_fork_version) const {
         const auto wallet_switch =
                 (NETWORK_TYPE == network_type::MAINNET || NETWORK_TYPE == network_type::FAKECHAIN)
@@ -577,6 +587,9 @@ inline constexpr network_config mainnet_config{
         config::SERVICE_NODE_PAYABLE_AFTER_BLOCKS,
         config::HARDFORK_DEREGISTRATION_GRACE_PERIOD,
         config::STORE_LONG_TERM_STATE_INTERVAL,
+        config::ETHEREUM_CHAIN_ID,
+        config::ETHEREUM_REWARDS_CONTRACT,
+        config::ETHEREUM_POOL_CONTRACT,
 };
 inline constexpr network_config testnet_config{
         network_type::TESTNET,
@@ -605,6 +618,9 @@ inline constexpr network_config testnet_config{
         config::testnet::SERVICE_NODE_PAYABLE_AFTER_BLOCKS,
         config::HARDFORK_DEREGISTRATION_GRACE_PERIOD,
         config::STORE_LONG_TERM_STATE_INTERVAL,
+        config::ETHEREUM_CHAIN_ID,
+        config::ETHEREUM_REWARDS_CONTRACT,
+        config::ETHEREUM_POOL_CONTRACT,
 };
 inline constexpr network_config devnet_config{
         network_type::DEVNET,
@@ -632,6 +648,10 @@ inline constexpr network_config devnet_config{
         config::LIMIT_BATCH_OUTPUTS,
         config::testnet::SERVICE_NODE_PAYABLE_AFTER_BLOCKS,
         config::HARDFORK_DEREGISTRATION_GRACE_PERIOD,
+        config::STORE_LONG_TERM_STATE_INTERVAL,
+        config::ETHEREUM_CHAIN_ID,
+        config::ETHEREUM_REWARDS_CONTRACT,
+        config::ETHEREUM_POOL_CONTRACT,
 };
 inline constexpr network_config fakenet_config{
         network_type::FAKECHAIN,
@@ -660,6 +680,9 @@ inline constexpr network_config fakenet_config{
         config::testnet::SERVICE_NODE_PAYABLE_AFTER_BLOCKS,
         config::HARDFORK_DEREGISTRATION_GRACE_PERIOD,
         config::STORE_LONG_TERM_STATE_INTERVAL,
+        config::ETHEREUM_CHAIN_ID,
+        config::ETHEREUM_REWARDS_CONTRACT,
+        config::ETHEREUM_POOL_CONTRACT,
 };
 
 inline constexpr const network_config& get_config(network_type nettype) {

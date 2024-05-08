@@ -54,6 +54,7 @@
 #include "service_node_quorum_cop.h"
 #include "service_node_voting.h"
 #include "tx_pool.h"
+#include "bls/bls_aggregator.h"
 PUSH_WARNINGS
 DISABLE_VS_WARNINGS(4355)
 
@@ -950,6 +951,12 @@ class core : public i_miner_handler {
     const std::vector<service_nodes::key_image_blacklist_entry>&
     get_service_node_blacklisted_key_images() const;
 
+    aggregateWithdrawalResponse aggregate_withdrawal_request(const std::string& ethereum_address);
+    aggregateExitResponse aggregate_exit_request(const std::string& bls_key);
+    aggregateExitResponse aggregate_liquidation_request(const std::string& bls_key);
+    std::vector<std::pair<std::string, uint64_t>> get_bls_pubkeys() const;
+    blsRegistrationResponse bls_registration(const std::string& ethereum_address, const uint64_t fee = 0) const;
+
     /**
      * @brief get a snapshot of the service node list state at the time of the call.
      *
@@ -1242,9 +1249,13 @@ class core : public i_miner_handler {
 
     tx_memory_pool m_mempool;         //!< transaction pool instance
     Blockchain m_blockchain_storage;  //!< Blockchain instance
+    
 
     service_nodes::service_node_list m_service_node_list;
     service_nodes::quorum_cop m_quorum_cop;
+
+    std::shared_ptr<BLSSigner> m_bls_signer;
+    std::unique_ptr<BLSAggregator> m_bls_aggregator;
 
     i_cryptonote_protocol* m_pprotocol;        //!< cryptonote protocol instance
     cryptonote_protocol_stub m_protocol_stub;  //!< cryptonote protocol stub instance
@@ -1299,7 +1310,7 @@ class core : public i_miner_handler {
     uint16_t m_quorumnet_port;
 
     /// OxenMQ main object.  Gets created during init().
-    std::unique_ptr<oxenmq::OxenMQ> m_omq;
+    std::shared_ptr<oxenmq::OxenMQ> m_omq;
 
     // Internal opaque data object managed by cryptonote_protocol/quorumnet.cpp.  void pointer to
     // avoid linking issues (protocol does not link against core).

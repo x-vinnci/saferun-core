@@ -961,6 +961,42 @@ bool add_burned_amount_to_tx_extra(std::vector<uint8_t>& tx_extra, uint64_t burn
     return true;
 }
 //---------------------------------------------------------------
+bool add_new_service_node_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_extra_ethereum_new_service_node& new_service_node) {
+    tx_extra_field field = new_service_node;
+    if (!add_tx_extra_field_to_tx_extra(tx_extra, field)) {
+        log::info(logcat, "failed to serialize tx extra for new service node transaction");
+        return false;
+    }
+    return true;
+}
+//---------------------------------------------------------------
+bool add_service_node_leave_request_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_extra_ethereum_service_node_leave_request& leave_request) {
+    tx_extra_field field = leave_request;
+    if (!add_tx_extra_field_to_tx_extra(tx_extra, field)) {
+        log::info(logcat, "failed to serialize tx extra for service node leave request transaction");
+        return false;
+    }
+    return true;
+}
+//---------------------------------------------------------------
+bool add_service_node_exit_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_extra_ethereum_service_node_exit& exit_data) {
+    tx_extra_field field = exit_data;
+    if (!add_tx_extra_field_to_tx_extra(tx_extra, field)) {
+        log::info(logcat, "failed to serialize tx extra for service node exit transaction");
+        return false;
+    }
+    return true;
+}
+//---------------------------------------------------------------
+bool add_service_node_deregister_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_extra_ethereum_service_node_deregister& deregister) {
+    tx_extra_field field = deregister;
+    if (!add_tx_extra_field_to_tx_extra(tx_extra, field)) {
+        log::info(logcat, "failed to serialize tx extra for service node deregister transaction");
+        return false;
+    }
+    return true;
+}
+//---------------------------------------------------------------
 bool get_inputs_money_amount(const transaction& tx, uint64_t& money) {
     money = 0;
     for (const auto& in : tx.vin) {

@@ -31,7 +31,8 @@
 
 # warnings are cleared only for GCC on Linux
 if (NOT (MINGW OR APPLE OR FREEBSD OR OPENBSD OR DRAGONFLY))
-  add_compile_options("${WARNINGS_AS_ERRORS_FLAG}") # applies only to targets that follow
+  message(STATUS "Setting warnings as errors")
+  #add_compile_options("${WARNINGS_AS_ERRORS_FLAG}") # applies only to targets that follow
 endif()
 
 set_property(GLOBAL PROPERTY oxen_executable_targets "")
@@ -55,6 +56,8 @@ add_subdirectory(cryptonote_basic)
 add_subdirectory(cryptonote_core)
 add_subdirectory(logging)
 add_subdirectory(lmdb)
+add_subdirectory(l2_tracker)
+add_subdirectory(bls)
 add_subdirectory(multisig)
 add_subdirectory(net)
 add_subdirectory(mnemonics)

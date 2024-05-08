@@ -49,6 +49,7 @@
 #include <thread>
 #include <unordered_map>
 #include <unordered_set>
+#include <ethyl/provider.hpp>
 
 #include "blockchain_db/blockchain_db.h"
 #include "blockchain_db/sqlite/db_sqlite.h"
@@ -67,6 +68,7 @@
 #include "pulse.h"
 #include "rpc/core_rpc_server_binary_commands.h"
 #include "rpc/core_rpc_server_commands_defs.h"
+#include "l2_tracker/l2_tracker.h"
 
 struct sqlite3;
 namespace service_nodes {
@@ -147,6 +149,7 @@ class Blockchain {
      * @param offline true if running offline, else false
      * @param test_options test parameters
      * @param fixed_difficulty fixed difficulty for testing purposes; 0 means disabled
+     * @param ethereum_provider sync ethereum using this provider
      * @param get_checkpoints if set, will be called to get checkpoints data
      *
      * @return true on success, false if any initialization steps fail
@@ -159,6 +162,7 @@ class Blockchain {
             bool offline = false,
             const cryptonote::test_options* test_options = nullptr,
             difficulty_type fixed_difficulty = 0,
+            const std::string& ethereum_provider = "",
             const GetCheckpointsCallback& get_checkpoints = nullptr);
 
     /**
@@ -698,11 +702,12 @@ class Blockchain {
      */
     bool check_tx_inputs(
             transaction& tx,
-            uint64_t& pmax_used_block_height,
-            crypto::hash& max_used_block_id,
             tx_verification_context& tvc,
-            bool kept_by_block = false,
-            std::unordered_set<crypto::key_image>* key_image_conflicts = nullptr);
+            std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
+            crypto::hash& max_used_block_id,
+            uint64_t& pmax_used_block_height,
+            std::unordered_set<crypto::key_image>* key_image_conflicts = nullptr,
+            bool kept_by_block = false);
 
     /**
      * @brief get fee quantization mask
@@ -1158,6 +1163,10 @@ class Blockchain {
      */
     void flush_invalid_blocks();
 
+    void add_ethereum_transactions_to_tx_pool();
+
+    std::shared_ptr<L2Tracker> m_l2_tracker;
+
 #ifndef IN_UNIT_TESTS
   private:
 #endif
@@ -1280,6 +1289,9 @@ class Blockchain {
 
     checkpoints m_checkpoints;
 
+    // Ethereum client for communicating with L2 blockchain
+    std::shared_ptr<Provider> m_provider;
+
     network_type m_nettype;
     bool m_offline;
     difficulty_type m_fixed_difficulty;
@@ -1385,6 +1397,7 @@ class Blockchain {
     bool check_tx_inputs(
             transaction& tx,
             tx_verification_context& tvc,
+            std::shared_ptr<TransactionReviewSession> ethereum_transaction_review_session,
             uint64_t* pmax_used_block_height = nullptr,
             std::unordered_set<crypto::key_image>* key_image_conflicts = nullptr);
 
@@ -1628,6 +1641,7 @@ class Blockchain {
      * @return the current time
      */
     uint64_t get_adjusted_time() const;
+
 
     /**
      * @brief finish an alternate chain's timestamp window from the main chain

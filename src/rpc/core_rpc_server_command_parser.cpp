@@ -475,4 +475,33 @@ void parse_request(GET_SERVICE_NODE_REGISTRATION_CMD_RAW& cmd, rpc_input in) {
             "staking_requirement",
             required{cmd.request.staking_requirement});
 }
+void parse_request(GET_SERVICE_NODE_REGISTRATION_CMD& cmd, rpc_input in) {
+    get_values(
+            in,
+            "contributor_addresses",
+            required{cmd.request.contributor_addresses},
+            "contributor_amounts",
+            required{cmd.request.contributor_amounts},
+            "operator_cut",
+            required{cmd.request.operator_cut},
+            "staking_requirement",
+            required{cmd.request.staking_requirement});
+}
+
+void parse_request(BLS_REWARDS_REQUEST& cmd, rpc_input in) {
+    get_values( in, "address", required{cmd.request.address});
+}
+
+void parse_request(BLS_EXIT_REQUEST& cmd, rpc_input in) {
+    get_values( in, "bls_key", required{cmd.request.bls_key});
+}
+
+void parse_request(BLS_LIQUIDATION_REQUEST& cmd, rpc_input in) {
+    get_values( in, "bls_key", required{cmd.request.bls_key});
+}
+
+void parse_request(BLS_REGISTRATION& cmd, rpc_input in) {
+    get_values( in, "address", required{cmd.request.address});
+}
+
 }  // namespace cryptonote::rpc

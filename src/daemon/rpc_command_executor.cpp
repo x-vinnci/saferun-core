@@ -297,7 +297,7 @@ json rpc_command_executor::invoke(
 bool rpc_command_executor::print_checkpoints(
         std::optional<uint64_t> start_height, std::optional<uint64_t> end_height, bool print_json) {
 
-    uint32_t count;
+    uint32_t count = 0;
     if (!start_height && !end_height)
         count = GET_CHECKPOINTS::NUM_CHECKPOINTS_TO_QUERY_BY_DEFAULT;
     else if (!start_height || !end_height)
@@ -2127,6 +2127,37 @@ bool rpc_command_executor::flush_cache(bool bad_txs, bool bad_blocks) {
     return true;
 }
 
+bool rpc_command_executor::claim_rewards(const std::string& address) {
+    auto maybe_withdrawal_response = try_running(
+            [this, address] {
+                return invoke<BLS_REWARDS_REQUEST>(json{{"address", address}});
+            },
+            "Failed to get withdrawal rewards");
+    if (!maybe_withdrawal_response)
+        return false;
+    auto& withdrawal_response = *maybe_withdrawal_response;
+
+    std::ostringstream link;
+    link << "https://oxen-eth-webpage.vercel.app";
+    link << "/?amount=" << withdrawal_response["amount"];
+    link << "?address=" << withdrawal_response["address"];
+    link << "?height=" <<  withdrawal_response["height"];
+    link << "&sig=" <<     withdrawal_response["signature"];
+    for (const auto& non_signer : withdrawal_response["non_signers"]) {
+        link << "&indices=" << non_signer;
+    }
+
+    tools::msg_writer(
+                  "Address: {}\n Amount: {}\n Height: {}\n Signature: {}\n Link to claim rewards: {}\n",
+                  withdrawal_response["address"],
+                  withdrawal_response["amount"],
+                  withdrawal_response["height"],
+                  withdrawal_response["signature"],
+                  link.str()
+              );
+    return true;
+}
+
 bool rpc_command_executor::print_sn_status(std::vector<std::string> args) {
     return print_sn(std::move(args), true);
 }
@@ -2234,6 +2265,16 @@ bool rpc_command_executor::prepare_registration(bool force_registration) {
     if (!maybe_keys)
         return false;
     auto& snode_keys = *maybe_keys;
+
+    //TODO sean use the feature flag instead
+    if (hf_version > hf::hf20) {
+        tools::success_msg_writer(
+            "Service Node Pubkey: {}\n"
+            "Service Node Signature: {}\n", 
+            snode_keys.value<std::string>("service_node_pubkey", ""),
+            snode_keys.value<std::string>("service_node_signature", "")); // Assuming 'service_node_signature' is the key for signature
+        return true;
+    }
 
     if (!info.value("devnet", false))  // Devnet doesn't run storage-server / lokinet
     {

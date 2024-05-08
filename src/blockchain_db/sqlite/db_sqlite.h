@@ -65,6 +65,7 @@ class BlockchainSQLite : public db::Database {
     // exist it will be created.
     bool add_sn_rewards(const std::vector<cryptonote::batch_sn_payment>& payments);
     bool subtract_sn_rewards(const std::vector<cryptonote::batch_sn_payment>& payments);
+    bool update_sn_rewards_address(const std::string& oxen_address, const crypto::eth_address& eth_address);
 
   private:
     bool reward_handler(
@@ -74,13 +75,13 @@ class BlockchainSQLite : public db::Database {
 
     std::unordered_map<account_public_address, std::string> address_str_cache;
     std::pair<hf, cryptonote::address_parse_info> parsed_governance_addr = {hf::none, {}};
-    const std::string& get_address_str(const account_public_address& addr);
+    std::string get_address_str(const cryptonote::batch_sn_payment& addr);
     std::mutex address_str_cache_mutex;
 
   public:
     // get_accrued_earnings -> queries the database for the amount that has been accrued to
     // `service_node_address` will return the atomic value in oxen that the service node is owed.
-    uint64_t get_accrued_earnings(const std::string& address);
+    std::pair<uint64_t, uint64_t> get_accrued_earnings(const std::string& address);
     // get_all_accrued_earnings -> queries the database for all the amount that has been accrued to
     // service nodes will return 2 vectors corresponding to the addresses and the atomic value in
     // oxen that the service nodes are owed.
@@ -115,6 +116,8 @@ class BlockchainSQLite : public db::Database {
     bool pop_block(
             const cryptonote::block& block,
             const service_nodes::service_node_list::state_t& service_nodes_state);
+
+    bool return_staked_amount_to_user(const crypto::eth_address& eth_address, const uint64_t amount);
 
     // validate_batch_payment -> used to make sure that list of miner_tx_vouts is correct. Compares
     // the miner_tx_vouts with a list previously extracted payments to make sure that the correct

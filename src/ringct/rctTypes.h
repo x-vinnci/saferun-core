@@ -30,6 +30,10 @@
 
 #pragma once
 
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wold-style-cast"
+#pragma GCC diagnostic ignored "-Wshadow"
+
 #include <sodium/crypto_verify_32.h>
 
 #include <cstddef>
@@ -803,3 +807,5 @@ VARIANT_TAG(rct::Bulletproof, "rct_bulletproof", 0x9c);
 VARIANT_TAG(rct::multisig_kLRki, "rct_multisig_kLR", 0x9d);
 VARIANT_TAG(rct::multisig_out, "rct_multisig_out", 0x9e);
 VARIANT_TAG(rct::clsag, "rct_clsag", 0x9f);
+
+#pragma GCC diagnostic pop

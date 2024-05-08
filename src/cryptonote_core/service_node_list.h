@@ -199,6 +199,13 @@ struct pulse_sort_key {
     END_SERIALIZE()
 };
 
+struct service_node_address
+{
+    crypto::x25519_public_key x_pkey;
+    uint32_t                  ip;
+    uint16_t                  port;
+};
+
 struct service_node_info  // registration information
 {
     enum class version_t : uint8_t {
@@ -210,6 +217,7 @@ struct service_node_info  // registration information
         v5_pulse_recomm_credit,
         v6_reassign_sort_keys,
         v7_decommission_reason,
+        v8_ethereum_address,
         _count
     };
 
@@ -242,10 +250,11 @@ struct service_node_info  // registration information
     };
 
     struct contributor_t {
-        uint8_t version = 0;
+        uint8_t version = 1;
         uint64_t amount = 0;
         uint64_t reserved = 0;
         cryptonote::account_public_address address{};
+        crypto::eth_address ethereum_address{};
         std::vector<contribution_t> locked_contributions;
 
         contributor_t() = default;
@@ -262,6 +271,8 @@ struct service_node_info  // registration information
         VARINT_FIELD(reserved)
         FIELD(address)
         FIELD(locked_contributions)
+        if (version >= 1)
+            FIELD(ethereum_address);
         END_SERIALIZE()
     };
 
@@ -293,6 +304,8 @@ struct service_node_info  // registration information
     uint64_t portions_for_operator = 0;
     swarm_id_t swarm_id = 0;
     cryptonote::account_public_address operator_address{};
+    crypto::eth_address operator_ethereum_address{};
+    crypto::bls_public_key bls_public_key{};
     uint64_t last_ip_change_height = 0;  // The height of the last quorum penalty for changing IPs
     version_t version = tools::enum_top<version_t>;
     cryptonote::hf registration_hf_version = cryptonote::hf::none;
@@ -353,6 +366,10 @@ struct service_node_info  // registration information
     if (version >= version_t::v7_decommission_reason) {
         VARINT_FIELD(last_decommission_reason_consensus_all)
         VARINT_FIELD(last_decommission_reason_consensus_any)
+    }
+    if (version >= version_t::v8_ethereum_address) {
+        FIELD(bls_public_key)
+        FIELD(operator_ethereum_address)
     }
     END_SERIALIZE()
 };
@@ -459,6 +476,7 @@ class service_node_list {
     bool state_history_exists(uint64_t height);
     bool process_batching_rewards(const cryptonote::block& block);
     bool pop_batching_rewards_block(const cryptonote::block& block);
+    bool process_ethereum_transactions(const cryptonote::network_type nettype, const cryptonote::block& block, const std::vector<cryptonote::transaction>& txs);
     void blockchain_detached(uint64_t height);
     void init();
     void validate_miner_tx(const cryptonote::miner_tx_info& info) const;
@@ -559,6 +577,27 @@ class service_node_list {
         }
     }
 
+    /// Copies `service_node_addresses` of all currently active SNs into the given output
+    /// iterator
+    template <typename OutputIt>
+    void copy_active_service_node_addresses(OutputIt out) const {
+        std::lock_guard lock{m_sn_mutex};
+        for (const auto& pk_info : m_state.service_nodes_infos) {
+            if (!pk_info.second->is_active())
+                continue;
+            auto it = proofs.find(pk_info.first);
+            if (it == proofs.end())
+                continue;
+            if (const auto& x2_pk = it->second.pubkey_x25519) {
+                service_node_address address = {};
+                address.x_pkey = x2_pk;
+                address.ip = it->second.proof   ? it->second.proof->public_ip : 0;
+                address.port = it->second.proof ? it->second.proof->qnet_port : 0;
+                *out++ = address;
+            }
+        }
+    }
+
     std::vector<pubkey_and_sninfo> active_service_nodes_infos() const {
         return m_state.active_service_nodes_infos();
     }
@@ -597,6 +636,8 @@ class service_node_list {
             std::unique_ptr<uptime_proof::Proof> proof,
             bool& my_uptime_proof_confirmation,
             crypto::x25519_public_key& x25519_pkey);
+
+    crypto::public_key bls_public_key_lookup(const crypto::bls_public_key& bls_key) const;
 
     void record_checkpoint_participation(
             crypto::public_key const& pubkey, uint64_t height, bool participated);
@@ -797,6 +838,29 @@ class service_node_list {
                 cryptonote::hf hf_version,
                 uint64_t block_height,
                 const cryptonote::transaction& tx) const;
+        // Returns true if there was a registration:
+        bool process_ethereum_registration_tx(
+                cryptonote::network_type nettype,
+                cryptonote::block const& block,
+                const cryptonote::transaction& tx,
+                uint32_t index,
+                const service_node_keys* my_keys);
+        bool process_ethereum_unlock_tx(
+                cryptonote::network_type nettype,
+                cryptonote::hf hf_version,
+                uint64_t block_height,
+                const cryptonote::transaction& tx);
+        bool process_ethereum_exit_tx(
+                cryptonote::network_type nettype,
+                cryptonote::hf hf_version,
+                uint64_t block_height,
+                const cryptonote::transaction& tx);
+        bool process_ethereum_deregister_tx(
+                cryptonote::network_type nettype,
+                cryptonote::hf hf_version,
+                uint64_t block_height,
+                const cryptonote::transaction& tx,
+                const service_node_keys* my_keys);
         payout get_block_leader() const;
         payout get_block_producer(uint8_t pulse_round) const;
     };
@@ -893,6 +957,7 @@ bool tx_get_staking_components_and_amounts(
         staking_components* contribution);
 
 using contribution = std::pair<cryptonote::account_public_address, uint64_t>;
+using eth_contribution = std::pair<crypto::eth_address, uint64_t>;
 struct registration_details {
     crypto::public_key service_node_pubkey;
     std::vector<contribution> reserved;
@@ -900,6 +965,8 @@ struct registration_details {
     uint64_t hf;         // expiration timestamp before HF19
     bool uses_portions;  // if true then `hf` is a timestamp
     crypto::signature signature;
+    std::vector<eth_contribution> eth_contributions;
+    crypto::bls_public_key bls_key;
 };
 
 bool is_registration_tx(
@@ -911,7 +978,18 @@ bool is_registration_tx(
         uint32_t index,
         crypto::public_key& key,
         service_node_info& info);
+    
+std::pair<crypto::public_key, std::shared_ptr<service_node_info>> validate_and_get_ethereum_registration(
+        cryptonote::network_type nettype,
+        cryptonote::hf hf_version,
+        const cryptonote::transaction& tx,
+        uint64_t block_timestamp,
+        uint64_t block_height,
+        uint32_t index);
+
 std::optional<registration_details> reg_tx_extract_fields(const cryptonote::transaction& tx);
+std::optional<registration_details> eth_reg_tx_extract_fields(cryptonote::hf hf_version, const cryptonote::transaction& tx);
+
 uint64_t offset_testing_quorum_height(quorum_type type, uint64_t height);
 
 // Converts string input values into a partially filled `registration_details`; pubkey and

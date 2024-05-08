@@ -291,6 +291,11 @@ or "default" to return the limit to its default value.)");
             "flush_cache [bad-txs] [bad-blocks]",
             "Flush the specified cache(s).");
     m_command_lookup.set_handler(
+            "claim_rewards",
+            [this](const auto& x) { return m_parser.claim_rewards(x); },
+            "claim_rewards",
+            "Provides a link to the website that allows claiming of ERC-20 rewards");
+    m_command_lookup.set_handler(
             "test_trigger_uptime_proof",
             [this](const auto&) {
                 m_parser.test_trigger_uptime_proof();

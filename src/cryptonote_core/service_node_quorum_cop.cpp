@@ -615,6 +615,7 @@ void quorum_cop::process_quorums(cryptonote::block const& block) {
 
             case quorum_type::pulse:
             case quorum_type::blink: break;
+
         }
     }
 }

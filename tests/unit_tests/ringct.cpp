@@ -443,36 +443,30 @@ static bool range_proof_test(
 TEST(ringct, range_proofs_reject_empty_outs_simple)
 {
   const uint64_t inputs[] = {5000};
-  const uint64_t outputs[] = {};
-  EXPECT_FALSE(range_proof_test(NELTS(inputs), inputs, NELTS(outputs), outputs));
+  EXPECT_FALSE(range_proof_test(NELTS(inputs), inputs, 0, nullptr));
 }
 
 TEST(ringct, range_proofs_reject_empty_ins_simple)
 {
-  const uint64_t inputs[] = {};
   const uint64_t outputs[] = {5000};
-  EXPECT_FALSE(range_proof_test(NELTS(inputs), inputs, NELTS(outputs), outputs));
+  EXPECT_FALSE(range_proof_test(0, nullptr, NELTS(outputs), outputs));
 }
 
 TEST(ringct, range_proofs_reject_all_empty_simple)
 {
-  const uint64_t inputs[] = {};
-  const uint64_t outputs[] = {};
-  EXPECT_FALSE(range_proof_test(NELTS(inputs), inputs, NELTS(outputs), outputs));
+  EXPECT_FALSE(range_proof_test(0, nullptr, 0, nullptr));
 }
 
 TEST(ringct, range_proofs_reject_zero_empty_simple)
 {
   const uint64_t inputs[] = {0};
-  const uint64_t outputs[] = {};
-  EXPECT_FALSE(range_proof_test(NELTS(inputs), inputs, NELTS(outputs), outputs));
+  EXPECT_FALSE(range_proof_test(NELTS(inputs), inputs, 0, nullptr));
 }
 
 TEST(ringct, range_proofs_reject_empty_zero_simple)
 {
-  const uint64_t inputs[] = {};
   const uint64_t outputs[] = {0};
-  EXPECT_FALSE(range_proof_test(NELTS(inputs), inputs, NELTS(outputs), outputs));
+  EXPECT_FALSE(range_proof_test(0, nullptr, NELTS(outputs), outputs));
 }
 
 TEST(ringct, range_proofs_accept_zero_zero_simple)
@@ -726,8 +720,7 @@ TEST(ringct, fee_burn_valid_one_out_simple)
 TEST(ringct, fee_burn_invalid_zero_out_simple)
 {
   const uint64_t inputs[] = {1000, 1000};
-  const uint64_t outputs[] = {};
-  EXPECT_FALSE(range_proof_test(NELTS(inputs), inputs, NELTS(outputs), outputs, 2000));
+  EXPECT_FALSE(range_proof_test(NELTS(inputs), inputs, 0, nullptr, 2000));
 }
 
 static constexpr std::array<uint64_t, 2> base_inputs{1000, 1000};
