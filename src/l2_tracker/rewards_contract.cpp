@@ -164,13 +164,35 @@ std::vector<RewardsLogEntry> RewardsContract::Logs(uint64_t height) {
     return logEntries;
 }
 
-ContractServiceNode RewardsContract::serviceNodes(uint64_t index)
+std::vector<std::string> RewardsContract::getAllBLSPubkeys(uint64_t blockNumber) {
+    std::stringstream stream;
+    stream << "0x" << std::hex << blockNumber;
+    std::string blockNumberHex = stream.str();
+
+    // Get the sentinel node to start the iteration
+    const uint64_t service_node_sentinel_id = 0;
+    ContractServiceNode sentinelNode = serviceNodes(service_node_sentinel_id, blockNumberHex);
+    uint64_t currentNodeId = sentinelNode.next;
+
+    std::vector<std::string> blsPublicKeys;
+
+    // Iterate over the linked list of service nodes
+    while (currentNodeId != service_node_sentinel_id) {
+        ContractServiceNode serviceNode = serviceNodes(currentNodeId, blockNumberHex);
+        blsPublicKeys.push_back(serviceNode.pubkey);
+        currentNodeId = serviceNode.next;
+    }
+
+    return blsPublicKeys;
+}
+
+ContractServiceNode RewardsContract::serviceNodes(uint64_t index, std::string_view blockNumber)
 {
     ReadCallData callData            = {};
     std::string  indexABI            = utils::padTo32Bytes(utils::decimalToHex(index), utils::PaddingDirection::LEFT);
     callData.contractAddress         = contractAddress;
     callData.data                    = utils::getFunctionSignature("serviceNodes(uint64)") + indexABI;
-    nlohmann::json     callResult    = provider->callReadFunctionJSON(callData);
+    nlohmann::json     callResult    = provider->callReadFunctionJSON(callData, blockNumber);
     const std::string& callResultHex = callResult.get_ref<nlohmann::json::string_t&>();
     std::string_view   callResultIt  = utils::trimPrefix(callResultHex, "0x");
 

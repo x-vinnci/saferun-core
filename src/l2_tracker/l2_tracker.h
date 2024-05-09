@@ -88,6 +88,7 @@ class L2Tracker {
 
     uint64_t get_pool_block_reward(uint64_t timestamp, uint64_t ethereum_block_height);
     std::vector<uint64_t> get_non_signers(const std::vector<std::string>& bls_public_keys);
+    std::vector<std::string> get_all_bls_public_keys(uint64_t blockNumber);
 
   private:
     void insert_in_order(State&& new_state);

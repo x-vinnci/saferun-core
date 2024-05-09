@@ -1147,9 +1147,14 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                                         "containing the bls_key"
                                         "(received " +
                                                 std::to_string(m.data.size()) + ")");
-                            // TODO sean this should actually check here if the bls key can exit,
                             // right not its approving everything
                             std::string bls_key_requesting_exit(m.data[0]);
+                            if (!is_node_removable(bls_key_requesting_exit)) {
+                                m.send_reply(
+                                    "403",
+                                    "Forbidden: The BLS key " + bls_key_requesting_exit + " should not be removed.");
+                                return;
+                            }
                             // bytes memory encodedMessage = abi.encodePacked(removalTag, blsKey);
                             std::string encoded_message =
                                     "0x" + m_bls_signer->buildTag(m_bls_signer->removalTag) +
@@ -1175,9 +1180,13 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                                         "part containing the bls_key"
                                         "(received " +
                                                 std::to_string(m.data.size()) + ")");
-                            // TODO sean this should actually check here if the bls key can exit,
-                            // right not its approving everything
                             std::string bls_key_requesting_exit(m.data[0]);
+                            if (!is_node_liquidatable(bls_key_requesting_exit)) {
+                                m.send_reply(
+                                    "403",
+                                    "Forbidden: The BLS key " + bls_key_requesting_exit + " should not be liquidated.");
+                                return;
+                            }
                             // bytes memory encodedMessage = abi.encodePacked(liquidateTag, blsKey);
                             std::string encoded_message =
                                     "0x" + m_bls_signer->buildTag(m_bls_signer->liquidateTag) +
@@ -1210,6 +1219,45 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
     }
 
     quorumnet_init(*this, m_quorumnet_state);
+}
+
+std::vector<std::string> core::get_removable_nodes()
+{
+    std::vector<std::string> bls_pubkeys_in_snl;
+    auto sns = m_service_node_list.get_service_node_list_state();
+    bls_pubkeys_in_snl.reserve(sns.size());
+    for (const auto& sni : sns)
+        bls_pubkeys_in_snl.push_back(tools::type_to_hex(sni.info->bls_public_key));
+
+
+    uint64_t oxen_height = m_blockchain_storage.get_current_blockchain_height();
+    std::vector<cryptonote::block> blocks;
+    if (!get_blocks(oxen_height, 1, blocks)) {
+        log::error(logcat, "Could not get latest block");
+        throw std::runtime_error("Could not get latest block");
+    }
+    std::vector<std::string> bls_pubkeys_in_smart_contract = m_blockchain_storage.m_l2_tracker->get_all_bls_public_keys(blocks[0].l2_height);
+
+    std::vector<std::string> removable_nodes;
+
+    // Find BLS keys that are in the smart contract but not in the service node list
+    std::sort(bls_pubkeys_in_snl.begin(), bls_pubkeys_in_snl.end());
+    std::sort(bls_pubkeys_in_smart_contract.begin(), bls_pubkeys_in_smart_contract.end());
+    std::set_difference(
+        bls_pubkeys_in_smart_contract.begin(), bls_pubkeys_in_smart_contract.end(),
+        bls_pubkeys_in_snl.begin(), bls_pubkeys_in_snl.end(),
+        std::back_inserter(removable_nodes)
+    );
+    return removable_nodes;
+}
+
+bool core::is_node_removable(std::string_view node_bls_pubkey) {
+    std::vector<std::string> removable_nodes = get_removable_nodes();
+    return std::find(removable_nodes.begin(), removable_nodes.end(), node_bls_pubkey) != removable_nodes.end();
+}
+
+bool core::is_node_liquidatable(std::string_view node_bls_pubkey) {
+    return is_node_removable(node_bls_pubkey) and not m_service_node_list.is_recently_expired(node_bls_pubkey);
 }
 
 void core::start_oxenmq() {

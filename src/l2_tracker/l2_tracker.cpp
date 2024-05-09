@@ -337,3 +337,7 @@ uint64_t L2Tracker::get_pool_block_reward(uint64_t timestamp, uint64_t ethereum_
 std::vector<uint64_t> L2Tracker::get_non_signers(const std::vector<std::string>& bls_public_keys) {
     return rewards_contract->getNonSigners(bls_public_keys);
 }
+
+std::vector<std::string> L2Tracker::get_all_bls_public_keys(uint64_t blockNumber) {
+    return rewards_contract->getAllBLSPubkeys(blockNumber);
+}

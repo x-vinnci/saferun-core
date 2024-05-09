@@ -879,6 +879,8 @@ class service_node_list {
         return m_state.is_premature_unlock(nettype, hf_version, block_height, tx);
     }
 
+    bool is_recently_expired(std::string_view node_bls_pubkey) const;
+
   private:
     // Note(maxim): private methods don't have to be protected the mutex
     bool m_rescanning = false; /* set to true when doing a rescan so we know not to reset proofs */
@@ -934,6 +936,7 @@ class service_node_list {
 
     state_t m_state;  // NOTE: Not in m_transient due to the non-trivial constructor. We can't
                       // blanket initialise using = {}; needs to be reset in ::reset(...) manually
+    std::unordered_map<std::string, uint64_t> recently_expired_nodes;
 };
 
 struct staking_components {

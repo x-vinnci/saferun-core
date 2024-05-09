@@ -109,8 +109,9 @@ class RewardsContract {
     StateResponse State(uint64_t height);
 
     std::vector<RewardsLogEntry> Logs(uint64_t height);
-    ContractServiceNode serviceNodes(uint64_t index);
+    ContractServiceNode serviceNodes(uint64_t index, std::string_view blockNumber = "latest");
     std::vector<uint64_t> getNonSigners(const std::vector<std::string>& bls_public_keys);
+    std::vector<std::string> getAllBLSPubkeys(uint64_t blockNumber);
 
   private:
     std::string contractAddress;
