@@ -56,12 +56,12 @@
 
 using namespace crypto;
 
-#define CHECK_AND_ASSERT_THROW_MES_L1(expr, message) \
-    {                                                \
-        if (!(expr)) {                               \
-            log::warning(logcat, message);           \
-            throw std::runtime_error(message);       \
-        }                                            \
+#define CHECK_AND_ASSERT_THROW_MES_L1(expr, frmt, ...)                \
+    {                                                                 \
+        if (!(expr)) {                                                \
+            log::warning(logcat, frmt, __VA_ARGS__);                  \
+            throw std::runtime_error(fmt::format(frmt, __VA_ARGS__)); \
+        }                                                             \
     }
 
 namespace cryptonote {
@@ -79,11 +79,9 @@ static void add_public_key(
         crypto::public_key& AB, const crypto::public_key& A, const crypto::public_key& B) {
     ge_p3 B2, A2;
     CHECK_AND_ASSERT_THROW_MES_L1(
-            ge_frombytes_vartime(&B2, &B) == 0,
-            "ge_frombytes_vartime failed at " + boost::lexical_cast<std::string>(__LINE__));
+            ge_frombytes_vartime(&B2, &B) == 0, "ge_frombytes_vartime failed at {}", __LINE__);
     CHECK_AND_ASSERT_THROW_MES_L1(
-            ge_frombytes_vartime(&A2, &A) == 0,
-            "ge_frombytes_vartime failed at " + boost::lexical_cast<std::string>(__LINE__));
+            ge_frombytes_vartime(&A2, &A) == 0, "ge_frombytes_vartime failed at {}", __LINE__);
     ge_cached tmp2;
     ge_p3_to_cached(&tmp2, &B2);
     ge_p1p1 tmp3;
@@ -93,7 +91,6 @@ static void add_public_key(
 }
 
 uint64_t get_transaction_weight_clawback(const transaction& tx, size_t n_padded_outputs) {
-    const rct::rctSig& rv = tx.rct_signatures;
     const uint64_t bp_base = 368;
     const size_t n_outputs = tx.vout.size();
     if (n_padded_outputs <= 2)
@@ -105,13 +102,14 @@ uint64_t get_transaction_weight_clawback(const transaction& tx, size_t n_padded_
     const size_t bp_size = 32 * (9 + 2 * nlr);
     CHECK_AND_ASSERT_THROW_MES_L1(
             n_outputs <= TX_BULLETPROOF_MAX_OUTPUTS,
-            "maximum number of outputs is " + std::to_string(TX_BULLETPROOF_MAX_OUTPUTS) +
-                    " per transaction");
+            "maximum number of outputs is {} per transaction",
+            TX_BULLETPROOF_MAX_OUTPUTS);
     CHECK_AND_ASSERT_THROW_MES_L1(
             bp_base * n_padded_outputs >= bp_size,
-            "Invalid bulletproof clawback: bp_base " + std::to_string(bp_base) +
-                    ", n_padded_outputs " + std::to_string(n_padded_outputs) + ", bp_size " +
-                    std::to_string(bp_size));
+            "Invalid bulletproof clawback: bp_base {}, n_padded_outputs {}, bp_size {}",
+            bp_base,
+            n_padded_outputs,
+            bp_size);
     const uint64_t bp_clawback = (bp_base * n_padded_outputs - bp_size) * 4 / 5;
     return bp_clawback;
 }
@@ -508,7 +506,9 @@ uint64_t get_transaction_weight(const transaction& tx, size_t blob_size) {
     const size_t n_padded_outputs = rct::n_bulletproof_max_amounts(rv.p.bulletproofs);
     uint64_t bp_clawback = get_transaction_weight_clawback(tx, n_padded_outputs);
     CHECK_AND_ASSERT_THROW_MES_L1(
-            bp_clawback <= std::numeric_limits<uint64_t>::max() - blob_size, "Weight overflow");
+            bp_clawback <= std::numeric_limits<uint64_t>::max() - blob_size,
+            "Weight overflow {}",
+            bp_clawback);
     return blob_size + bp_clawback;
 }
 //---------------------------------------------------------------
@@ -560,7 +560,9 @@ uint64_t get_pruned_transaction_weight(const transaction& tx) {
     // clawback
     uint64_t bp_clawback = get_transaction_weight_clawback(tx, n_padded_outputs);
     CHECK_AND_ASSERT_THROW_MES_L1(
-            bp_clawback <= std::numeric_limits<uint64_t>::max() - weight, "Weight overflow");
+            bp_clawback <= std::numeric_limits<uint64_t>::max() - weight,
+            "Weight overflow {}",
+            bp_clawback);
     weight += bp_clawback;
 
     return weight;
@@ -961,7 +963,9 @@ bool add_burned_amount_to_tx_extra(std::vector<uint8_t>& tx_extra, uint64_t burn
     return true;
 }
 //---------------------------------------------------------------
-bool add_new_service_node_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_extra_ethereum_new_service_node& new_service_node) {
+bool add_new_service_node_to_tx_extra(
+        std::vector<uint8_t>& tx_extra,
+        const tx_extra_ethereum_new_service_node& new_service_node) {
     tx_extra_field field = new_service_node;
     if (!add_tx_extra_field_to_tx_extra(tx_extra, field)) {
         log::info(logcat, "failed to serialize tx extra for new service node transaction");
@@ -970,16 +974,20 @@ bool add_new_service_node_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_e
     return true;
 }
 //---------------------------------------------------------------
-bool add_service_node_leave_request_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_extra_ethereum_service_node_leave_request& leave_request) {
+bool add_service_node_leave_request_to_tx_extra(
+        std::vector<uint8_t>& tx_extra,
+        const tx_extra_ethereum_service_node_leave_request& leave_request) {
     tx_extra_field field = leave_request;
     if (!add_tx_extra_field_to_tx_extra(tx_extra, field)) {
-        log::info(logcat, "failed to serialize tx extra for service node leave request transaction");
+        log::info(
+                logcat, "failed to serialize tx extra for service node leave request transaction");
         return false;
     }
     return true;
 }
 //---------------------------------------------------------------
-bool add_service_node_exit_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_extra_ethereum_service_node_exit& exit_data) {
+bool add_service_node_exit_to_tx_extra(
+        std::vector<uint8_t>& tx_extra, const tx_extra_ethereum_service_node_exit& exit_data) {
     tx_extra_field field = exit_data;
     if (!add_tx_extra_field_to_tx_extra(tx_extra, field)) {
         log::info(logcat, "failed to serialize tx extra for service node exit transaction");
@@ -988,7 +996,9 @@ bool add_service_node_exit_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_
     return true;
 }
 //---------------------------------------------------------------
-bool add_service_node_deregister_to_tx_extra(std::vector<uint8_t>& tx_extra, const tx_extra_ethereum_service_node_deregister& deregister) {
+bool add_service_node_deregister_to_tx_extra(
+        std::vector<uint8_t>& tx_extra,
+        const tx_extra_ethereum_service_node_deregister& deregister) {
     tx_extra_field field = deregister;
     if (!add_tx_extra_field_to_tx_extra(tx_extra, field)) {
         log::info(logcat, "failed to serialize tx extra for service node deregister transaction");

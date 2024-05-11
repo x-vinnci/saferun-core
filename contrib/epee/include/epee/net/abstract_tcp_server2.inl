@@ -1385,7 +1385,7 @@ POP_WARNINGS
           }
       });
     //start async connect
-    sock_.async_connect(remote_endpoint, [=](const boost::system::error_code& ec_)
+    sock_.async_connect(remote_endpoint, [=, this](const boost::system::error_code& ec_)
       {
         t_connection_context conn_context{};
         if(!ec_)

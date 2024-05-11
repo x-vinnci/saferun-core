@@ -30,6 +30,8 @@
 
 #pragma once
 
+#include <fmt/std.h>
+
 #include <stdexcept>
 #include <string>
 #include <system_error>
@@ -215,11 +217,13 @@ namespace tools { namespace error {
     template <int msg_index>
     struct file_error_base : public wallet_logic_error {
         file_error_base(std::string loc, fs::path file, std::error_code e = {}) :
-                wallet_logic_error(
+                wallet_logic_error{
                         std::move(loc),
-                        std::string(file_error_messages[msg_index]) + " \"" + file.u8string() +
-                                '"' + (e ? ": " + e.message() : "")),
-                m_file(std::move(file)) {}
+                        "{} \"{}\": {}"_format(
+                                file_error_messages[msg_index],
+                                file,
+                                e ? e.message() : "unknown"s)},
+                m_file{std::move(file)} {}
 
         const fs::path& file() const { return m_file; }
 
@@ -375,7 +379,7 @@ namespace tools { namespace error {
     //----------------------------------------------------------------------------------------------------
     struct not_enough_unlocked_money : public transfer_error {
         explicit not_enough_unlocked_money(
-                std::string&& loc, uint64_t available, uint64_t tx_amount, uint64_t fee) :
+                std::string&& loc, uint64_t available, uint64_t tx_amount, uint64_t /*fee*/) :
                 transfer_error(std::move(loc), "Not enough unlocked money"),
                 m_available(available),
                 m_tx_amount(tx_amount) {}
@@ -398,7 +402,7 @@ namespace tools { namespace error {
     //----------------------------------------------------------------------------------------------------
     struct not_enough_money : public transfer_error {
         explicit not_enough_money(
-                std::string&& loc, uint64_t available, uint64_t tx_amount, uint64_t fee) :
+                std::string&& loc, uint64_t available, uint64_t tx_amount, uint64_t /*fee*/) :
                 transfer_error(std::move(loc), "Not enough money"),
                 m_available(available),
                 m_tx_amount(tx_amount) {}
@@ -728,10 +732,9 @@ namespace tools { namespace error {
     struct wallet_files_doesnt_correspond : public wallet_logic_error {
         explicit wallet_files_doesnt_correspond(
                 std::string&& loc, const fs::path& keys_file, const fs::path& wallet_file) :
-                wallet_logic_error(
+                wallet_logic_error{
                         std::move(loc),
-                        "File " + wallet_file.u8string() + " does not correspond to " +
-                                keys_file.u8string()) {}
+                        "File {} does not correspond to {}"_format(wallet_file, keys_file)} {}
     };
     //----------------------------------------------------------------------------------------------------
     struct get_accrued_batched_earnings_error : public wallet_rpc_error {
@@ -762,7 +765,7 @@ namespace tools { namespace error {
     template <typename TException, typename... TArgs>
     void throw_wallet_ex(std::string&& loc, TArgs&&... args) {
         TException e(std::move(loc), std::forward<TArgs>(args)...);
-        oxen::log::warning(globallogcat, e.to_string());
+        oxen::log::warning(globallogcat, "{}", e.to_string());
         throw e;
     }
 }}  // namespace tools::error
@@ -783,4 +786,5 @@ namespace tools { namespace error {
             oxen::log::error(logcat, "{}. THROW EXCEPTION: {}", #cond, #err_type); \
             tools::error::throw_wallet_ex<err_type>(                               \
                     std::string(__FILE__ ":" STRINGIZE(__LINE__)), ##__VA_ARGS__); \
-    }} while (0)
+        }                                                                          \
+    } while (0)

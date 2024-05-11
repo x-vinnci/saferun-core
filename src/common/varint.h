@@ -32,6 +32,7 @@
 #pragma once
 
 #include <cassert>
+#include <concepts>
 #include <iterator>
 #include <string>
 #include <type_traits>
@@ -86,10 +87,7 @@ constexpr size_t VARINT_MAX_LENGTH = (sizeof(T) * 8 + 6) / 7;  // i.e. integer c
  * could static cast a signed type to an unsigned type, but note that any actual negative values
  * (which have a high bit set) will always end up full size since the high bit is set.
  */
-template <
-        typename OutputIt,
-        typename T,
-        std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+template <std::unsigned_integral T, std::output_iterator<T> OutputIt>
 void write_varint(OutputIt&& it, T i) {
 #ifndef NDEBUG
     size_t count = 0;
@@ -118,11 +116,7 @@ std::string get_varint_data(const T& v) {
  * the position after the varint bytes that we read.  Returns the number of bytes read on success,
  * or one of the negative EVARIANT_* constants on failure.
  */
-template <
-        typename It,
-        typename EndIt,
-        typename T,
-        std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+template <std::unsigned_integral T, std::input_iterator It, std::sentinel_for<It> EndIt>
 int read_varint(It&& it, const EndIt& end, T& write) {
     constexpr size_t bits = sizeof(T) * 8;
 
@@ -152,26 +146,20 @@ int read_varint(It&& it, const EndIt& end, T& write) {
 }
 
 // Overloads to allow {read,write}_varint to be called with const iterators
-template <
-        typename OutputIt,
-        typename T,
-        std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+template <std::unsigned_integral T, std::output_iterator<T> OutputIt>
 auto write_varint(const OutputIt& it_, T i) {
     return write_varint(OutputIt{it_}, i);
 }
 
-template <
-        typename It,
-        typename T,
-        std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
-auto read_varint(const It& it_, const It& end, T& i) {
-    return read_varint(It{it_}, end, i);
+template <std::unsigned_integral T, std::input_iterator It, std::sentinel_for<It> EndIt>
+int read_varint(const It& it, const EndIt& end, T& write) {
+    return read_varint(It{it}, end, write);
 }
 
 /*! \brief reads the varint from an encoded string into `write`. Returns the number of bytes
  * consumed, or an error value (as above).
  */
-template <typename T, std::enable_if_t<std::is_integral_v<T> && std::is_unsigned_v<T>, int> = 0>
+template <std::unsigned_integral T>
 int read_varint(std::string_view s, T& write) {
     return read_varint(s.begin(), s.end(), write);
 }

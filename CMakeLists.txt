@@ -48,7 +48,7 @@ cmake_minimum_required(VERSION 3.13...3.24)
 message(STATUS "CMake version ${CMAKE_VERSION}")
 
 # Has to be set before `project()`, and ignored on non-macos:
-set(CMAKE_OSX_DEPLOYMENT_TARGET 10.12 CACHE STRING "macOS deployment target (Apple clang only)")
+set(CMAKE_OSX_DEPLOYMENT_TARGET 10.15 CACHE STRING "macOS deployment target (Apple clang only)")
 
 project(oxen
     VERSION 11.0.0
@@ -71,7 +71,7 @@ if(POLICY CMP0079)
   cmake_policy(SET CMP0079 NEW)
 endif()
 
-set(CMAKE_CXX_STANDARD 17)
+set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_C_STANDARD 11)
@@ -305,7 +305,6 @@ if(NOT MANUAL_SUBMODULES)
       check_submodule(external/Catch2)
     endif()
     check_submodule(external/uWebSockets uSockets)
-    check_submodule(external/ghc-filesystem)
     check_submodule(external/SQLiteCpp)
     check_submodule(external/pybind11)
   endif()
@@ -357,8 +356,6 @@ endif()
 #   set(NETBSD TRUE)
 # elseif(CMAKE_SYSTEM_NAME MATCHES ".*BSDI.*")
 #   set(BSDI TRUE)
-
-include(cmake/check_for_std_filesystem.cmake)
 
 include_directories(external/rapidjson/include src external)
 

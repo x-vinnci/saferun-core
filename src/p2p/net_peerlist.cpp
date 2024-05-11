@@ -165,7 +165,7 @@ std::optional<peerlist_storage> peerlist_storage::open(std::istream& src, const 
 }
 
 std::optional<peerlist_storage> peerlist_storage::open(const fs::path& path) {
-    fs::ifstream src_file{path, std::ios::binary};
+    std::ifstream src_file{path, std::ios::binary};
     if (src_file.fail())
         return std::nullopt;
 
@@ -209,7 +209,7 @@ bool peerlist_storage::store(std::ostream& dest, const peerlist_types& other) co
 }
 
 bool peerlist_storage::store(const fs::path& path, const peerlist_types& other) const {
-    fs::ofstream dest_file{path, std::ios::binary | std::ios::trunc};
+    std::ofstream dest_file{path, std::ios::binary | std::ios::trunc};
     if (dest_file.fail())
         return false;
 

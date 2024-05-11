@@ -445,13 +445,12 @@ namespace cryptonote
       Nz. */
       int64_t diff = static_cast<int64_t>(hshd.current_height) - static_cast<int64_t>(curr_height);
       uint64_t abs_diff = std::abs(diff);
-      uint64_t max_block_height = std::max(hshd.current_height, curr_height);
       std::string sync_msg = "{}Sync data returned a new top block candidate: {} -> {} [Your node is {} blocks ({} {})]\nSYNCHRONIZATION started"_format(
               context, curr_height, hshd.current_height, abs_diff, tools::get_human_readable_timespan(abs_diff*TARGET_BLOCK_TIME), (0 <= diff ? "behind" : "ahead"));
       if (is_initial)
-        log::info(globallogcat, fg(fmt::terminal_color::cyan), sync_msg);
+        log::info(globallogcat, fg(fmt::terminal_color::cyan), "{}", sync_msg);
       else
-        log::debug(globallogcat, sync_msg);
+        log::debug(globallogcat, "{}", sync_msg);
 
       m_period_start_time = m_sync_start_time = std::chrono::steady_clock::now();
       m_sync_start_height = curr_height;
@@ -1498,12 +1497,11 @@ namespace cryptonote
               if (bvc.m_verifivation_failed || bvc.m_marked_as_orphaned)
               {
                 if (!m_p2p->for_connection(span_connection_id, [&](cryptonote_connection_context& context, nodetool::peerid_type peer_id)->bool{
-                      std::string const err_msg =
-                      bvc.m_verifivation_failed
-                          ? "Block verification failed, dropping connection"
-                          : "Block received at sync phase was marked as orphaned, dropping connection";
+                    if (bvc.m_verifivation_failed)
+                        log::info(logcat, "Block verification failed, dropping connection");
+                    else
+                        log::info(logcat, "Block received at sync phase was marked as orphaned, dropping connection");
 
-                  log::info(logcat, err_msg);
                   drop_connection(context, true, true);
                   return 1;
                 }))

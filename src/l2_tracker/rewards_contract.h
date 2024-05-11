@@ -1,12 +1,11 @@
 #pragma once
-#include <string>
-#include <memory>
-#include <variant>
-
 #include <crypto/crypto.h>
 
-#include <ethyl/provider.hpp>
 #include <ethyl/logs.hpp>
+#include <ethyl/provider.hpp>
+#include <memory>
+#include <string>
+#include <variant>
 
 enum class TransactionType {
     NewServiceNode,
@@ -20,12 +19,11 @@ struct Contributor {
     crypto::eth_address addr;
     uint64_t amount;
 
-    Contributor(const crypto::eth_address& address, uint64_t amt)
-        : addr(address), amount(amt) {}
+    Contributor(const crypto::eth_address& address, uint64_t amt) : addr(address), amount(amt) {}
 };
 
 class NewServiceNodeTx {
-public:
+  public:
     crypto::bls_public_key bls_key;
     crypto::eth_address eth_address;
     std::string service_node_pubkey;
@@ -33,41 +31,56 @@ public:
     uint64_t fee;
     std::vector<Contributor> contributors;
 
-    NewServiceNodeTx(const crypto::bls_public_key& _bls_key, const crypto::eth_address& _eth_address, const std::string& _service_node_pubkey, const std::string& _signature, const uint64_t _fee, const std::vector<Contributor>& _contributors)
-        : bls_key(_bls_key), eth_address(_eth_address), service_node_pubkey(_service_node_pubkey), signature(_signature), fee(_fee), contributors(_contributors) {}
+    NewServiceNodeTx(
+            const crypto::bls_public_key& _bls_key,
+            const crypto::eth_address& _eth_address,
+            const std::string& _service_node_pubkey,
+            const std::string& _signature,
+            const uint64_t _fee,
+            const std::vector<Contributor>& _contributors) :
+            bls_key(_bls_key),
+            eth_address(_eth_address),
+            service_node_pubkey(_service_node_pubkey),
+            signature(_signature),
+            fee(_fee),
+            contributors(_contributors) {}
 };
 
 class ServiceNodeLeaveRequestTx {
-public:
+  public:
     crypto::bls_public_key bls_key;
 
-    ServiceNodeLeaveRequestTx(const crypto::bls_public_key& _bls_key)
-        : bls_key(_bls_key) {}
+    ServiceNodeLeaveRequestTx(const crypto::bls_public_key& _bls_key) : bls_key(_bls_key) {}
 };
 
 class ServiceNodeDeregisterTx {
-public:
+  public:
     crypto::bls_public_key bls_key;
 
-    ServiceNodeDeregisterTx(const crypto::bls_public_key& _bls_key)
-        : bls_key(_bls_key) {}
+    ServiceNodeDeregisterTx(const crypto::bls_public_key& _bls_key) : bls_key(_bls_key) {}
 };
 
 class ServiceNodeExitTx {
-public:
+  public:
     crypto::eth_address eth_address;
     uint64_t amount;
     crypto::bls_public_key bls_key;
 
-    ServiceNodeExitTx(const crypto::eth_address& _eth_address, const uint64_t _amount, const crypto::bls_public_key& _bls_key)
-        : eth_address(_eth_address), amount(_amount), bls_key(_bls_key) {}
+    ServiceNodeExitTx(
+            const crypto::eth_address& _eth_address,
+            const uint64_t _amount,
+            const crypto::bls_public_key& _bls_key) :
+            eth_address(_eth_address), amount(_amount), bls_key(_bls_key) {}
 };
 
-using TransactionStateChangeVariant = std::variant<NewServiceNodeTx, ServiceNodeLeaveRequestTx, ServiceNodeDeregisterTx, ServiceNodeExitTx>;
-
+using TransactionStateChangeVariant = std::variant<
+        NewServiceNodeTx,
+        ServiceNodeLeaveRequestTx,
+        ServiceNodeDeregisterTx,
+        ServiceNodeExitTx>;
 
 class RewardsLogEntry : public LogEntry {
-public:
+  public:
     RewardsLogEntry(const LogEntry& log) : LogEntry(log) {}
     TransactionType getLogType() const;
     std::optional<TransactionStateChangeVariant> getLogTransaction() const;
@@ -79,7 +92,7 @@ struct StateResponse {
 };
 
 class RewardsContract {
-public:
+  public:
     // Constructor
     RewardsContract(const std::string& _contractAddress, std::shared_ptr<Provider> _provider);
 
@@ -88,7 +101,7 @@ public:
 
     std::vector<RewardsLogEntry> Logs(uint64_t height);
 
-private:
+  private:
     std::string contractAddress;
     std::shared_ptr<Provider> provider;
 };

@@ -338,7 +338,7 @@ bool rpc_command_executor::print_checkpoints(
             entry.append("No Checkpoints");
     }
 
-    tools::success_msg_writer(entry);
+    tools::success_msg_writer() + entry;
     return true;
 }
 
@@ -904,9 +904,9 @@ bool rpc_command_executor::print_block_by_hash(const crypto::hash& block_hash, b
     auto& block = *maybe_block;
 
     if (include_hex)
-        tools::success_msg_writer(block["blob"].get<std::string_view>()) + "\n";
+        tools::success_msg_writer() + block["blob"].get<std::string_view>() + "\n";
     print_block_header(block["block_header"]);
-    tools::success_msg_writer(block["json"].get<std::string_view>()) + "\n";
+    tools::success_msg_writer() + block["json"].get<std::string_view>() + "\n";
 
     return true;
 }
@@ -1900,7 +1900,9 @@ static void append_printable_service_node_list_entry(
         stream << '\n' << indent2 << "Pulse blocks: ";
         print_votes<std::pair<uint64_t, uint8_t>>(
                 stream, entry, "pulse_votes", [](const auto& val) {
-                    return fmt::format(val.second ? "{} {}" : "{}", val.first, val.second);
+                    if (val.second)
+                        return "{} {}"_format(val.first, val.second);
+                    return "{}"_format(val.first);
                 });
 
         auto print_pass_fail = [&stream, &entry](const std::string& key) {
@@ -2141,20 +2143,19 @@ bool rpc_command_executor::claim_rewards(const std::string& address) {
     link << "https://oxen-eth-webpage.vercel.app";
     link << "/?amount=" << withdrawal_response["amount"];
     link << "?address=" << withdrawal_response["address"];
-    link << "?height=" <<  withdrawal_response["height"];
-    link << "&sig=" <<     withdrawal_response["signature"];
+    link << "?height=" << withdrawal_response["height"];
+    link << "&sig=" << withdrawal_response["signature"];
     for (const auto& non_signer : withdrawal_response["non_signers"]) {
         link << "&indices=" << non_signer;
     }
 
     tools::msg_writer(
-                  "Address: {}\n Amount: {}\n Height: {}\n Signature: {}\n Link to claim rewards: {}\n",
-                  withdrawal_response["address"],
-                  withdrawal_response["amount"],
-                  withdrawal_response["height"],
-                  withdrawal_response["signature"],
-                  link.str()
-              );
+            "Address: {}\n Amount: {}\n Height: {}\n Signature: {}\n Link to claim rewards: {}\n",
+            withdrawal_response["address"],
+            withdrawal_response["amount"],
+            withdrawal_response["height"],
+            withdrawal_response["signature"],
+            link.str());
     return true;
 }
 
@@ -2266,13 +2267,15 @@ bool rpc_command_executor::prepare_registration(bool force_registration) {
         return false;
     auto& snode_keys = *maybe_keys;
 
-    //TODO sean use the feature flag instead
+    // TODO sean use the feature flag instead
     if (hf_version > hf::hf20) {
         tools::success_msg_writer(
-            "Service Node Pubkey: {}\n"
-            "Service Node Signature: {}\n", 
-            snode_keys.value<std::string>("service_node_pubkey", ""),
-            snode_keys.value<std::string>("service_node_signature", "")); // Assuming 'service_node_signature' is the key for signature
+                "Service Node Pubkey: {}\n"
+                "Service Node Signature: {}\n",
+                snode_keys.value<std::string>("service_node_pubkey", ""),
+                snode_keys.value<std::string>(
+                        "service_node_signature",
+                        ""));  // Assuming 'service_node_signature' is the key for signature
         return true;
     }
 
@@ -2718,7 +2721,7 @@ bool rpc_command_executor::version() {
             "Failed to retrieve node info");
     if (!version)
         return false;
-    tools::success_msg_writer(*version);
+    tools::success_msg_writer() + *version;
     return true;
 }
 

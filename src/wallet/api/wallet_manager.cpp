@@ -156,7 +156,7 @@ EXPORT
 bool WalletManagerImpl::walletExists(std::string_view path) {
     bool keys_file_exists;
     bool wallet_file_exists;
-    tools::wallet2::wallet_exists(fs::u8path(path), keys_file_exists, wallet_file_exists);
+    tools::wallet2::wallet_exists(tools::utf8_path(path), keys_file_exists, wallet_file_exists);
     if (keys_file_exists) {
         return true;
     }
@@ -170,7 +170,7 @@ bool WalletManagerImpl::verifyWalletPassword(
         bool no_spend_key,
         uint64_t kdf_rounds) const {
     return tools::wallet2::verify_password(
-            fs::u8path(keys_file_name),
+            tools::utf8_path(keys_file_name),
             password,
             no_spend_key,
             hw::get_device("default"),
@@ -184,14 +184,15 @@ bool WalletManagerImpl::queryWalletDevice(
         const std::string& password,
         uint64_t kdf_rounds) const {
     hw::device::type type;
-    bool r = tools::wallet2::query_device(type, fs::u8path(keys_file_name), password, kdf_rounds);
+    bool r = tools::wallet2::query_device(
+            type, tools::utf8_path(keys_file_name), password, kdf_rounds);
     device_type = static_cast<Wallet::Device>(type);
     return r;
 }
 
 EXPORT
 std::vector<std::string> WalletManagerImpl::findWallets(std::string_view path_) {
-    auto path = fs::u8path(path_);
+    auto path = tools::utf8_path(path_);
     std::vector<std::string> result;
     // return empty result if path doesn't exist
     if (!fs::is_directory(path)) {

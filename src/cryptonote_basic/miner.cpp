@@ -195,7 +195,7 @@ bool miner::start(
         log::info(logcat, "Mining until height {}", m_stop_height);
 
     for (int i = 0; i < m_threads_total; i++)
-        m_threads.emplace_back([=] { return worker_thread(i, slow_mining); });
+        m_threads.emplace_back([this, i, slow_mining] { return worker_thread(i, slow_mining); });
 
     log::info(logcat, "Mining has started with {} threads, good luck!", m_threads_total);
 

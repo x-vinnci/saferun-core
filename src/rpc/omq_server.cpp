@@ -2,6 +2,7 @@
 #include "omq_server.h"
 
 #include <fmt/core.h>
+#include <fmt/std.h>
 #include <oxenc/bt.h>
 #include <oxenmq/fmt.h>
 #include <oxenmq/oxenmq.h>
@@ -156,13 +157,11 @@ namespace cryptonote { namespace rpc {
 #ifndef _WIN32
             // Push default .oxen/oxend.sock
             locals.push_back(
-                    "ipc://" + core.get_config_directory().u8string() + "/" +
-                    std::string{cryptonote::SOCKET_FILENAME});
+                    "ipc://{}"_format(core.get_config_directory() / cryptonote::SOCKET_FILENAME));
             // Pushing old default lokid.sock onto the list. A symlink from .loki -> .oxen so the
             // user should be able to communicate via the old .loki/lokid.sock
-            locals.push_back(
-                    "ipc://" + core.get_config_directory().u8string() + "/" +
-                    std::string{cryptonote::old::SOCKET_FILENAME});
+            locals.push_back("ipc://{}"_format(
+                    core.get_config_directory() / cryptonote::old::SOCKET_FILENAME));
 #endif
         } else if (locals.size() == 1 && locals[0] == "none") {
             locals.clear();

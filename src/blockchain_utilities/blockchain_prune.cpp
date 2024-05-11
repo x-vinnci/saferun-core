@@ -606,7 +606,7 @@ int main(int argc, char* argv[]) {
         }
 
         if (n == 1) {
-            paths[1] = fs::u8path(data_dir) / (db->get_db_name() + "-pruned");
+            paths[1] = tools::utf8_path(data_dir) / tools::utf8_path(db->get_db_name() + "-pruned");
             if (fs::exists(paths[1])) {
                 if (!fs::is_directory(paths[1])) {
                     log::error(
@@ -623,7 +623,7 @@ int main(int argc, char* argv[]) {
             }
             db_path = paths[1];
         } else {
-            paths[0] = fs::u8path(data_dir) / db->get_db_name();
+            paths[0] = tools::utf8_path(data_dir) / tools::utf8_path(db->get_db_name());
         }
 
         log::info(logcat, "Loading blockchain from folder {} ...", paths[n]);

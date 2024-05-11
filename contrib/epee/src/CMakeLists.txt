@@ -64,6 +64,5 @@ target_link_libraries(epee
     oxenmq::oxenmq
     oxenc::oxenc
   PRIVATE
-    filesystem
     Boost::thread
     extra)

@@ -1,5 +1,6 @@
 #include "oxen_name_system.h"
 
+#include <fmt/std.h>
 #include <oxenc/base32z.h>
 #include <oxenc/base64.h>
 #include <oxenc/hex.h>
@@ -7,11 +8,12 @@
 
 #include <algorithm>
 #include <bitset>
+#include <concepts>
 #include <iterator>
+#include <type_traits>
 #include <variant>
 #include <vector>
 
-#include "common/fs-format.h"
 #include "common/hex.h"
 #include "common/oxen.h"
 #include "common/string_util.h"
@@ -161,20 +163,16 @@ namespace {
     /// `bind()` binds a particular parameter to a statement by index.  The bind type is inferred
     /// from the argument.
 
-    // Small (<=32 bits) integers
-    template <typename T, std::enable_if_t<std::is_integral_v<T> && (sizeof(T) <= 4), int> = 0>
+    template <std::integral T>
     bool bind(sql_compiled_statement& s, int index, const T& val) {
-        return SQLITE_OK == sqlite3_bind_int(s.statement, index, val);
-    }
-
-    // Big (>32 bits) integers
-    template <typename T, std::enable_if_t<std::is_integral_v<T> && (sizeof(T) > 4), int> = 0>
-    bool bind(sql_compiled_statement& s, int index, const T& val) {
-        return SQLITE_OK == sqlite3_bind_int64(s.statement, index, val);
+        if constexpr (sizeof(T) <= 4)
+            return SQLITE_OK == sqlite3_bind_int(s.statement, index, val);
+        else
+            return SQLITE_OK == sqlite3_bind_int64(s.statement, index, val);
     }
 
     // Floats/doubles
-    template <typename T, std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
+    template <std::floating_point T>
     bool bind(sql_compiled_statement& s, int index, const T& val) {
         return SQLITE_OK == sqlite3_bind_double(s.statement, index, val);
     }
@@ -241,17 +239,10 @@ namespace {
     }
 
     template <typename T>
-    constexpr bool is_int_enum_impl() {
-        if constexpr (std::is_enum_v<T>)
-            return std::is_same_v<std::underlying_type_t<T>, int>;
-        else
-            return false;
-    }
-    template <typename T>
-    constexpr bool is_int_enum = is_int_enum_impl<T>();
+    concept int_enum = (std::is_enum_v<T> && std::same_as<std::underlying_type_t<T>, int>) || false;
 
     // Binds, but gives index as an enum class
-    template <typename T, typename I, std::enable_if_t<is_int_enum<I>, int> = 0>
+    template <typename T, int_enum I>
     bool bind(sql_compiled_statement& s, I index, T&& val) {
         return ons::bind(s, static_cast<int>(index), std::forward<T>(val));
     }
@@ -298,39 +289,36 @@ namespace {
     /// Retrieve a type from an executed statement.
 
     // Small (<=32 bits) integers
-    template <typename T, std::enable_if_t<std::is_integral_v<T> && (sizeof(T) <= 32), int> = 0>
+    template <std::integral T>
     T get(sql_compiled_statement& s, int index) {
-        return static_cast<T>(sqlite3_column_int(s.statement, index));
-    }
-
-    // Big (>32 bits) integers
-    template <typename T, std::enable_if_t<std::is_integral_v<T> && (sizeof(T) > 32), int> = 0>
-    T get(sql_compiled_statement& s, int index) {
-        return static_cast<T>(sqlite3_column_int64(s.statement, index));
+        if constexpr (sizeof(T) <= 4)
+            return static_cast<T>(sqlite3_column_int(s.statement, index));
+        else
+            return static_cast<T>(sqlite3_column_int64(s.statement, index));
     }
 
     // Floats/doubles
-    template <typename T, std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
+    template <std::floating_point T>
     T get(sql_compiled_statement& s, int index) {
         return static_cast<T>(sqlite3_column_double(s.statement, index));
     }
 
     // text, via a string_view pointing at the text data
-    template <typename T, std::enable_if_t<std::is_same_v<T, std::string_view>, int> = 0>
+    template <std::same_as<std::string_view> T>
     std::string_view get(sql_compiled_statement& s, int index) {
         return {reinterpret_cast<const char*>(sqlite3_column_text(s.statement, index)),
                 static_cast<size_t>(sqlite3_column_bytes(s.statement, index))};
     }
 
     // text, copied into a std::string
-    template <typename T, std::enable_if_t<std::is_same_v<T, std::string>, int> = 0>
+    template <std::same_as<std::string> T>
     std::string get(sql_compiled_statement& s, int index) {
         return {reinterpret_cast<const char*>(sqlite3_column_text(s.statement, index)),
                 static_cast<size_t>(sqlite3_column_bytes(s.statement, index))};
     }
 
     // blob_view pointing at the blob data
-    template <typename T, std::enable_if_t<std::is_same_v<T, blob_view>, int> = 0>
+    template <std::same_as<blob_view> T>
     blob_view get(sql_compiled_statement& s, int index) {
         return blob_view{
                 reinterpret_cast<const char*>(sqlite3_column_blob(s.statement, index)),
@@ -338,13 +326,14 @@ namespace {
     }
 
     template <typename T>
-    constexpr bool is_optional = false;
-    template <typename T>
-    constexpr bool is_optional<std::optional<T>> = true;
+    concept optional = requires {
+        typename T::value_type;
+    }
+    &&std::convertible_to<std::nullopt_t, T>;
 
     // Gets a potentially null value; returns a std::nullopt if the column contains NULL, otherwise
     // return a value via get<T>(...).
-    template <typename T, std::enable_if_t<is_optional<T>, int> = 0>
+    template <optional T>
     T get(sql_compiled_statement& s, int index) {
         if (sqlite3_column_type(s.statement, index) == SQLITE_NULL)
             return std::nullopt;
@@ -352,7 +341,7 @@ namespace {
     }
 
     // Forwards to any of the above, but takes an enum class instead of an int
-    template <typename T, typename I, std::enable_if_t<is_int_enum<I>, int> = 0>
+    template <typename T, int_enum I>
     T get(sql_compiled_statement& s, I index) {
         return get<T>(s, static_cast<int>(index));
     }
@@ -650,7 +639,9 @@ sqlite3* init_oxen_name_system(const fs::path& file_path, bool read_only) {
     }
 
     int const flags = read_only ? SQLITE_OPEN_READONLY : SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE;
-    int sql_open = sqlite3_open_v2(file_path.u8string().c_str(), &result, flags, nullptr);
+    auto utf8_path = file_path.u8string();
+    int sql_open = sqlite3_open_v2(
+            reinterpret_cast<const char*>(utf8_path.c_str()), &result, flags, nullptr);
     if (sql_open != SQLITE_OK) {
         log::error(
                 logcat,
@@ -830,7 +821,7 @@ static constexpr bool char_is_alphanum(char c) {
 
 template <typename... T>
 static bool check_condition(
-        bool condition, std::string* reason, std::string_view format, T&&... args) {
+        bool condition, std::string* reason, fmt::format_string<T...> format, T&&... args) {
     if (condition && reason)
         *reason = fmt::format(format, std::forward<T>(args)...);
     return condition;
@@ -2604,8 +2595,7 @@ struct replay_ons_tx {
     cryptonote::tx_extra_oxen_name_system entry;
 };
 
-void name_system_db::block_detach(
-        cryptonote::Blockchain const& blockchain, uint64_t new_blockchain_height) {
+void name_system_db::block_detach(cryptonote::Blockchain const&, uint64_t new_blockchain_height) {
     prune_db(new_blockchain_height);
 }
 
@@ -2814,7 +2804,7 @@ std::vector<mapping_record> name_system_db::get_mappings_by_owners(
         sql_statement += placeholders;
         sql_statement += SQL_SUFFIX;
 
-        for (int i : {0, 1})
+        for ([[maybe_unused]] int i : {0, 1})
             for (auto const& owner : owners)
                 bind.emplace_back(blob_view{reinterpret_cast<const char*>(&owner), sizeof(owner)});
     }

@@ -31,11 +31,12 @@
 #define __STDC_FORMAT_MACROS  // NOTE(oxen): Explicitly define the PRIu64 macro on Mingw
 #endif
 
+#include <fmt/std.h>
+
 #include "blockchain_db/blockchain_db.h"
 #include "blockchain_objects.h"
 #include "common/command_line.h"
 #include "common/file.h"
-#include "common/fs-format.h"
 #include "common/hex.h"
 #include "common/signal_handler.h"
 #include "common/string_util.h"
@@ -184,7 +185,7 @@ static int resize_env(const char* db_path) {
     uint64_t mapsize = mei.me_mapsize;
     if (size_used + needed > mei.me_mapsize) {
         try {
-            auto si = fs::space(fs::u8path(db_path));
+            auto si = fs::space(tools::utf8_path(db_path));
             if (si.available < needed) {
                 log::error(
                         logcat,
@@ -294,7 +295,6 @@ static void close() {
 }
 
 static std::string compress_ring(const std::vector<uint64_t>& ring, std::string s = "") {
-    const size_t sz = s.size();
     s.reserve(s.size() + tools::VARINT_MAX_LENGTH<uint64_t> * ring.size());
     auto ins = std::back_inserter(s);
     for (uint64_t out : ring)
@@ -346,8 +346,7 @@ static bool for_all_transactions(
     dbr = mdb_env_open(env, filename.string().c_str(), 0, 0664);
     if (dbr)
         throw std::runtime_error(
-                "Failed to open rings database file '" + filename.u8string() +
-                "': " + std::string(mdb_strerror(dbr)));
+                "Failed to open rings database file '{}': {}"_format(filename, mdb_strerror(dbr)));
 
     dbr = mdb_txn_begin(env, NULL, MDB_RDONLY, &txn);
     if (dbr)
@@ -444,8 +443,7 @@ static bool for_all_transactions(
     dbr = mdb_env_open(env, filename.string().c_str(), 0, 0664);
     if (dbr)
         throw std::runtime_error(
-                "Failed to open rings database file '" + filename.u8string() +
-                "': " + std::string(mdb_strerror(dbr)));
+                "Failed to open rings database file '{}': {}"_format(filename, mdb_strerror(dbr)));
 
     dbr = mdb_txn_begin(env, NULL, MDB_RDONLY, &txn);
     if (dbr)
@@ -581,9 +579,8 @@ static uint64_t find_first_diverging_transaction(
         const fs::path& actual_filename = i ? second_filename : first_filename;
         dbr = mdb_env_open(env[i], actual_filename.string().c_str(), 0, 0664);
         if (dbr)
-            throw std::runtime_error(
-                    "Failed to open rings database file '" + actual_filename.u8string() +
-                    "': " + std::string(mdb_strerror(dbr)));
+            throw std::runtime_error("Failed to open rings database file '{}': {}"_format(
+                    actual_filename, mdb_strerror(dbr)));
 
         dbr = mdb_txn_begin(env[i], NULL, MDB_RDONLY, &txn[i]);
         if (dbr)
@@ -758,7 +755,6 @@ static void get_per_amount_outputs(
             !dbr,
             "Failed to open cursor for per amount outputs: " + std::string(mdb_strerror(dbr)));
     MDB_val k, v;
-    mdb_size_t count = 0;
     k.mv_size = sizeof(uint64_t);
     k.mv_data = (void*)&amount;
     dbr = mdb_cursor_get(cur, &k, &v, MDB_SET);
@@ -780,7 +776,6 @@ static void inc_per_amount_outputs(MDB_txn* txn, uint64_t amount, uint64_t total
             !dbr,
             "Failed to open cursor for per amount outputs: " + std::string(mdb_strerror(dbr)));
     MDB_val k, v;
-    mdb_size_t count = 0;
     k.mv_size = sizeof(uint64_t);
     k.mv_data = (void*)&amount;
     dbr = mdb_cursor_get(cur, &k, &v, MDB_SET);
@@ -1029,8 +1024,7 @@ static void open_db(
     dbr = mdb_env_open(*env, filename.string().c_str(), flags, 0664);
     CHECK_AND_ASSERT_THROW_MES(
             !dbr,
-            "Failed to open rings database file '" + filename.u8string() +
-                    "': " + std::string(mdb_strerror(dbr)));
+            "Failed to open rings database file '{}': {}"_format(filename, mdb_strerror(dbr)));
 
     dbr = mdb_txn_begin(*env, NULL, MDB_RDONLY, txn);
     CHECK_AND_ASSERT_THROW_MES(
@@ -1095,8 +1089,7 @@ static crypto::hash get_genesis_block_hash(const fs::path& filename) {
     dbr = mdb_env_open(env, filename.string().c_str(), 0, 0664);
     if (dbr)
         throw std::runtime_error(
-                "Failed to open rings database file '" + filename.u8string() +
-                "': " + std::string(mdb_strerror(dbr)));
+                "Failed to open rings database file '{}': {}"_format(filename, mdb_strerror(dbr)));
 
     dbr = mdb_txn_begin(env, NULL, MDB_RDONLY, &txn);
     if (dbr)
@@ -1154,7 +1147,6 @@ static std::vector<std::pair<uint64_t, uint64_t>> load_outputs(const fs::path& f
             s[len - 1] = 0;
         if (!s[0])
             continue;
-        std::pair<uint64_t, uint64_t> output;
         uint64_t offset, num_offsets;
         if (sscanf(s, "@%" PRIu64, &amount) == 1) {
             continue;
@@ -1246,7 +1238,7 @@ int main(int argc, char* argv[]) {
     const command_line::arg_descriptor<std::string> arg_blackball_db_dir = {
             "spent-output-db-dir",
             "Specify spent output database directory",
-            get_default_db_path().u8string(),
+            tools::convert_str<char>(get_default_db_path().u8string()),
     };
     const command_line::arg_descriptor<std::string> arg_log_level = {
             "log-level", "0-4 or categories", ""};
@@ -1322,7 +1314,7 @@ int main(int argc, char* argv[]) {
     oxen::logging::init(log_file_path, log_level);
     log::warning(logcat, "Starting...");
 
-    fs::path output_file_path = fs::u8path(command_line::get_arg(vm, arg_blackball_db_dir));
+    fs::path output_file_path = tools::utf8_path(command_line::get_arg(vm, arg_blackball_db_dir));
     bool opt_rct_only = command_line::get_arg(vm, arg_rct_only);
     bool opt_check_subsets = command_line::get_arg(vm, arg_check_subsets);
     bool opt_verbose = command_line::get_arg(vm, arg_verbose);
@@ -1342,7 +1334,7 @@ int main(int argc, char* argv[]) {
 
     std::vector<fs::path> inputs;
     for (auto& in : command_line::get_arg(vm, arg_inputs))
-        inputs.push_back(fs::u8path(in));
+        inputs.push_back(tools::utf8_path(in));
     if (inputs.empty()) {
         log::warning(logcat, "No inputs given");
         return 1;
@@ -1501,7 +1493,7 @@ int main(int argc, char* argv[]) {
     }
 
     for (size_t n = 0; n < inputs.size(); ++n) {
-        const std::string canonical = fs::canonical(inputs[n]).u8string();
+        const std::string canonical = tools::convert_str<char>(fs::canonical(inputs[n]).u8string());
         uint64_t start_idx = get_processed_txidx(canonical);
         if (n > 0 && start_idx == 0) {
             start_idx = find_first_diverging_transaction(inputs[0], inputs[n]);
