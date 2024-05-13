@@ -1,5 +1,7 @@
 #include "pool_contract.h"
 
+#include <ethyl/utils.hpp>
+
 #include "logging/oxen_logger.h"
 
 static auto logcat = oxen::log::Cat("l2_tracker");

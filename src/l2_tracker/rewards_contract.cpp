@@ -1,5 +1,7 @@
 #include "rewards_contract.h"
 
+#include <ethyl/utils.hpp>
+
 #pragma GCC diagnostic push
 #pragma GCC diagnostic ignored "-Wuseless-cast"
 #include <nlohmann/json.hpp>

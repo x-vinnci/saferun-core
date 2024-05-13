@@ -1,8 +1,10 @@
 #pragma once
 
+#include <atomic>
+#include <thread>
+
 #include "crypto/hash.h"
 #include "cryptonote_config.h"
-#include "l2_tracker.h"
 #include "pool_contract.h"
 #include "rewards_contract.h"
 
