@@ -3263,7 +3263,7 @@ bool simple_wallet::set_variable(const std::vector<std::string>& args) {
         success_msg_writer() << "refresh-type = "
                              << get_refresh_type_name(m_wallet->get_refresh_type());
         success_msg_writer() << "priority = " << priority << " (" << priority_string << ")";
-        success_msg_writer() << "ask-password = " << m_wallet->ask_password() << " ("
+        success_msg_writer() << "ask-password = " << static_cast<int>(m_wallet->ask_password()) << " ("
                              << ask_password_string << ")";
         success_msg_writer() << "min-outputs-count = " << m_wallet->get_min_output_count();
         success_msg_writer() << "min-outputs-value = "
@@ -7186,12 +7186,12 @@ bool simple_wallet::ons_lookup(std::vector<std::string> args) {
         writer << "Name: " << name
                << "\n    Type: " << static_cast<ons::mapping_type>(mapping["type"])
                << "\n    Value: " << value.to_readable_value(m_wallet->nettype(), mapping["type"])
-               << "\n    Owner: " << mapping["owner"];
+               << "\n    Owner: " << mapping["owner"].get<std::string_view>();
         if (auto got = mapping.find("backup_owner"); got != mapping.end())
-            writer << "\n    Backup owner: " << mapping["backup_owner"];
-        writer << "\n    Last updated height: " << mapping["update_height"];
+            writer << "\n    Backup owner: " << mapping["backup_owner"].get<std::string_view>();
+        writer << "\n    Last updated height: " << mapping["update_height"].get<int64_t>();
         if (auto got = mapping.find("expiration_height"); got != mapping.end())
-            writer << "\n    Expiration height: " << mapping["expiration_height"];
+            writer << "\n    Expiration height: " << mapping["expiration_height"].get<int64_t>();
         writer << "\n    Encrypted value: " << enc_hex;
         writer << "\n";
 
@@ -7255,28 +7255,29 @@ bool simple_wallet::ons_by_owner(const std::vector<std::string>& args) {
         if (auto got = cache.find(entry["name_hash"]); got != cache.end()) {
             name = got->second.name;
             ons::mapping_value mv;
-            if (ons::mapping_value::validate_encrypted(
+            auto enc_val_hex = entry["encrypted_value"].get<std::string_view>();
+            if (oxenc::is_hex(enc_val_hex) && ons::mapping_value::validate_encrypted(
                         ons_type,
-                        oxenc::from_hex(entry["encrypted_value"].get<std::string>()),
+                        oxenc::from_hex(enc_val_hex),
                         &mv) &&
                 mv.decrypt(name, ons_type))
                 value = mv.to_readable_value(nettype, ons_type);
         }
 
         auto writer = message_writer();
-        writer << "Name (hashed): " << entry["name_hash"];
+        writer << "Name (hashed): " << entry["name_hash"].get<std::string_view>();
         if (!name.empty())
             writer << "\n    Name: " << name;
         writer << "\n    Type: " << ons_type;
         if (!value.empty())
             writer << "\n    Value: " << value;
-        writer << "\n    Owner: " << entry["owner"];
+        writer << "\n    Owner: " << entry["owner"].get<std::string_view>();
         if (auto got = entry.find("backup_owner"); got != entry.end())
-            writer << "\n    Backup owner: " << entry["backup_owner"];
-        writer << "\n    Last updated height: " << entry["update_height"];
+            writer << "\n    Backup owner: " << entry["backup_owner"].get<std::string_view>();
+        writer << "\n    Last updated height: " << entry["update_height"].get<int64_t>();
         if (auto got = entry.find("expiration_height"); got != entry.end())
-            writer << "\n    Expiration height: " << entry["expiration_height"];
-        writer << "\n    Encrypted value: " << entry["encrypted_value"];
+            writer << "\n    Expiration height: " << entry["expiration_height"].get<int64_t>();
+        writer << "\n    Encrypted value: " << entry["encrypted_value"].get<std::string_view>();
     }
     return true;
 }

@@ -3473,7 +3473,7 @@ ONS_KNOWN_NAMES::response wallet_rpc_server::invoke(ONS_KNOWN_NAMES::request&& r
                     log::warning(
                             logcat,
                             "Got back invalid entry_index {} for a request for {} entries",
-                            rec["entry_index"],
+                            rec["entry_index"].get<size_t>(),
                             num_entries);
                     continue;
                 }

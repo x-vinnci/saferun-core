@@ -971,7 +971,7 @@ bool node_server<t_payload_net_handler>::do_handshake_with_peer(
 //-----------------------------------------------------------------------------------
 template <class t_payload_net_handler>
 bool node_server<t_payload_net_handler>::do_peer_timed_sync(
-        const epee::net_utils::connection_context_base& context_, peerid_type peer_id) {
+        const epee::net_utils::connection_context_base& context_, peerid_type /*peer_id*/) {
     using request_t = typename COMMAND_TIMED_SYNC::request;
     using response_t = typename COMMAND_TIMED_SYNC::response;
     request_t arg{};
@@ -1153,12 +1153,11 @@ bool node_server<t_payload_net_handler>::try_to_connect_and_handshake_with_new_p
         return false;
     }
 
-    con->m_anchor = peer_type == anchor;
+    con->m_anchor = peer_type == PeerType::anchor;
     peerid_type pi{};
     bool res = do_handshake_with_peer(pi, *con, just_take_peerlist);
 
     if (!res) {
-        bool is_priority = is_priority_node(na);
         if (is_priority_node(na))
             log::info(logcat, "{}[priority] Failed to HANDSHAKE with peer {}", *con, na.str());
         else
@@ -1295,7 +1294,7 @@ bool node_server<t_payload_net_handler>::make_new_connection_from_anchor_peerlis
                 pe.adr.str(),
                 format_stamp_ago(pe.first_seen));
 
-        if (!try_to_connect_and_handshake_with_new_peer(pe.adr, false, 0, anchor, pe.first_seen)) {
+        if (!try_to_connect_and_handshake_with_new_peer(pe.adr, false, 0, PeerType::anchor, pe.first_seen)) {
             log::debug(logcat, "Handshake failed");
             continue;
         }
@@ -1472,11 +1471,11 @@ bool node_server<t_payload_net_handler>::make_new_connection_from_peerlist(
                 peerid_to_string(pe.id),
                 pe.adr.str(),
                 epee::string_tools::to_string_hex(pe.pruning_seed),
-                (use_white_list ? white : gray),
+                (use_white_list ? "white" : "gray"),
                 format_stamp_ago(pe.last_seen));
 
         if (!try_to_connect_and_handshake_with_new_peer(
-                    pe.adr, false, pe.last_seen, use_white_list ? white : gray)) {
+                    pe.adr, false, pe.last_seen, use_white_list ? PeerType::white : PeerType::gray)) {
             log::debug(logcat, "Handshake failed");
             continue;
         }
@@ -1600,20 +1599,20 @@ bool node_server<t_payload_net_handler>::connections_maker() {
                                cryptonote::p2p::DEFAULT_ANCHOR_CONNECTIONS_COUNT &&
                        make_expected_connections_count(
                                zone.second,
-                               anchor,
+                               PeerType::anchor,
                                cryptonote::p2p::DEFAULT_ANCHOR_CONNECTIONS_COUNT))
                     ;
                 // then do white list
                 while (get_outgoing_connections_count(zone.second) < expected_white_connections &&
                        make_expected_connections_count(
-                               zone.second, white, expected_white_connections))
+                               zone.second, PeerType::white, expected_white_connections))
                     ;
                 // then do grey list
                 while (get_outgoing_connections_count(zone.second) <
                                zone.second.m_config.m_net_config.max_out_connection_count &&
                        make_expected_connections_count(
                                zone.second,
-                               gray,
+                               PeerType::gray,
                                zone.second.m_config.m_net_config.max_out_connection_count))
                     ;
             } else {
@@ -1622,7 +1621,7 @@ bool node_server<t_payload_net_handler>::connections_maker() {
                                zone.second.m_config.m_net_config.max_out_connection_count &&
                        make_expected_connections_count(
                                zone.second,
-                               gray,
+                               PeerType::gray,
                                zone.second.m_config.m_net_config.max_out_connection_count))
                     ;
                 // and then do white list
@@ -1630,7 +1629,7 @@ bool node_server<t_payload_net_handler>::connections_maker() {
                                zone.second.m_config.m_net_config.max_out_connection_count &&
                        make_expected_connections_count(
                                zone.second,
-                               white,
+                               PeerType::white,
                                zone.second.m_config.m_net_config.max_out_connection_count))
                     ;
             }
@@ -1666,7 +1665,7 @@ bool node_server<t_payload_net_handler>::make_expected_connections_count(
 
     std::vector<anchor_peerlist_entry> apl;
 
-    if (peer_type == anchor) {
+    if (peer_type == PeerType::anchor) {
         zone.m_peerlist.get_and_empty_anchor_peerlist(apl);
     }
 
@@ -1683,15 +1682,15 @@ bool node_server<t_payload_net_handler>::make_expected_connections_count(
                 conn_count,
                 expected_connections);
 
-        if (peer_type == anchor && !make_new_connection_from_anchor_peerlist(apl)) {
+        if (peer_type == PeerType::anchor && !make_new_connection_from_anchor_peerlist(apl)) {
             return false;
         }
 
-        if (peer_type == white && !make_new_connection_from_peerlist(zone, true)) {
+        if (peer_type == PeerType::white && !make_new_connection_from_peerlist(zone, true)) {
             return false;
         }
 
-        if (peer_type == gray && !make_new_connection_from_peerlist(zone, false)) {
+        if (peer_type == PeerType::gray && !make_new_connection_from_peerlist(zone, false)) {
             return false;
         }
     }
@@ -1930,10 +1929,10 @@ bool node_server<t_payload_net_handler>::get_local_node_data(
 //-----------------------------------------------------------------------------------
 template <class t_payload_net_handler>
 int node_server<t_payload_net_handler>::handle_get_support_flags(
-        int command,
-        COMMAND_REQUEST_SUPPORT_FLAGS::request& arg,
+        int /*command*/,
+        COMMAND_REQUEST_SUPPORT_FLAGS::request& /*arg*/,
         COMMAND_REQUEST_SUPPORT_FLAGS::response& rsp,
-        p2p_connection_context& context) {
+        p2p_connection_context& /*context*/) {
     rsp.support_flags = 0;
     return 1;
 }
@@ -2149,7 +2148,7 @@ bool node_server<t_payload_net_handler>::try_ping(
                                 zone.m_net_server.get_config_object(),
                                 [=, this](int code,
                                     const COMMAND_PING::response& rsp,
-                                    p2p_connection_context& context) {
+                                    p2p_connection_context& /*context*/) {
                                     if (code <= 0) {
                                         log::warning(
                                                 logcat,
@@ -2249,7 +2248,7 @@ int node_server<t_payload_net_handler>::handle_timed_sync(
 //-----------------------------------------------------------------------------------
 template <class t_payload_net_handler>
 int node_server<t_payload_net_handler>::handle_handshake(
-        int command,
+        int /*command*/,
         typename COMMAND_HANDSHAKE::request& arg,
         typename COMMAND_HANDSHAKE::response& rsp,
         p2p_connection_context& context) {
@@ -2379,8 +2378,8 @@ int node_server<t_payload_net_handler>::handle_handshake(
 //-----------------------------------------------------------------------------------
 template <class t_payload_net_handler>
 int node_server<t_payload_net_handler>::handle_ping(
-        int command,
-        COMMAND_PING::request& arg,
+        int /*command*/,
+        COMMAND_PING::request& /*arg*/,
         COMMAND_PING::response& rsp,
         p2p_connection_context& context) {
     log::debug(logcat, "{}COMMAND_PING", context);
@@ -2563,7 +2562,7 @@ uint32_t node_server<t_payload_net_handler>::get_max_in_public_peers() const {
 
 template <class t_payload_net_handler>
 bool node_server<t_payload_net_handler>::set_tos_flag(
-        const boost::program_options::variables_map& vm, int flag) {
+        const boost::program_options::variables_map& /*vm*/, int flag) {
     if (flag == -1) {
         return true;
     }
@@ -2575,7 +2574,7 @@ bool node_server<t_payload_net_handler>::set_tos_flag(
 
 template <class t_payload_net_handler>
 bool node_server<t_payload_net_handler>::set_rate_up_limit(
-        const boost::program_options::variables_map& vm, int64_t limit) {
+        const boost::program_options::variables_map& /*vm*/, int64_t limit) {
     this->islimitup = (limit != -1) && (limit != cryptonote::p2p::DEFAULT_LIMIT_RATE_UP);
 
     if (limit == -1) {
@@ -2590,7 +2589,7 @@ bool node_server<t_payload_net_handler>::set_rate_up_limit(
 
 template <class t_payload_net_handler>
 bool node_server<t_payload_net_handler>::set_rate_down_limit(
-        const boost::program_options::variables_map& vm, int64_t limit) {
+        const boost::program_options::variables_map& /*vm*/, int64_t limit) {
     this->islimitdown = (limit != -1) && (limit != cryptonote::p2p::DEFAULT_LIMIT_RATE_DOWN);
     if (limit == -1) {
         limit = cryptonote::p2p::DEFAULT_LIMIT_RATE_DOWN;
@@ -2603,7 +2602,7 @@ bool node_server<t_payload_net_handler>::set_rate_down_limit(
 
 template <class t_payload_net_handler>
 bool node_server<t_payload_net_handler>::set_rate_limit(
-        const boost::program_options::variables_map& vm, int64_t limit) {
+        const boost::program_options::variables_map& /*vm*/, int64_t limit) {
     int64_t limit_up = 0;
     int64_t limit_down = 0;
 

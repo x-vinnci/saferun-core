@@ -1219,12 +1219,12 @@ void core_rpc_server::invoke(START_MINING& start_mining, rpc_context context) {
     if (!get_account_address_from_str(
                 info, m_core.get_nettype(), start_mining.request.miner_address)) {
         start_mining.response["status"] = "Failed, invalid address";
-        log::warning(logcat, "{}", start_mining.response["status"]);
+        log::warning(logcat, "{}", start_mining.response["status"].get<std::string_view>());
         return;
     }
     if (info.is_subaddress) {
         start_mining.response["status"] = "Mining to subaddress isn't supported yet";
-        log::warning(logcat, "{}", start_mining.response["status"]);
+        log::warning(logcat, "{}", start_mining.response["status"].get<std::string_view>());
         return;
     }
 
@@ -1238,7 +1238,7 @@ void core_rpc_server::invoke(START_MINING& start_mining, rpc_context context) {
     // then we fail and log that.
     if (start_mining.request.threads_count > max_concurrency_count) {
         start_mining.response["status"] = "Failed, too many threads relative to CPU cores.";
-        log::warning(logcat, "{}", start_mining.response["status"]);
+        log::warning(logcat, "{}", start_mining.response["status"].get<std::string_view>());
         return;
     }
 
@@ -1254,7 +1254,7 @@ void core_rpc_server::invoke(START_MINING& start_mining, rpc_context context) {
                 start_mining.request.num_blocks,
                 start_mining.request.slow_mining)) {
         start_mining.response["status"] = "Failed, mining not started";
-        log::warning(logcat, "{}", start_mining.response["status"]);
+        log::warning(logcat, "{}", start_mining.response["status"].get<std::string_view>());
         return;
     }
 
@@ -1265,12 +1265,12 @@ void core_rpc_server::invoke(STOP_MINING& stop_mining, rpc_context context) {
     cryptonote::miner& miner = m_core.get_miner();
     if (!miner.is_mining()) {
         stop_mining.response["status"] = "Mining never started";
-        log::warning(logcat, "{}", stop_mining.response["status"]);
+        log::warning(logcat, "{}", stop_mining.response["status"].get<std::string_view>());
         return;
     }
     if (!miner.stop()) {
         stop_mining.response["status"] = "Failed, mining not stopped";
-        log::warning(logcat, "{}", stop_mining.response["status"]);
+        log::warning(logcat, "{}", stop_mining.response["status"].get<std::string_view>());
         return;
     }
 
@@ -1307,7 +1307,7 @@ void core_rpc_server::invoke(MINING_STATUS& mining_status, rpc_context context) 
 void core_rpc_server::invoke(SAVE_BC& save_bc, rpc_context context) {
     if (!m_core.get_blockchain_storage().store_blockchain()) {
         save_bc.response["status"] = "Error while storing blockchain";
-        log::warning(logcat, "{}", save_bc.response["status"]);
+        log::warning(logcat, "{}", save_bc.response["status"].get<std::string_view>());
         return;
     }
     save_bc.response["status"] = STATUS_OK;
@@ -2507,7 +2507,7 @@ void core_rpc_server::invoke(
                     get_service_node_registration_cmd.request.operator_cut)));
         } catch (const std::exception& e) {
             get_service_node_registration_cmd.response["status"] = "Invalid value: "s + e.what();
-            log::error(logcat, "{}", get_service_node_registration_cmd.response["status"]);
+            log::error(logcat, "{}", get_service_node_registration_cmd.response["status"].get<std::string_view>());
             return;
         }
     }

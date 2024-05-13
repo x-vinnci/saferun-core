@@ -1884,7 +1884,7 @@ skip:
       const uint32_t distance = (peer_stripe + (1<<PRUNING_LOG_STRIPES) - next_stripe) % (1<<PRUNING_LOG_STRIPES);
       if ((n_out_peers >= m_max_out_peers && n_peers_on_next_stripe == 0) || (distance > 1 && n_peers_on_next_stripe <= 2) || distance > 2)
       {
-        log::debug(logcat, "{}we want seed {}, and either {} is at max out peers ({}) or distance {} from {} to {} is too large and we have only {} peers on next seed, dropping connection to make space", context, next_stripe, n_out_peers, m_max_out_peers, distance, next_stripe, peer_stripe, n_peers_on_next_stripe);
+        log::debug(logcat, "{}we want seed {}, and either {} is at max out peers ({}) or distance {} from {} to {} is too large and we have only {} peers on next seed, dropping connection to make space", context, next_stripe, n_out_peers, m_max_out_peers.load(), distance, next_stripe, peer_stripe, n_peers_on_next_stripe);
         return true;
       }
     }
@@ -2552,7 +2552,7 @@ Use the "help" command to see the list of available commands.
     const bool use_next = (n_next > m_max_out_peers / 2 && n_subsequent <= 1) || (n_next > 2 && n_subsequent == 0);
     const uint32_t ret_stripe = use_next ? subsequent_pruning_stripe: next_pruning_stripe;
     const std::string po = get_peers_overview();
-    log::debug(logcat, "get_next_needed_pruning_stripe: want height {} ({} from blockchain, {} from block queue), stripe {} ({}/{} on it and {} on {}, {} others) -> {} (+{}), current peers {}", want_height, want_height_from_blockchain, want_height_from_block_queue, next_pruning_stripe, n_next, m_max_out_peers, n_subsequent, subsequent_pruning_stripe, n_others, ret_stripe, (ret_stripe - next_pruning_stripe + (1 << PRUNING_LOG_STRIPES)) % (1 << PRUNING_LOG_STRIPES), po);
+    log::debug(logcat, "get_next_needed_pruning_stripe: want height {} ({} from blockchain, {} from block queue), stripe {} ({}/{} on it and {} on {}, {} others) -> {} (+{}), current peers {}", want_height, want_height_from_blockchain, want_height_from_block_queue, next_pruning_stripe, n_next, m_max_out_peers.load(), n_subsequent, subsequent_pruning_stripe, n_others, ret_stripe, (ret_stripe - next_pruning_stripe + (1 << PRUNING_LOG_STRIPES)) % (1 << PRUNING_LOG_STRIPES), po);
     return std::make_pair(next_pruning_stripe, ret_stripe);
   }
   //------------------------------------------------------------------------------------------------------------------------

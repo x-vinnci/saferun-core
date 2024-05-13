@@ -7644,11 +7644,9 @@ bool wallet2::is_transfer_unlocked(
 
         for (auto const& entry : blacklist) {
             crypto::key_image check_image;
-            if (!tools::hex_to_type(entry["key_image"].get<std::string_view>(), check_image)) {
-                log::error(
-                        logcat,
-                        "Failed to parse hex representation of key image: {}",
-                        entry["key_image"]);
+            if (auto ki_in = entry["key_image"].get<std::string_view>();
+                !tools::hex_to_type(ki_in, check_image)) {
+                log::error(logcat, "Failed to parse hex representation of key image: {}", ki_in);
                 break;
             }
 
@@ -10553,9 +10551,9 @@ void wallet2::get_outs(
                                 logcat,
                                 "Found {}: {} total, {} unlocked, {} recent",
                                 print_money(amount),
-                                he["total_instances"],
-                                he["unlocked_instances"],
-                                he["recent_instances"]);
+                                he["total_instances"].get<uint64_t>(),
+                                he["unlocked_instances"].get<uint64_t>(),
+                                he["recent_instances"].get<uint64_t>());
                         num_outs = he["unlocked_instances"].get<uint64_t>();
                         num_recent_outs = he["recent_instances"].get<uint64_t>();
                         break;

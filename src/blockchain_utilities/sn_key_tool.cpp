@@ -208,14 +208,15 @@ int show(std::list<std::string_view> args) {
         return error(2, fmt::format("Unable to open '{}': {}", filename, std::strerror(errno)));
 
     in.seekg(0, std::ios::end);
-    auto size = in.tellg();
+    auto sz = in.tellg();
     in.seekg(0, std::ios::beg);
     if (!legacy && !ed25519) {
-        if (size == 32)
+        if (sz == 32)
             legacy = true;
-        else if (size == 64)
+        else if (sz == 64)
             ed25519 = true;
     }
+    auto size = static_cast<size_t>(sz);
     if (!legacy && !ed25519)
         return error(
                 2,
