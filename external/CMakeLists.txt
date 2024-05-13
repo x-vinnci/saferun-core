@@ -39,8 +39,8 @@ endif()
 
 include(system_or_submodule)
 
+system_or_submodule(OXENC oxenc liboxenc>=1.1.0 oxen-encoding)
 system_or_submodule(OXENMQ oxenmq liboxenmq>=1.2.13 oxen-mq)
-system_or_submodule(OXENC oxenc liboxenc>=1.0.3 oxen-mq/oxen-encoding)
 
 add_subdirectory(db_drivers)
 add_subdirectory(randomx EXCLUDE_FROM_ALL)

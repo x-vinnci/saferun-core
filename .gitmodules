@@ -47,3 +47,6 @@
 [submodule "external/bls"]
 	path = external/bls
 	url = https://github.com/herumi/bls.git
+[submodule "external/oxen-encoding"]
+	path = external/oxen-encoding
+	url = https://github.com/oxen-io/oxen-encoding.git
