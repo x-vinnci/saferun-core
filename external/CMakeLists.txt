@@ -46,15 +46,7 @@ add_subdirectory(db_drivers)
 add_subdirectory(randomx EXCLUDE_FROM_ALL)
 add_subdirectory(date EXCLUDE_FROM_ALL)
 
-# bls's CMakeLists.txt forces creation of shared libraries and does some subdirectory-unfriendly
-# things like changing the global CMAKE_C_FLAGS, so we build it ourselves to work better.
-set(MCL_STATIC_LIB ON CACHE INTERNAL "" FORCE)
-add_subdirectory(bls/mcl EXCLUDE_FROM_ALL)
-add_library(bls256 bls/src/bls_c256.cpp)
-target_include_directories(bls256 PUBLIC bls/include)
-target_compile_definitions(bls256 PUBLIC BLS_ETH)
-target_link_libraries(bls256 PUBLIC mcl::mclbn256)
-add_library(bls::bls256 ALIAS bls256)
+add_subdirectory(bls EXCLUDE_FROM_ALL)
 
 set(JSON_BuildTests OFF CACHE INTERNAL "")
 set(JSON_MultipleHeaders ON CACHE BOOL "") # Allows multi-header nlohmann use
