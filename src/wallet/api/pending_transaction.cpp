@@ -143,7 +143,7 @@ bool PendingTransactionImpl::commit(std::string_view filename_, bool overwrite, 
         m_status = {Status_Error, std::string("Unknown exception: ") + e.what()};
     } catch (...) {
         m_status = {Status_Error, "Unhandled exception"};
-        log::error(logcat, m_status.second);
+        log::error(logcat, "{}", m_status.second);
     }
 
     return good();

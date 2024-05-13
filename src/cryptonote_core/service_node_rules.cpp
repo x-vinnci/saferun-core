@@ -282,7 +282,7 @@ uint64_t get_portions_to_make_amount(
 }
 
 std::optional<double> parse_fee_percent(std::string_view fee) {
-    if (tools::ends_with(fee, "%"))
+    if (fee.ends_with("%"))
         fee.remove_suffix(1);
 
     double percent;

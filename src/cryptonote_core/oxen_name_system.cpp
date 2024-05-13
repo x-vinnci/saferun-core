@@ -326,10 +326,8 @@ namespace {
     }
 
     template <typename T>
-    concept optional = requires {
-        typename T::value_type;
-    }
-    &&std::convertible_to<std::nullopt_t, T>;
+    concept optional =
+            requires { typename T::value_type; } && std::convertible_to<std::nullopt_t, T>;
 
     // Gets a potentially null value; returns a std::nullopt if the column contains NULL, otherwise
     // return a value via get<T>(...).
@@ -899,7 +897,7 @@ bool validate_ons_name(mapping_type type, std::string name, std::string* reason)
         // Must end with .loki
         auto constexpr SUFFIX = ".loki"sv;
         if (check_condition(
-                    !tools::ends_with(name_view, SUFFIX),
+                    !name_view.ends_with(SUFFIX),
                     reason,
                     "ONS type={} specifies mapping from name->value where the name does not end "
                     "with the domain .loki, name={}",
@@ -913,7 +911,7 @@ bool validate_ons_name(mapping_type type, std::string name, std::string* reason)
         // domains
         if (check_condition(
                     name_view.size() >= 4 && name_view.substr(2, 2) == "--"sv &&
-                            !tools::starts_with(name_view, "xn--"sv),
+                            !name_view.starts_with("xn--"sv),
                     reason,
                     "ONS type={} specifies reserved name `?\?--*.loki': {}",
                     type,
@@ -1097,7 +1095,7 @@ bool mapping_value::validate(
         // need 51 base32z chars (=255 bits) followed by a 1-bit value ('y'=0, or 'o'=0b10000);
         // anything else in the last spot isn't a valid lokinet address.
         if (check_condition(
-                    value.size() != 57 || !tools::ends_with(value, ".loki") ||
+                    value.size() != 57 || !value.ends_with(".loki") ||
                             !oxenc::is_base32z(value.substr(0, 52)) ||
                             !(value[51] == 'y' || value[51] == 'o'),
                     reason,
@@ -1132,7 +1130,7 @@ bool mapping_value::validate(
         // NOTE: Session public keys are 33 bytes, with the first byte being 0x05 and the remaining
         // 32 being the public key.
         if (check_condition(
-                    !tools::starts_with(value, "05"),
+                    !value.starts_with("05"),
                     reason,
                     "ONS type=session specifies mapping from name -> ed25519 key where the key is "
                     "not prefixed with 05, given ed25519={}",

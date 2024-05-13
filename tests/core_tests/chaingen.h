@@ -776,7 +776,7 @@ public:
     if (added != entry.can_be_added_to_blockchain)
     {
       if (entry.fail_msg.size())
-        oxen::log::warning(globallogcat, entry.fail_msg);
+        oxen::log::warning(globallogcat, "{}", entry.fail_msg);
       else
         oxen::log::warning(globallogcat, "Failed to add checkpoint (no reason given)");
       return false;
@@ -792,7 +792,7 @@ public:
     if (added != entry.can_be_added_to_blockchain)
     {
       if (entry.fail_msg.size())
-        oxen::log::warning(globallogcat, entry.fail_msg);
+        oxen::log::warning(globallogcat,  "{}",entry.fail_msg);
       else
         oxen::log::warning(globallogcat, "Failed to add service node vote (no reason given)");
       return false;
@@ -824,7 +824,7 @@ public:
     if (added != entry.can_be_added_to_blockchain)
     {
       if (entry.fail_msg.size())
-        oxen::log::warning(globallogcat, entry.fail_msg);
+        oxen::log::warning(globallogcat, "{}", entry.fail_msg);
       else
         oxen::log::warning(globallogcat, "Failed to add block with checkpoint (no reason given)");
       return false;
@@ -851,7 +851,7 @@ public:
     if (added != entry.can_be_added_to_blockchain)
     {
       if (entry.fail_msg.size())
-        oxen::log::warning(globallogcat, entry.fail_msg);
+        oxen::log::warning(globallogcat, "{}", entry.fail_msg);
       else
         oxen::log::warning(globallogcat, "Failed to add block (no reason given)");
       return false;
@@ -877,7 +877,7 @@ public:
     if (added != entry.can_be_added_to_blockchain)
     {
       if (entry.fail_msg.size())
-        oxen::log::warning(globallogcat, entry.fail_msg);
+        oxen::log::warning(globallogcat, "{}", entry.fail_msg);
       else
         oxen::log::warning(globallogcat, "Failed to add block (no reason given)");
       return false;
@@ -898,7 +898,7 @@ public:
     if (added != entry.can_be_added_to_blockchain)
     {
       if (entry.fail_msg.size())
-        oxen::log::warning(globallogcat, entry.fail_msg);
+        oxen::log::warning(globallogcat, "{}", entry.fail_msg);
       else if (entry.can_be_added_to_blockchain)
         oxen::log::warning(globallogcat, "Failed to add transaction that should have been accepted");
       else
@@ -919,7 +919,7 @@ public:
   bool operator()(const std::string &msg) const
   {
     log_event("event_msgevent_marker");
-    oxen::log::info(globallogcat, fmt::format(fg(fmt::terminal_color::magenta), msg));
+    oxen::log::info(globallogcat, fg(fmt::terminal_color::magenta), "{}", msg);
     return true;
   }
 
@@ -927,7 +927,7 @@ private:
   void log_event(const std::string& event_type) const
   {
     if (globallogcat->should_log(oxen::log::Level::info))
-      oxen::log::debug(globallogcat, fmt::format(fg(fmt::terminal_color::yellow), "=== EVENT # {}:{}", m_ev_index, event_type));
+      oxen::log::debug(globallogcat, fg(fmt::terminal_color::yellow), "=== EVENT # {}:{}", m_ev_index, event_type);
   }
 };
 //--------------------------------------------------------------------------
@@ -1204,7 +1204,7 @@ inline bool do_replay_file(const std::string& filename)
     cryptonote::core core;                                                                                             \
     if (generated && do_replay_events_get_core<generator_class>(events, &core, generator_class_instance))              \
     {                                                                                                                  \
-      oxen::log::info(globallogcat, fmt::format(fg(fmt::terminal_color::green), "#TEST# Succeeded {}", #generator_class));\
+      oxen::log::info(globallogcat, fg(fmt::terminal_color::green), "#TEST# Succeeded {}", #generator_class);\
     }                                                                                                                  \
     else                                                                                                               \
     {                                                                                                                  \
@@ -1219,7 +1219,7 @@ inline bool do_replay_file(const std::string& filename)
     if (generated &&                                                                                                   \
         replay_events_through_core_plain<generator_class>(events, CORE, generator_class_instance, false /*reinit*/))   \
     {                                                                                                                  \
-      oxen::log::info(globallogcat, fmt::format(fg(fmt::terminal_color::green), "#TEST# Succeeded {}", #generator_class));\
+      oxen::log::info(globallogcat, fg(fmt::terminal_color::green), "#TEST# Succeeded {}", #generator_class);\
     }                                                                                                                  \
     else                                                                                                               \
     {                                                                                                                  \

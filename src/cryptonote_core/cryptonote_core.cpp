@@ -1105,7 +1105,7 @@ void core::init_oxenmq(const boost::program_options::variables_map& vm) {
                                                 std::to_string(m.data.size()) + ")");
 
                             std::string eth_address = tools::lowercase_ascii_string(m.data[0]);
-                            if (!tools::starts_with(eth_address, "0x")) {
+                            if (!eth_address.starts_with("0x")) {
                                 eth_address = "0x" + eth_address;
                             }
                             auto [batchdb_height, amount] =

@@ -5791,7 +5791,7 @@ void simple_wallet::check_for_inactivity_lock(bool user) {
 std::string eat_named_argument(std::vector<std::string>& args, std::string_view prefix) {
     std::string result = {};
     for (auto it = args.begin(); it != args.end(); it++) {
-        if (it->size() > prefix.size() && tools::starts_with(*it, prefix)) {
+        if (it->size() > prefix.size() && it->starts_with(prefix)) {
             result = it->substr(prefix.size());
             args.erase(it);
             break;
@@ -6075,7 +6075,7 @@ bool simple_wallet::transfer_main(
             de.original = local_args[i];
             i += 2;
         } else {
-            if (boost::starts_with(local_args[i], "oxen:"))
+            if (local_args[i].starts_with("oxen:"))
                 fail_msg_writer() << tr("Invalid last argument: ") << local_args.back() << ": "
                                   << error;
             else
@@ -6664,9 +6664,9 @@ static std::optional<ons::mapping_type> guess_ons_type(
         std::string_view name,
         std::string_view value) {
     if (typestr.empty()) {
-        if (tools::ends_with(name, ".loki") && (tools::ends_with(value, ".loki") || value.empty()))
+        if (name.ends_with(".loki") && (value.ends_with(".loki") || value.empty()))
             return ons::mapping_type::lokinet;
-        if (!tools::ends_with(name, ".loki") && tools::starts_with(value, "05") &&
+        if (!name.ends_with(".loki") && value.starts_with("05") &&
             value.length() == 2 * ons::SESSION_PUBLIC_KEY_BINARY_LENGTH)
             return ons::mapping_type::session;
         if (cryptonote::is_valid_address(std::string{value}, wallet.nettype()))
@@ -9547,8 +9547,8 @@ bool simple_wallet::sign_string(std::string_view value, const subaddress_index& 
         // Print the string directly if it's ascii without control characters, up to 100 bytes, and
         // doesn't contain any doubled, leading, or trailing spaces (because we can't feed those
         // back into verify_value in the cli wallet).
-        bool printable = value.size() <= 100 && !tools::starts_with(value, " ") &&
-                         !tools::ends_with(value, " ") && value.find("  ") == std::string::npos &&
+        bool printable = value.size() <= 100 && !value.starts_with(" ") && !value.ends_with(" ") &&
+                         value.find("  ") == std::string::npos &&
                          std::all_of(value.begin(), value.end(), [](char x) {
                              return x >= ' ' && x <= '~';
                          });

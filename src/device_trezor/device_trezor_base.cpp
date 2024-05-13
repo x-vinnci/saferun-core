@@ -122,7 +122,7 @@ namespace hw { namespace trezor {
 
             for (auto& cur : trans) {
                 std::string cur_path = cur->get_path();
-                if (tools::starts_with(cur_path, name)) {
+                if (cur_path.starts_with(name)) {
                     log::debug(logcat, "Device Match: {}", cur_path);
                     m_transport = cur;
                     break;

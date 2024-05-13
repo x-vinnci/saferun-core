@@ -351,9 +351,7 @@ namespace hw { namespace trezor {
             assert_port_number(bridge_port);
 
             m_bridge_url = "http://127.0.0.1:" + std::to_string(bridge_port);
-        } else if (
-                !tools::starts_with(m_bridge_url, "http://") &&
-                !tools::starts_with(m_bridge_url, "https://"))
+        } else if (!m_bridge_url.starts_with("http://") && !m_bridge_url.starts_with("https://"))
             m_bridge_url.insert(0, "http://");
         log::debug(logcat, "Bridge host: {}", m_bridge_url);
     }
@@ -516,7 +514,7 @@ namespace hw { namespace trezor {
 
     std::string BridgeTransport::post_json(std::string_view uri, std::string json) {
         std::string url = m_bridge_url;
-        if (!tools::ends_with(url, "/") && !tools::starts_with(uri, "/"))
+        if (!url.ends_with("/") && !uri.starts_with("/"))
             url += '/';
         url += uri;
 
@@ -562,7 +560,7 @@ namespace hw { namespace trezor {
     // UdpTransport
     //
     static void parse_udp_path(std::string& host, int& port, std::string path) {
-        if (tools::starts_with(path, UdpTransport::PATH_PREFIX)) {
+        if (path.starts_with(UdpTransport::PATH_PREFIX)) {
             path = path.substr(strlen(UdpTransport::PATH_PREFIX));
         }
 
@@ -587,7 +585,7 @@ namespace hw { namespace trezor {
             parse_udp_path(m_device_host, m_device_port, *device_path);
         } else if (
                 (env_trezor_path = getenv("TREZOR_PATH")) != nullptr &&
-                tools::starts_with(env_trezor_path, UdpTransport::PATH_PREFIX)) {
+                env_trezor_path.starts_with(UdpTransport::PATH_PREFIX)) {
             parse_udp_path(m_device_host, m_device_port, std::string(env_trezor_path));
             log::debug(logcat, "Applied TREZOR_PATH: {}:{}", m_device_host, m_device_port);
         } else {
@@ -1290,11 +1288,11 @@ namespace hw { namespace trezor {
     }
 
     std::shared_ptr<Transport> transport(const std::string& path) {
-        if (tools::starts_with(path, BridgeTransport::PATH_PREFIX)) {
+        if (path.starts_with(BridgeTransport::PATH_PREFIX)) {
             return std::make_shared<BridgeTransport>(
                     path.substr(strlen(BridgeTransport::PATH_PREFIX)));
 
-        } else if (tools::starts_with(path, UdpTransport::PATH_PREFIX)) {
+        } else if (path.starts_with(UdpTransport::PATH_PREFIX)) {
             return std::make_shared<UdpTransport>(path.substr(strlen(UdpTransport::PATH_PREFIX)));
 
         } else {

@@ -3,6 +3,7 @@
 
 #include <charconv>
 #include <chrono>
+#include <concepts>
 #include <cstring>
 #include <iterator>
 #include <string_view>
@@ -27,16 +28,6 @@ inline bool string_iequal(std::string_view s1, std::string_view s2) {
 template <typename S1, typename... S>
 bool string_iequal_any(const S1& s1, const S&... s) {
     return (... || string_iequal(s1, s));
-}
-
-/// Returns true if the first argument begins with the second argument
-inline bool starts_with(std::string_view str, std::string_view prefix) {
-    return str.substr(0, prefix.size()) == prefix;
-}
-
-/// Returns true if the first argument ends with the second argument
-inline bool ends_with(std::string_view str, std::string_view suffix) {
-    return str.size() >= suffix.size() && str.substr(str.size() - suffix.size()) == suffix;
 }
 
 /// Splits a string on some delimiter string and returns a vector of string_view's pointing into the
@@ -166,8 +157,9 @@ std::string short_duration(std::chrono::duration<double> dur);
 /// Given an array of string arguments, look for strings of the format <prefix><value> and return
 /// <value> Returns empty string view if not found.
 template <typename It>
+    requires std::convertible_to<std::iter_reference_t<It>, std::string_view>
 std::string_view find_prefixed_value(It begin, It end, std::string_view prefix) {
-    auto it = std::find_if(begin, end, [&](const auto& s) { return starts_with(s, prefix); });
+    auto it = std::find_if(begin, end, [&](const auto& s) { return s.starts_with(prefix); });
     if (it == end)
         return {};
     return std::string_view{*it}.substr(prefix.size());

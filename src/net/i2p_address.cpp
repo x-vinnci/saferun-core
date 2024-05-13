@@ -52,7 +52,7 @@ namespace {
             u8"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz234567";
 
     expect<void> host_check(std::string_view host) noexcept {
-        if (!tools::ends_with(host, tld))
+        if (!host.ends_with(tld))
             return {net::error::expected_tld};
 
         host.remove_suffix(sizeof(tld) - 1);
