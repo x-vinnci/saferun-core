@@ -45,13 +45,9 @@ constexpr bool via_underlying = false;
 namespace detail {
 
     template <typename T>
-    concept callable_to_string_method = requires(T v) {
-        v.to_string();
-    };
+    concept callable_to_string_method = requires(T v) { v.to_string(); };
     template <typename T>
-    concept callable_to_hex_string_method = requires(T v) {
-        v.to_hex_string();
-    };
+    concept callable_to_hex_string_method = requires(T v) { v.to_hex_string(); };
 
 }  // namespace detail
 
@@ -98,18 +94,15 @@ struct underlying_t_formatter : fmt::formatter<std::underlying_type_t<T>> {
 namespace fmt {
 
 template <typename T, typename Char>
-requires ::formattable::via_to_string<T>
-struct formatter<T, Char> : ::formattable::to_string_formatter<T> {
-};
+    requires ::formattable::via_to_string<T>
+struct formatter<T, Char> : ::formattable::to_string_formatter<T> {};
 
 template <typename T, typename Char>
-requires ::formattable::via_to_hex_string<T>
-struct formatter<T, Char> : ::formattable::to_hex_string_formatter<T> {
-};
+    requires ::formattable::via_to_hex_string<T>
+struct formatter<T, Char> : ::formattable::to_hex_string_formatter<T> {};
 
 template <typename T, typename Char>
-requires ::formattable::via_underlying<T>
-struct formatter<T, Char> : ::formattable::underlying_t_formatter<T> {
-};
+    requires ::formattable::via_underlying<T>
+struct formatter<T, Char> : ::formattable::underlying_t_formatter<T> {};
 
 }  // namespace fmt

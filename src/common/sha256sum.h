@@ -18,8 +18,8 @@ bool sha256sum_str(std::string_view str, crypto::hash& hash);
 // Calculates sha256 checksum of the given data, for non-char string_view (e.g.
 // basic_string_view<unsigned char> or basic_string_view<uint8_t>).
 template <basic_char Char>
-requires(!std::same_as<Char, char>) bool sha256sum_str(
-        std::basic_string_view<Char> str, crypto::hash& hash) {
+    requires(!std::same_as<Char, char>)
+bool sha256sum_str(std::basic_string_view<Char> str, crypto::hash& hash) {
     return sha256sum_str(
             std::string_view{reinterpret_cast<const char*>(str.data()), str.size()}, hash);
 }

@@ -94,7 +94,8 @@ std::array<unsigned char, crypto_core_ed25519_BYTES> pubkey_from_privkey(ustring
     return pubkey;
 }
 template <size_t N>
-requires(N >= 32) std::array<unsigned char, crypto_core_ed25519_BYTES> pubkey_from_privkey(
+    requires(N >= 32)
+std::array<unsigned char, crypto_core_ed25519_BYTES> pubkey_from_privkey(
         const std::array<unsigned char, N>& privkey) {
     return pubkey_from_privkey(ustring_view{privkey.data(), 32});
 }

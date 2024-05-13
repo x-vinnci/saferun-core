@@ -3789,7 +3789,7 @@ void wallet2::cancel_long_poll() {
 }
 
 template <typename It>
-requires std::is_same_v<crypto::hash, std::remove_cv_t<typename It::value_type>>
+    requires std::is_same_v<crypto::hash, std::remove_cv_t<typename It::value_type>>
 static std::vector<std::string> hashes_to_hex(It begin, It end) {
     std::vector<std::string> hexes;
     if constexpr (std::is_base_of_v<
@@ -6332,8 +6332,8 @@ bool wallet2::verify_extra_multisig_info(
     signer = *(const crypto::public_key*)(decoded.data() + offset);
     offset += sizeof(signer);
     const crypto::signature& signature =
-            *(const crypto::
-                      signature*)(decoded.data() + offset + n_keys * sizeof(crypto::public_key));
+            *(const crypto::signature*)(decoded.data() + offset +
+                                        n_keys * sizeof(crypto::public_key));
 
     crypto::hash hash;
     crypto::cn_fast_hash(decoded.data(), decoded.size() - sizeof(signature), hash);

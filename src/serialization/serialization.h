@@ -181,15 +181,11 @@ namespace detail {
 
     /// True if `serialize_value(ar, t)` exists for non-const `ar` and `t`
     template <typename T, typename Archive>
-    concept free_serializable_value = requires(Archive& a, T v) {
-        serialize_value(a, v);
-    };
+    concept free_serializable_value = requires(Archive& a, T v) { serialize_value(a, v); };
 
     /// True if `t.serialize_value(ar)` exists (and returns void) for non-const `ar` and `t`
     template <typename T, typename Archive>
-    concept memfn_serializable_value = requires(Archive& a, T v) {
-        v.serialize_value(a);
-    };
+    concept memfn_serializable_value = requires(Archive& a, T v) { v.serialize_value(a); };
 
 }  // namespace detail
 
@@ -203,7 +199,7 @@ void value(Archive& ar, T& v) {
 
 // Blob serialization
 template <class Archive, typename T>
-requires T::binary_serializable || binary_serializable<T>
+    requires T::binary_serializable || binary_serializable<T>
 void value(Archive& ar, T& v) {
     static_assert(
             std::has_unique_object_representations_v<T> || epee::is_byte_spannable<T>,
@@ -256,7 +252,7 @@ void varint(Archive& ar, T& val) {
 
 /// Serializes an enum value using varint encoding of the underlying integer value.
 template <class Archive, typename T>
-requires std::is_enum_v<T>
+    requires std::is_enum_v<T>
 void varint(Archive& ar, T& val) {
     using UType = std::underlying_type_t<T>;
     UType tmp;
@@ -271,7 +267,7 @@ void varint(Archive& ar, T& val) {
 
 /// Serializes an integer or enum value using varint encoding with a Predicate (see value()).
 template <class Archive, typename T, std::predicate<const T&> Predicate>
-requires std::is_integral_v<T> || std::is_enum_v<T>
+    requires std::is_integral_v<T> || std::is_enum_v<T>
 void varint(Archive& ar, T& val, Predicate test) {
     varint(ar, val);
     if (Archive::is_deserializer && !test(val))
@@ -299,7 +295,7 @@ void field(Archive& ar, [[maybe_unused]] std::string_view name, T& val, Predicat
 /// Serializes a key-value pair where the value is an integer or an enum using varint encoding of
 /// the value.
 template <class Archive, typename T>
-requires std::is_integral_v<T> || std::is_enum_v<T>
+    requires std::is_integral_v<T> || std::is_enum_v<T>
 void field_varint(Archive& ar, [[maybe_unused]] std::string_view name, T& val) {
     if constexpr (Archive::is_serializer)
         ar.tag(name);
@@ -310,7 +306,7 @@ void field_varint(Archive& ar, [[maybe_unused]] std::string_view name, T& val) {
 /// Serializes using field_varint(ar,name,val) with an additional predicate that must be satisfied
 /// when deserializing.
 template <class Archive, typename T, std::predicate<const T&> Predicate>
-requires std::is_integral_v<T> || std::is_enum_v<T>
+    requires std::is_integral_v<T> || std::is_enum_v<T>
 void field_varint(Archive& ar, [[maybe_unused]] std::string_view name, T& val, Predicate&& test) {
     if constexpr (Archive::is_serializer)
         ar.tag(name);

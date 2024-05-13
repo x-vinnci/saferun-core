@@ -56,22 +56,16 @@ namespace detail {
 
     /// True if `val.reserve(0)` exists for `T val`.
     template <typename T>
-    concept reservable = requires(T val) {
-        val.reserve(size_t{});
-    };
+    concept reservable = requires(T val) { val.reserve(size_t{}); };
 
     /// True if `val.emplace_back()` exists for `T val`, and that T::value_type is default
     /// constructible.
     template <typename T>
-    concept back_emplaceable = requires(T val) {
-        val.emplace_back();
-    };
+    concept back_emplaceable = requires(T val) { val.emplace_back(); };
 
     /// True if `val.insert(V{})` exists for `T val` and `using V = T::value_type`.
     template <typename T>
-    concept value_insertable = requires(T val) {
-        val.insert(typename T::value_type{});
-    };
+    concept value_insertable = requires(T val) { val.insert(typename T::value_type{}); };
 
     template <typename Archive, class T>
     void serialize_container_element(Archive& ar, T& e) {
@@ -84,7 +78,7 @@ namespace detail {
 
     // Deserialize into the container.
     template <deserializing Archive, typename C>
-    requires detail::back_emplaceable<C> || detail::value_insertable<C>
+        requires detail::back_emplaceable<C> || detail::value_insertable<C>
     void serialize_container(Archive& ar, C& v) {
         using T = std::remove_cv_t<typename C::value_type>;
 

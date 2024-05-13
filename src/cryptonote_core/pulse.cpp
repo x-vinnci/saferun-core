@@ -25,7 +25,7 @@ namespace {
     auto logcat = log::Cat("pulse");
 
     // Deliberately makes pulse communications flakey for testing purposes:
-    //#define PULSE_TEST_CODE
+    // #define PULSE_TEST_CODE
 
     enum struct round_state {
         null_state,

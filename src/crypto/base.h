@@ -11,7 +11,7 @@ namespace crypto {
 
 /// constexpr null (all-0) value for various crypto types; use as `crypto::null<crypto::whatever>`.
 template <typename T>
-requires std::is_standard_layout_v<T> && std::is_default_constructible_v<T>
+    requires std::is_standard_layout_v<T> && std::is_default_constructible_v<T>
 constexpr T null{};
 
 // Base type for fixed-byte quantities (points, scalars, signatures, hashes).  The bool controls
@@ -61,9 +61,10 @@ std::string to_hex_string(const T& val) {
 }
 
 template <hash_hex_comparable T>
-requires(
-        std::is_standard_layout_v<T> && sizeof(T) >= sizeof(size_t) &&
-        alignof(T) >= sizeof(size_t)) struct raw_hasher {
+    requires(
+            std::is_standard_layout_v<T> && sizeof(T) >= sizeof(size_t) &&
+            alignof(T) >= sizeof(size_t))
+struct raw_hasher {
     size_t operator()(const T& val) const { return *reinterpret_cast<const size_t*>(val.data()); }
 };
 }  // namespace crypto

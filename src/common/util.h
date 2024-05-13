@@ -75,8 +75,8 @@ std::string get_human_readable_timespan(std::chrono::seconds seconds);
 std::string get_human_readable_bytes(uint64_t bytes);
 
 template <typename Rep, typename Period>
-requires(!std::convertible_to<std::chrono::duration<Rep, Period>, std::chrono::seconds>) std::string
-        get_human_readable_timespan(std::chrono::duration<Rep, Period> d) {
+    requires(!std::convertible_to<std::chrono::duration<Rep, Period>, std::chrono::seconds>)
+std::string get_human_readable_timespan(std::chrono::duration<Rep, Period> d) {
     return get_human_readable_timespan(std::chrono::duration_cast<std::chrono::seconds>(d));
 }
 
@@ -111,8 +111,8 @@ namespace detail {
 
     // Copy a class byte-for-byte (but only if it is standard layout and has byte alignment)
     template <typename T>
-    requires(std::is_class_v<T> && !crypto_bytes_derived<T>) void memcpy_one(
-            char*& dest, const T& t) {
+        requires(std::is_class_v<T> && !crypto_bytes_derived<T>)
+    void memcpy_one(char*& dest, const T& t) {
         // We don't *actually* require byte alignment here but it's quite possibly an error (i.e.
         // passing in a type containing integer members) so disallow it.
         static_assert(

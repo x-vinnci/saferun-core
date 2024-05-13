@@ -498,10 +498,9 @@ class BlockchainLMDB : public BlockchainDB {
 
   private:
     template <typename T>
-    requires std::is_same_v<T, cryptonote::block> || std::is_same_v<T, cryptonote::block_header> ||
-            std::is_same_v<T, std::string>
-                    T get_and_convert_block_blob_from_height(uint64_t height)
-    const;
+        requires std::is_same_v<T, cryptonote::block> ||
+                 std::is_same_v<T, cryptonote::block_header> || std::is_same_v<T, std::string>
+    T get_and_convert_block_blob_from_height(uint64_t height) const;
 
     MDB_env* m_env;
 

@@ -12,9 +12,9 @@ concept convertible_from_hex =
         !std::is_const_v<T> && (std::is_trivially_copyable_v<T> || epee::is_byte_spannable<T>);
 
 template <typename T>
-concept convertible_to_hex = (std::is_standard_layout_v<T> &&
-                              std::has_unique_object_representations_v<T>) ||
-                             epee::is_byte_spannable<T>;
+concept convertible_to_hex =
+        (std::is_standard_layout_v<T> && std::has_unique_object_representations_v<T>) ||
+        epee::is_byte_spannable<T>;
 
 // Reads a hex string directly into a trivially copyable type T without performing any temporary
 // allocation.  Returns false if the given string is not hex or does not match T in length,

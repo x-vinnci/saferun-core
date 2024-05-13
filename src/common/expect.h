@@ -288,8 +288,8 @@ class expect {
         \return False if `has_error()`, otherwise `value() == rhs`.
     */
     template <typename U>
-    requires(!std::is_constructible_v<std::error_code, U>) bool equal(U const& rhs) const
-            noexcept(noexcept(*std::declval<expect<T>>() == rhs)) {
+        requires(!std::is_constructible_v<std::error_code, U>)
+    bool equal(U const& rhs) const noexcept(noexcept(*std::declval<expect<T>>() == rhs)) {
         return has_value() && get() == rhs;
     }
 

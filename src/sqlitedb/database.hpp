@@ -288,8 +288,8 @@ class Database {
     /// Prepares (with caching), binds parameters, then returns an object that lets you iterate
     /// through results where each row is a T or tuple<T...>:
     template <typename... T, typename... Bind>
-    requires(sizeof...(T) != 0) IterableStatementWrapper<T...> prepared_results(
-            const std::string& query, const Bind&... bind) {
+        requires(sizeof...(T) != 0)
+    IterableStatementWrapper<T...> prepared_results(const std::string& query, const Bind&... bind) {
         return IterableStatementWrapper<T...>{prepared_bind(query, bind...)};
     }
 

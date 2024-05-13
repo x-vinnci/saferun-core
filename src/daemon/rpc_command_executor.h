@@ -70,7 +70,7 @@ class rpc_command_executor final {
     /// @param check_status_ok whether we require res.status == STATUS_OK to consider the request
     /// successful
     template <std::derived_from<cryptonote::rpc::RPC_COMMAND> RPC>
-    requires cryptonote::rpc::FIXME_has_nested_response_v<RPC>
+        requires cryptonote::rpc::FIXME_has_nested_response_v<RPC>
     bool invoke(
             typename RPC::request&& req,
             typename RPC::response& res,
@@ -124,9 +124,9 @@ class rpc_command_executor final {
     /// @param check_status_ok whether we require the result to have a "status" key set to STATUS_OK
     /// to consider the request successful
     template <std::derived_from<cryptonote::rpc::RPC_COMMAND> RPC>
-    requires(!cryptonote::rpc::FIXME_has_nested_response_v<RPC>) nlohmann::json
-            invoke(std::optional<nlohmann::json> params = std::nullopt,
-                   bool check_status_ok = true) {
+        requires(!cryptonote::rpc::FIXME_has_nested_response_v<RPC>)
+    nlohmann::json invoke(
+            std::optional<nlohmann::json> params = std::nullopt, bool check_status_ok = true) {
         return invoke(
                 RPC::names()[0],
                 std::is_base_of_v<cryptonote::rpc::PUBLIC, RPC>,
@@ -138,8 +138,8 @@ class rpc_command_executor final {
     // the return value beyond the "status": "OK" field.  Returns true (and prints a success
     // message) on success, false (with a failure message printed) on failure.
     template <std::derived_from<cryptonote::rpc::RPC_COMMAND> RPC>
-    requires(!cryptonote::rpc::FIXME_has_nested_response_v<RPC>) bool invoke_simple(
-            std::string_view error_prefix, std::string_view success_msg) {
+        requires(!cryptonote::rpc::FIXME_has_nested_response_v<RPC>)
+    bool invoke_simple(std::string_view error_prefix, std::string_view success_msg) {
         if (!try_running([this] { return invoke<RPC>(); }, error_prefix))
             return false;
 

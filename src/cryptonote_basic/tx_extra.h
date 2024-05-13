@@ -238,7 +238,8 @@ void inner_serializer(Archive& ar, tx_extra_merge_mining_tag& mm) {
 
 // load
 template <class Archive>
-requires Archive::is_deserializer void serialize_value(Archive& ar, tx_extra_merge_mining_tag& mm) {
+    requires Archive::is_deserializer
+void serialize_value(Archive& ar, tx_extra_merge_mining_tag& mm) {
     // MM tag gets binary-serialized into a string, and then that string gets serialized (as a
     // string).  This is very strange.
     std::string field;
@@ -250,7 +251,8 @@ requires Archive::is_deserializer void serialize_value(Archive& ar, tx_extra_mer
 
 // store
 template <class Archive>
-requires Archive::is_serializer void serialize_value(Archive& ar, tx_extra_merge_mining_tag& mm) {
+    requires Archive::is_serializer
+void serialize_value(Archive& ar, tx_extra_merge_mining_tag& mm) {
     // As above: first we binary-serialize into a string, then we serialize the string.
     serialization::binary_string_archiver inner_ar;
     inner_serializer(inner_ar, mm);

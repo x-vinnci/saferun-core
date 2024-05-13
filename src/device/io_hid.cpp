@@ -365,4 +365,4 @@ unsigned int hid::unwrapReponse(
 
 }  // namespace hw::io
 
-#endif  //#if defined(HAVE_HIDAPI)
+#endif  // #if defined(HAVE_HIDAPI)

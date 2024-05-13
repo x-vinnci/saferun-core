@@ -94,8 +94,8 @@ class json_binary_proxy {
     /// Assigns binary data from a string_view over a 1-byte, non-char type (e.g. unsigned char or
     /// uint8_t).
     template <basic_char Char>
-    requires(!std::same_as<Char, char>) nlohmann::json& operator=(
-            std::basic_string_view<Char> binary_data) {
+        requires(!std::same_as<Char, char>)
+    nlohmann::json& operator=(std::basic_string_view<Char> binary_data) {
         return *this = std::string_view{
                        reinterpret_cast<const char*>(binary_data.data()), binary_data.size()};
     }
