@@ -94,7 +94,7 @@ struct StateResponse {
 class RewardsContract {
   public:
     // Constructor
-    RewardsContract(const std::string& _contractAddress, std::shared_ptr<Provider> _provider);
+    RewardsContract(const std::string& _contractAddress, ethyl::Provider& provider);
 
     StateResponse State();
     StateResponse State(uint64_t height);
@@ -103,5 +103,5 @@ class RewardsContract {
 
   private:
     std::string contractAddress;
-    std::shared_ptr<Provider> provider;
+    ethyl::Provider& provider;
 };
