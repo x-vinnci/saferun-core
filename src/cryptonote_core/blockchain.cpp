@@ -533,7 +533,8 @@ bool Blockchain::init(
     if (!m_checkpoints.init(m_nettype, m_db))
         throw std::runtime_error("Failed to initialize checkpoints");
 
-    m_l2_tracker = std::make_shared<L2Tracker>(m_nettype);
+    m_l2_tracker                          = std::make_shared<L2Tracker>(m_nettype);
+    m_l2_tracker->provider.connectTimeout = 2000ms;
     if (ethereum_provider.size()) {
         std::string_view delimiter = ",";
         std::vector<std::string_view> provider_urls = tools::split(ethereum_provider, delimiter, /*trim*/ true);
