@@ -54,8 +54,9 @@ add_subdirectory(nlohmann-json EXCLUDE_FROM_ALL)
 if(BUILD_STATIC_DEPS)
   set(OXEN_LOGGING_FORCE_SUBMODULES TRUE CACHE BOOL "" FORCE)
 endif()
-set(OXEN_LOGGING_SOURCE_ROOT "${PROJECT_SOURCE_DIR}/src;${PROJECT_SOURCE_DIR}" CACHE INTERNAL "")
 add_subdirectory(oxen-logging)
+oxen_logging_add_source_dir("${PROJECT_SOURCE_DIR}")
+oxen_logging_add_source_dir("${PROJECT_SOURCE_DIR}/src")
 
 # uSockets doesn't really have a proper build system (just a very simple Makefile) so build it
 # ourselves.
