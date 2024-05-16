@@ -3416,6 +3416,7 @@ void core_rpc_server::invoke(
     bool at_least_one_succeeded = false;
 
     auto& balances = get_accrued_batched_earnings.response["balances"];
+    balances = json::object();
     auto& req = get_accrued_batched_earnings.request;
     if (req.addresses.size() > 0) {
         for (const auto& address : req.addresses) {
