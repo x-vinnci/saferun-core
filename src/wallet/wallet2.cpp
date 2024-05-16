@@ -73,7 +73,6 @@
 #include "rapidjson/document.h"
 #include "rapidjson/stringbuffer.h"
 #include "rapidjson/writer.h"
-#include "ringct/fmt.h"
 #include "ringct/rctSigs.h"
 #include "ringdb.h"
 #include "rpc/core_rpc_server_commands_defs.h"
