@@ -641,7 +641,7 @@ namespace {
                     // We aren't given info on whether this is testnet/mainnet, but we can guess by
                     // looking at the operator amount, which has to be <= 100 on testnet, but >=
                     // 3750 on mainnet.
-                    auto nettype = x.amounts[0] > oxen::STAKING_REQUIREMENT_TESTNET
+                    auto nettype = x.amounts[0] > oxen::SENT_STAKING_REQUIREMENT_TESTNET
                                          ? network_type::MAINNET
                                          : network_type::TESTNET;
                     portion = std::lround(

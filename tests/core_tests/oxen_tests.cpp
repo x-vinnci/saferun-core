@@ -2970,7 +2970,7 @@ bool oxen_service_nodes_insufficient_contribution::generate(std::vector<test_eve
   gen.create_and_add_next_block({tx0});
   gen.add_transfer_unlock_blocks();
 
-  uint64_t operator_amt = oxen::STAKING_REQUIREMENT_TESTNET / 2;
+  uint64_t operator_amt = oxen::SENT_STAKING_REQUIREMENT_TESTNET / 2;
   cryptonote::keypair sn_keys{hw::get_device("default")};
   cryptonote::transaction register_tx = gen.create_registration_tx(gen.first_miner_, sn_keys, operator_amt);
   gen.add_tx(register_tx);
@@ -3007,8 +3007,8 @@ bool oxen_service_nodes_insufficient_contribution_HF18::generate(std::vector<tes
   gen.create_and_add_next_block({tx0});
   gen.add_transfer_unlock_blocks();
 
-  uint64_t operator_amount = oxen::MINIMUM_OPERATOR_CONTRIBUTION_TESTNET;
-  uint64_t remaining_amount = oxen::STAKING_REQUIREMENT_TESTNET - operator_amount;
+  uint64_t operator_amount = oxen::MINIMUM_OPERATOR_CONTRIBUTION(oxen::OXEN_STAKING_REQUIREMENT_TESTNET);
+  uint64_t remaining_amount = oxen::OXEN_STAKING_REQUIREMENT_TESTNET - operator_amount;
   // This amount is too small under HF18 rules:
   uint64_t single_contributed_amount = remaining_amount / (oxen::MAX_CONTRIBUTORS_HF19 - 1);
   cryptonote::keypair sn_keys{hw::get_device("default")};
@@ -3049,8 +3049,8 @@ bool oxen_service_nodes_sufficient_contribution_HF19::generate(std::vector<test_
   gen.create_and_add_next_block({tx0});
   gen.add_transfer_unlock_blocks();
 
-  uint64_t operator_amount = oxen::MINIMUM_OPERATOR_CONTRIBUTION_TESTNET;
-  uint64_t remaining_amount = oxen::STAKING_REQUIREMENT_TESTNET - operator_amount;
+  uint64_t operator_amount = oxen::MINIMUM_OPERATOR_CONTRIBUTION(oxen::OXEN_STAKING_REQUIREMENT_TESTNET);
+  uint64_t remaining_amount = oxen::OXEN_STAKING_REQUIREMENT_TESTNET - operator_amount;
   // This amount is too small under HF18 rules, but is accepted under HF19:
   uint64_t single_contributed_amount = remaining_amount / (oxen::MAX_CONTRIBUTORS_HF19 - 1);
   uint64_t total_amount = operator_amount + single_contributed_amount;
@@ -3196,7 +3196,7 @@ bool oxen_service_nodes_insufficient_operator_contribution_HF19::generate(std::v
   gen.add_blocks_until_version(hard_forks.back().version);
   gen.add_mined_money_unlock_blocks();
 
-  uint64_t operator_amount = oxen::MINIMUM_OPERATOR_CONTRIBUTION_TESTNET - 1;
+  uint64_t operator_amount = oxen::MINIMUM_OPERATOR_CONTRIBUTION(oxen::OXEN_STAKING_REQUIREMENT_TESTNET) - 1;
   cryptonote::keypair sn_keys{hw::get_device("default")};
   cryptonote::transaction register_tx = gen.create_registration_tx(gen.first_miner_, sn_keys, operator_amount);
   gen.add_tx(register_tx);

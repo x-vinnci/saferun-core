@@ -18,21 +18,26 @@ using cryptonote::hf;
 
 namespace service_nodes {
 
+using namespace cryptonote;
+using namespace oxen;
+
 static auto logcat = log::Cat("service_nodes");
 
 uint64_t get_staking_requirement(cryptonote::network_type nettype, hf hardfork) {
     assert(hardfork >= hf::hf16_pulse);
-    return nettype == cryptonote::network_type::MAINNET ? oxen::STAKING_REQUIREMENT
-                                                        : oxen::STAKING_REQUIREMENT_TESTNET;
+    if (nettype == network_type::MAINNET)
+        return hardfork >= hf::hf20 ? SENT_STAKING_REQUIREMENT : OXEN_STAKING_REQUIREMENT;
+    return hardfork >= hf::hf20 ? SENT_STAKING_REQUIREMENT_TESTNET : OXEN_STAKING_REQUIREMENT_TESTNET;
 }
 
 // TODO(oxen): Move to oxen_economy, this will also need access to oxen::exp2
 uint64_t get_staking_requirement(cryptonote::network_type nettype, uint64_t height) {
-    if (nettype != cryptonote::network_type::MAINNET)
-        return oxen::STAKING_REQUIREMENT_TESTNET;
-
-    if (is_hard_fork_at_least(nettype, hf::hf16_pulse, height))
-        return oxen::STAKING_REQUIREMENT;
+    if (is_hard_fork_at_least(nettype, hf::hf20, height))
+        return nettype == network_type::MAINNET ? SENT_STAKING_REQUIREMENT : SENT_STAKING_REQUIREMENT_TESTNET;
+    else if (nettype != cryptonote::network_type::MAINNET)
+        return OXEN_STAKING_REQUIREMENT_TESTNET;
+    else if (is_hard_fork_at_least(nettype, hf::hf16_pulse, height))
+        return OXEN_STAKING_REQUIREMENT;
 
     if (is_hard_fork_at_least(nettype, hf::hf13_enforce_checkpoints, height)) {
         constexpr int64_t heights[] = {
@@ -149,7 +154,6 @@ bool check_service_node_portions(
 
 bool check_service_node_stakes(
         hf hf_version,
-        cryptonote::network_type nettype,
         uint64_t staking_requirement,
         const std::vector<uint64_t>& stakes) {
     if (hf_version < hf::hf19_reward_batching) {
@@ -167,9 +171,7 @@ bool check_service_node_stakes(
         return false;
     }
 
-    const auto operator_requirement = nettype == cryptonote::network_type::MAINNET
-                                            ? oxen::MINIMUM_OPERATOR_CONTRIBUTION
-                                            : oxen::MINIMUM_OPERATOR_CONTRIBUTION_TESTNET;
+    const auto operator_requirement = MINIMUM_OPERATOR_CONTRIBUTION(staking_requirement);
 
     uint64_t reserved = 0;
     uint64_t remaining = staking_requirement;

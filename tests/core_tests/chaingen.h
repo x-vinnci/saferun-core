@@ -1520,7 +1520,7 @@ struct oxen_chain_generator
   cryptonote::transaction                              create_tx(const cryptonote::account_base &src, const cryptonote::account_public_address &dest, uint64_t amount, uint64_t fee) const;
   cryptonote::transaction                              create_registration_tx(const cryptonote::account_base& src,
                                                                               const cryptonote::keypair& service_node_keys = cryptonote::keypair{hw::get_device("default")},
-                                                                              uint64_t operator_stake = oxen::STAKING_REQUIREMENT_TESTNET,
+                                                                              uint64_t operator_stake = oxen::OXEN_STAKING_REQUIREMENT_TESTNET,
                                                                               uint64_t fee = cryptonote::STAKING_FEE_BASIS,
                                                                               const std::vector<service_nodes::contribution>& contributors = {}) const;
   cryptonote::transaction                              create_staking_tx     (const crypto::public_key& pub_key, const cryptonote::account_base &src, uint64_t amount) const;

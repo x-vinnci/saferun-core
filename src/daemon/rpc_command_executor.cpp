@@ -2452,17 +2452,13 @@ bool rpc_command_executor::prepare_registration(bool force_registration) {
             case register_step::ask_amount: {
                 bool is_operator = state.total_reserved_contributions == 0;
                 uint64_t amount_left = staking_requirement - state.total_reserved_contributions;
-                uint64_t
-                        min_contribution = is_operator
-                                                 ? (nettype == cryptonote::network_type::MAINNET
-                                                            ? oxen::MINIMUM_OPERATOR_CONTRIBUTION
-                                                            : oxen::MINIMUM_OPERATOR_CONTRIBUTION_TESTNET)
-                                                 : service_nodes::
-                                                           get_min_node_contribution(
-                                                                   hf_version,
-                                                                   staking_requirement,
-                                                                   state.total_reserved_contributions,
-                                                                   state.contributions.size() - 1 /* -1 because we already added this address to the list */);
+                uint64_t min_contribution = is_operator ? oxen::MINIMUM_OPERATOR_CONTRIBUTION(
+                                                                  staking_requirement)
+                                                        : service_nodes::get_min_node_contribution(
+                                                                  hf_version,
+                                                                  staking_requirement,
+                                                                  state.total_reserved_contributions,
+                                                                  state.contributions.size() - 1 /* -1 because we already added this address to the list */);
 
                 auto [result, contribution_str] = input_line_value(
                         fmt::format(
@@ -2682,7 +2678,8 @@ The Service Node will not activate until the entire stake has been contributed.
             return false;
         auto& registration = *maybe_registration;
 
-        tools::success_msg_writer("\n\n{}\n\n", registration["registration_cmd"].get<std::string_view>());
+        tools::success_msg_writer(
+                "\n\n{}\n\n", registration["registration_cmd"].get<std::string_view>());
         return true;
     }
 
