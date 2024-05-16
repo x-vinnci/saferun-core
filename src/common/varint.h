@@ -88,7 +88,7 @@ constexpr size_t VARINT_MAX_LENGTH = (sizeof(T) * 8 + 6) / 7;  // i.e. integer c
  * (which have a high bit set) will always end up full size since the high bit is set.
  */
 template <std::unsigned_integral T, std::output_iterator<T> OutputIt>
-void write_varint(OutputIt&& it, T i) {
+void write_varint(OutputIt& it, T i) {
 #ifndef NDEBUG
     size_t count = 0;
 #endif
@@ -101,6 +101,11 @@ void write_varint(OutputIt&& it, T i) {
     // Last byte (7 bits or less, no continuation bit)
     assert(++count <= VARINT_MAX_LENGTH<T>);
     *it++ = static_cast<char>(i);
+}
+
+template <std::unsigned_integral T, std::output_iterator<T> OutputIt>
+void write_varint(OutputIt&& it, T i) {
+    write_varint(it, i);
 }
 
 /*! \brief Returns the string that represents the varint
@@ -117,7 +122,7 @@ std::string get_varint_data(const T& v) {
  * or one of the negative EVARIANT_* constants on failure.
  */
 template <std::unsigned_integral T, std::input_iterator It, std::sentinel_for<It> EndIt>
-int read_varint(It&& it, const EndIt& end, T& write) {
+int read_varint(It& it, const EndIt& end, T& write) {
     constexpr size_t bits = sizeof(T) * 8;
 
     bool more = true;
@@ -143,6 +148,11 @@ int read_varint(It&& it, const EndIt& end, T& write) {
     }
 
     return more ? EVARINT_TRUNCATED : read;
+}
+
+template <std::unsigned_integral T, std::input_iterator It, std::sentinel_for<It> EndIt>
+int read_varint(It&& it, const EndIt& end, T& write) {
+    return read_varint(it, end, write);
 }
 
 // Overloads to allow {read,write}_varint to be called with const iterators
