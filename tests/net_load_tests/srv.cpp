@@ -217,6 +217,7 @@ namespace
 
 int main(int argc, char** argv)
 {
+  auto logcat = oxen::log::Cat("net_load_tests");
   TRY_ENTRY();
   tools::on_startup();
   //set up logging options
@@ -236,5 +237,5 @@ int main(int argc, char** argv)
   if (!tcp_server.run_server(thread_count, true))
     return 2;
   return 0;
-  CATCH_ENTRY_L0("main", 1);
+  CATCH_ENTRY("main", 1);
 }

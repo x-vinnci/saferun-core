@@ -637,9 +637,8 @@ sqlite3* init_oxen_name_system(const fs::path& file_path, bool read_only) {
     }
 
     int const flags = read_only ? SQLITE_OPEN_READONLY : SQLITE_OPEN_CREATE | SQLITE_OPEN_READWRITE;
-    auto utf8_path = file_path.u8string();
-    int sql_open = sqlite3_open_v2(
-            reinterpret_cast<const char*>(utf8_path.c_str()), &result, flags, nullptr);
+    auto utf8_path = tools::convert_str<char>(file_path.u8string());
+    int sql_open = sqlite3_open_v2(utf8_path.c_str(), &result, flags, nullptr);
     if (sql_open != SQLITE_OK) {
         log::error(
                 logcat,

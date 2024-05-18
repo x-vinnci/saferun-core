@@ -65,4 +65,5 @@ target_link_libraries(epee
     oxenc::oxenc
   PRIVATE
     Boost::thread
+    oxen::logging
     extra)

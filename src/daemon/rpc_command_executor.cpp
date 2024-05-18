@@ -2144,7 +2144,8 @@ bool rpc_command_executor::claim_rewards(const std::string& address) {
     tools::msg_writer(
             "Address: {0:s}\n Amount: {1:d}\n Height: {2:d}\n Signature: {3:s}\n"
             " Link to claim rewards: "
-            "https://oxen-eth-webpage.vercel.app/?amount={1:d}&address={0:s}&height={2:d}&sig={3:s}\n",
+            "https://oxen-eth-webpage.vercel.app/"
+            "?amount={1:d}&address={0:s}&height={2:d}&sig={3:s}\n",
             withdrawal_response["address"].get<std::string_view>(),
             withdrawal_response["amount"].get<uint64_t>(),
             withdrawal_response["height"].get<uint64_t>(),

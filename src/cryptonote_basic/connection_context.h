@@ -91,17 +91,3 @@ constexpr char get_protocol_state_char(cryptonote_connection_context::state s) {
 }
 
 }  // namespace cryptonote
-
-template <std::derived_from<epee::net_utils::connection_context_base> T, typename Char>
-struct fmt::formatter<
-        T,
-        Char,
-        // SFINAE shouldn't be needed here in C++20, but gcc-10 disagrees:
-        std::enable_if_t<std::is_base_of_v<epee::net_utils::connection_context_base, T>>>
-        : fmt::formatter<std::string> {
-    auto format(epee::net_utils::connection_context_base connection_context, format_context& ctx) {
-        return formatter<std::string>::format(
-                "[{}]"_format(epee::net_utils::print_connection_context_short(connection_context)),
-                ctx);
-    }
-};

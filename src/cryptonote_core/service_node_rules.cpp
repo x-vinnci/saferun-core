@@ -27,13 +27,15 @@ uint64_t get_staking_requirement(cryptonote::network_type nettype, hf hardfork) 
     assert(hardfork >= hf::hf16_pulse);
     if (nettype == network_type::MAINNET)
         return hardfork >= hf::hf20 ? SENT_STAKING_REQUIREMENT : OXEN_STAKING_REQUIREMENT;
-    return hardfork >= hf::hf20 ? SENT_STAKING_REQUIREMENT_TESTNET : OXEN_STAKING_REQUIREMENT_TESTNET;
+    return hardfork >= hf::hf20 ? SENT_STAKING_REQUIREMENT_TESTNET
+                                : OXEN_STAKING_REQUIREMENT_TESTNET;
 }
 
 // TODO(oxen): Move to oxen_economy, this will also need access to oxen::exp2
 uint64_t get_staking_requirement(cryptonote::network_type nettype, uint64_t height) {
     if (is_hard_fork_at_least(nettype, hf::hf20, height))
-        return nettype == network_type::MAINNET ? SENT_STAKING_REQUIREMENT : SENT_STAKING_REQUIREMENT_TESTNET;
+        return nettype == network_type::MAINNET ? SENT_STAKING_REQUIREMENT
+                                                : SENT_STAKING_REQUIREMENT_TESTNET;
     else if (nettype != cryptonote::network_type::MAINNET)
         return OXEN_STAKING_REQUIREMENT_TESTNET;
     else if (is_hard_fork_at_least(nettype, hf::hf16_pulse, height))
@@ -153,9 +155,7 @@ bool check_service_node_portions(
 }
 
 bool check_service_node_stakes(
-        hf hf_version,
-        uint64_t staking_requirement,
-        const std::vector<uint64_t>& stakes) {
+        hf hf_version, uint64_t staking_requirement, const std::vector<uint64_t>& stakes) {
     if (hf_version < hf::hf19_reward_batching) {
         log::info(
                 logcat,

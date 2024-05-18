@@ -77,6 +77,8 @@ namespace service_nodes {
 }
 #endif
 
+static auto logcat = oxen::log::Cat("chaingen");
+
 using cryptonote::hf;
 
 struct oxen_block_with_checkpoint
@@ -957,7 +959,7 @@ inline bool replay_events_through_core_plain(cryptonote::core& cr, const std::ve
 
   return r;
 
-  CATCH_ENTRY_L0("replay_events_through_core", false);
+  CATCH_ENTRY("replay_events_through_core", false);
 }
 //--------------------------------------------------------------------------
 template<typename t_test_class>
@@ -1267,10 +1269,10 @@ inline bool do_replay_file(const std::string& filename)
 
 #define QUOTEME(x) #x
 #define DEFINE_TESTS_ERROR_CONTEXT(text) const char* perr_context = text;
-#define CHECK_TEST_CONDITION(cond) CHECK_AND_ASSERT_MES(cond, false, "[" << perr_context << "] failed: \"" << QUOTEME(cond) << "\"")
-#define CHECK_TEST_CONDITION_MSG(cond, msg) CHECK_AND_ASSERT_MES(cond, false, "[" << perr_context << "] failed: \"" << QUOTEME(cond) << "\", msg: " << msg)
-#define CHECK_EQ(v1, v2) CHECK_AND_ASSERT_MES(v1 == v2, false, "[" << perr_context << "] failed: \"" << QUOTEME(v1) << " == " << QUOTEME(v2) << "\", " << v1 << " != " << v2)
-#define CHECK_NOT_EQ(v1, v2) CHECK_AND_ASSERT_MES(!(v1 == v2), false, "[" << perr_context << "] failed: \"" << QUOTEME(v1) << " != " << QUOTEME(v2) << "\", " << v1 << " == " << v2)
+#define CHECK_TEST_CONDITION(cond) CHECK_AND_ASSERT_MES(cond, false, "[{}] failed: \"{}\"", perr_context, QUOTEME(cond))
+#define CHECK_TEST_CONDITION_MSG(cond, ...) CHECK_AND_ASSERT_MES(cond, false, "[{}] failed: \"{}\", msg: {}", perr_context, QUOTEME(cond), fmt::format(__VA_ARGS__))
+#define CHECK_EQ(v1, v2) CHECK_AND_ASSERT_MES(v1 == v2, false, "[{}] failed: \"{} == {}\", {} != {}", perr_context, QUOTEME(v1), QUOTEME(v2), v1, v2)
+#define CHECK_NOT_EQ(v1, v2) CHECK_AND_ASSERT_MES(!(v1 == v2), false, "[{}] failed: \"{} != {}\", {} == {}", perr_context, QUOTEME(v1), QUOTEME(v2), v1, v2)
 #define MK_COINS(amount) (UINT64_C(amount) * oxen::COIN)
 
 inline std::string make_junk() {

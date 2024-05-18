@@ -527,9 +527,9 @@ bool device_ledger::reset() {
 
     CHECK_AND_ASSERT_THROW_MES(
             device_version >= MINIMUM_APP_VERSION,
-            "Unsupported device application version: "
-                    << tools::join(".", device_version) << " At least "
-                    << tools::join(".", MINIMUM_APP_VERSION) << " is required.");
+            "Unsupported device application version: {}. At least {} is required.",
+            fmt::join(device_version, "."),
+            fmt::join(MINIMUM_APP_VERSION, "."));
 
     return true;
 }
@@ -552,9 +552,11 @@ unsigned int device_ledger::exchange(bool wait_on_input) {
 
     CHECK_AND_ASSERT_THROW_MES(
             sw == SW_OK,
-            "Wrong Device Status: "
-                    << "0x" << std::hex << sw << " (" << status_string(sw) << "), "
-                    << "EXPECTED 0x" << std::hex << SW_OK << " (" << status_string(SW_OK) << "), ");
+            "Wrong Device Status: 0x{:x} ({}), EXPECTED 0x{:x} ({})",
+            sw,
+            status_string(sw),
+            SW_OK,
+            status_string(SW_OK));
 
     return sw;
 }
@@ -1876,7 +1878,7 @@ bool device_ledger::generate_output_ephemeral_keys(
             32);
 #endif
 
-    CHECK_AND_ASSERT_THROW_MES(tx_version > 1, "TX version not supported" << tx_version);
+    CHECK_AND_ASSERT_THROW_MES(tx_version > 1, "TX version {} not supported", tx_version);
 
     // make additional tx pubkey if necessary
     cryptonote::keypair additional_txkey;

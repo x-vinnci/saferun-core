@@ -618,13 +618,13 @@ TEST_F(net_load_test_clt, permament_open_and_close_and_connections_closed_by_ser
 
 int main(int argc, char** argv)
 {
+  auto logcat = oxen::log::Cat("net_load_tests");
   TRY_ENTRY();
   tools::on_startup();
-  epee::debug::get_set_enable_assert(true, false);
   //set up logging options
   oxen::logging::init("net_load_tests_clt.log", oxen::log::Level::debug);
 
   ::testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
-  CATCH_ENTRY_L0("main", 1);
+  CATCH_ENTRY("main", 1);
 }

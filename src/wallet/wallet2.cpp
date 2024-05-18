@@ -4600,7 +4600,7 @@ bool wallet2::store_keys(
         r = tools::dump_file(tmp_file_name, buf);
     } catch (...) {
     }
-    CHECK_AND_ASSERT_MES(r, false, "failed to generate wallet keys file " << tmp_file_name);
+    CHECK_AND_ASSERT_MES(r, false, "failed to generate wallet keys file {}", tmp_file_name);
 
     unlock_keys_file();
     std::error_code e;

@@ -953,9 +953,12 @@ bool tx_memory_pool::insert_key_images(
         CHECK_AND_ASSERT_MES(
                 kept_by_block || kei_image_set.size() == 0,
                 false,
-                "internal error: kept_by_block="
-                        << kept_by_block << ",  kei_image_set.size()=" << kei_image_set.size()
-                        << "\ntxin.k_image=" << txin.k_image << "\ntx_id=" << id);
+                "internal error: kept_by_block={}, "
+                "kei_image_set.size()={}\ntxin.k_image={}\ntx_id={}",
+                kept_by_block,
+                kei_image_set.size(),
+                txin.k_image,
+                id);
         auto ins_res = kei_image_set.insert(id);
         CHECK_AND_ASSERT_MES(
                 ins_res.second,
@@ -980,21 +983,24 @@ bool tx_memory_pool::remove_transaction_keyimages(
         CHECK_AND_ASSERT_MES(
                 it != m_spent_key_images.end(),
                 false,
-                "failed to find transaction input in key images. img="
-                        << txin.k_image << "\ntransaction id = " << actual_hash);
+                "failed to find transaction input in key images. img={}, txid={}",
+                txin.k_image,
+                actual_hash);
         std::unordered_set<crypto::hash>& key_image_set = it->second;
         CHECK_AND_ASSERT_MES(
                 key_image_set.size(),
                 false,
-                "empty key_image set, img=" << txin.k_image
-                                            << "\ntransaction id = " << actual_hash);
+                "empty key_image set, img={}, txid={}",
+                txin.k_image,
+                actual_hash);
 
         auto it_in_set = key_image_set.find(actual_hash);
         CHECK_AND_ASSERT_MES(
                 it_in_set != key_image_set.end(),
                 false,
-                "transaction id not found in key_image set, img="
-                        << txin.k_image << "\ntransaction id = " << actual_hash);
+                "transaction id not found in key_image set, img={}, txid={}",
+                txin.k_image,
+                actual_hash);
         key_image_set.erase(it_in_set);
         if (!key_image_set.size()) {
             // it is now empty hash container for this key_image
@@ -1815,8 +1821,8 @@ static bool append_key_images(
         CHECK_AND_ASSERT_MES(
                 i_res.second,
                 false,
-                "internal error: key images pool cache - inserted duplicate image in set: "
-                        << itk.k_image);
+                "internal error: key images pool cache - inserted duplicate image in set: {}",
+                itk.k_image);
     }
     return true;
 }

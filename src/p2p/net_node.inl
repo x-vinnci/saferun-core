@@ -53,6 +53,7 @@
 #include "crypto/crypto.h"
 #include "cryptonote_config.h"
 #include "cryptonote_core/cryptonote_core.h"
+#include "cryptonote_basic/connection_context.h"
 #include "epee/misc_log_ex.h"
 #include "epee/net/local_ip.h"
 #include "epee/storages/levin_abstract_invoke2.h"
@@ -127,7 +128,7 @@ bool node_server<t_payload_net_handler>::init_config() {
 
     m_first_connection_maker_call = true;
 
-    CATCH_ENTRY_L0("node_server::init_config", false);
+    CATCH_ENTRY("node_server::init_config", false);
     return true;
 }
 //-----------------------------------------------------------------------------------
@@ -372,12 +373,14 @@ bool node_server<t_payload_net_handler>::handle_command_line(
             CHECK_AND_ASSERT_MES(
                     adr == net::error::unsupported_address,
                     false,
-                    "Bad address (\"" << pr_str << "\"): " << adr.error().message());
+                    "Bad address (\"{}\"): {}",
+                    pr_str,
+                    adr.error().message());
 
             std::vector<epee::net_utils::network_address> resolved_addrs;
             bool r = append_net_address(resolved_addrs, pr_str, default_port);
             CHECK_AND_ASSERT_MES(
-                    r, false, "Failed to parse or resolve address from string: " << pr_str);
+                    r, false, "Failed to parse or resolve address from string: {}", pr_str);
             for (const epee::net_utils::network_address& addr : resolved_addrs) {
                 pe.id = crypto::rand<uint64_t>();
                 pe.adr = addr;
@@ -540,9 +543,7 @@ inline bool append_net_address(
     boost::system::error_code ec;
     ip::tcp::resolver::iterator i = resolver.resolve(query, ec);
     CHECK_AND_ASSERT_MES(
-            !ec,
-            false,
-            "Failed to resolve host name '" << host << "': " << ec.message() << ':' << ec.value());
+            !ec, false, "Failed to resolve host name '{}': {}:{}", host, ec.message(), ec.value());
 
     ip::tcp::resolver::iterator iend;
     for (; i != iend; ++i) {
@@ -830,7 +831,7 @@ bool node_server<t_payload_net_handler>::store_config() {
         log::warning(logcat, "Failed to save config to file {}", state_file_path);
         return false;
     }
-    CATCH_ENTRY_L0("node_server::store", false);
+    CATCH_ENTRY("node_server::store", false);
     return true;
 }
 //-----------------------------------------------------------------------------------
@@ -1146,9 +1147,9 @@ bool node_server<t_payload_net_handler>::try_to_connect_and_handshake_with_new_p
     auto con = zone.m_connect(zone, na);
     if (!con) {
         if (is_priority_node(na))
-            log::info(logcat, "{}[priority] Connect failed to {}", bool(con), na.str());
+            log::info(logcat, "{}[priority] Connect failed to {}", con, na.str());
         else
-            log::info(logcat, "{} Connect failed to {}", bool(con), na.str());
+            log::info(logcat, "{} Connect failed to {}", con, na.str());
         record_addr_failed(na);
         return false;
     }
@@ -1294,7 +1295,8 @@ bool node_server<t_payload_net_handler>::make_new_connection_from_anchor_peerlis
                 pe.adr.str(),
                 format_stamp_ago(pe.first_seen));
 
-        if (!try_to_connect_and_handshake_with_new_peer(pe.adr, false, 0, PeerType::anchor, pe.first_seen)) {
+        if (!try_to_connect_and_handshake_with_new_peer(
+                    pe.adr, false, 0, PeerType::anchor, pe.first_seen)) {
             log::debug(logcat, "Handshake failed");
             continue;
         }
@@ -1438,9 +1440,7 @@ bool node_server<t_payload_net_handler>::make_new_connection_from_peerlist(
         bool r = use_white_list ? zone.m_peerlist.get_white_peer_by_index(pe, random_index)
                                 : zone.m_peerlist.get_gray_peer_by_index(pe, random_index);
         CHECK_AND_ASSERT_MES(
-                r,
-                false,
-                "Failed to get random peer from peerlist(white:" << use_white_list << ")");
+                r, false, "Failed to get random peer from peerlist(white:{})", use_white_list);
 
         ++try_count;
 
@@ -1475,7 +1475,10 @@ bool node_server<t_payload_net_handler>::make_new_connection_from_peerlist(
                 format_stamp_ago(pe.last_seen));
 
         if (!try_to_connect_and_handshake_with_new_peer(
-                    pe.adr, false, pe.last_seen, use_white_list ? PeerType::white : PeerType::gray)) {
+                    pe.adr,
+                    false,
+                    pe.last_seen,
+                    use_white_list ? PeerType::white : PeerType::gray)) {
             log::debug(logcat, "Handshake failed");
             continue;
         }
@@ -2146,9 +2149,10 @@ bool node_server<t_payload_net_handler>::try_ping(
                                 COMMAND_PING::ID,
                                 req,
                                 zone.m_net_server.get_config_object(),
-                                [=, this](int code,
-                                    const COMMAND_PING::response& rsp,
-                                    p2p_connection_context& /*context*/) {
+                                [=, this](
+                                        int code,
+                                        const COMMAND_PING::response& rsp,
+                                        p2p_connection_context& /*context*/) {
                                     if (code <= 0) {
                                         log::warning(
                                                 logcat,
@@ -2337,7 +2341,7 @@ int node_server<t_payload_net_handler>::handle_handshake(
                              epee::net_utils::ipv4_network_address::get_type_id() ||
                      context.m_remote_address.get_type_id() ==
                              epee::net_utils::ipv6_network_address::get_type_id()),
-                    void(),
+                    /*void*/,
                     "Only IPv4 or IPv6 addresses are supported here");
             // called only(!) if success pinged, update local peerlist
             peerlist_entry pe;
@@ -2492,7 +2496,7 @@ bool node_server<t_payload_net_handler>::parse_peers_and_add_to_container(
         std::vector<epee::net_utils::network_address> resolved_addrs;
         bool r = append_net_address(resolved_addrs, pr_str, default_port);
         CHECK_AND_ASSERT_MES(
-                r, false, "Failed to parse or resolve address from string: " << pr_str);
+                r, false, "Failed to parse or resolve address from string: {}", pr_str);
         for (const epee::net_utils::network_address& addr : resolved_addrs) {
             container.push_back(addr);
         }

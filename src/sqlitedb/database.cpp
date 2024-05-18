@@ -35,7 +35,7 @@ Database::StatementWrapper Database::prepared_st(const std::string& query) {
 }
 
 Database::Database(const fs::path& db_path, const std::string_view db_password) :
-        db{db_path.u8string(),
+        db{db_path,
            SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE | SQLite::OPEN_FULLMUTEX,
            5000 /*ms*/} {
     // Don't fail on these because we can still work even if they fail

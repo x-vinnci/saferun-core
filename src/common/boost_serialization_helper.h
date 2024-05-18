@@ -41,6 +41,7 @@
 namespace tools {
 template <class T>
 bool serialize_obj_to_file(T& obj, const fs::path& file_path) {
+    auto logcat = oxen::log::Cat("serialization");
     TRY_ENTRY();
     std::ofstream data_file{file_path, std::ios::binary | std::ios::trunc};
     if (data_file.fail())
@@ -54,11 +55,12 @@ bool serialize_obj_to_file(T& obj, const fs::path& file_path) {
     data_file.flush();
 
     return true;
-    CATCH_ENTRY_L0("serialize_obj_to_file", false);
+    CATCH_ENTRY("serialize_obj_to_file", false);
 }
 
 template <class T>
 bool unserialize_obj_from_file(T& obj, const fs::path& file_path) {
+    auto logcat = oxen::log::Cat("serialization");
     TRY_ENTRY();
 
     std::ifstream data_file{file_path, std::ios_base::binary};
@@ -79,6 +81,6 @@ bool unserialize_obj_from_file(T& obj, const fs::path& file_path) {
         boost::archive::binary_iarchive{data_file} >> obj;
     }
     return !data_file.fail();
-    CATCH_ENTRY_L0("unserialize_obj_from_file", false);
+    CATCH_ENTRY("unserialize_obj_from_file", false);
 }
 }  // namespace tools

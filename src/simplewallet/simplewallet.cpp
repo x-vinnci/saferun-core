@@ -107,6 +107,8 @@ struct formatter<boost::basic_format<char>> : formatter<std::string> {
 };
 }  // namespace fmt
 
+static auto logcat = oxen::log::Cat("wallet.simplewallet");
+
 namespace cryptonote {
 
 namespace string_tools = epee::string_tools;
@@ -139,8 +141,6 @@ using sw = cryptonote::simple_wallet;
 #define PRINT_USAGE(usage_help) fail_msg_writer() << boost::format(tr("usage: %s")) % usage_help;
 
 namespace {
-
-    auto logcat = log::Cat("wallet.simplewallet");
 
     const auto arg_wallet_file = wallet_args::arg_wallet_file();
     const command_line::arg_descriptor<std::string> arg_generate_new_wallet = {
@@ -3263,8 +3263,8 @@ bool simple_wallet::set_variable(const std::vector<std::string>& args) {
         success_msg_writer() << "refresh-type = "
                              << get_refresh_type_name(m_wallet->get_refresh_type());
         success_msg_writer() << "priority = " << priority << " (" << priority_string << ")";
-        success_msg_writer() << "ask-password = " << static_cast<int>(m_wallet->ask_password()) << " ("
-                             << ask_password_string << ")";
+        success_msg_writer() << "ask-password = " << static_cast<int>(m_wallet->ask_password())
+                             << " (" << ask_password_string << ")";
         success_msg_writer() << "min-outputs-count = " << m_wallet->get_min_output_count();
         success_msg_writer() << "min-outputs-value = "
                              << cryptonote::print_money(m_wallet->get_min_output_value());
@@ -3730,7 +3730,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
             }
 
             auto r = new_wallet(vm, info.address, std::nullopt, viewkey);
-            CHECK_AND_ASSERT_MES(r, false, tr("account creation failed"));
+            CHECK_AND_ASSERT_MES(r, false, "{}", tr("account creation failed"));
             password = *r;
             welcome = true;
         } else if (!m_generate_from_spend_key.empty()) {
@@ -3748,7 +3748,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
                 return false;
             }
             auto r = new_wallet(vm, m_recovery_key, true, false, "");
-            CHECK_AND_ASSERT_MES(r, false, tr("account creation failed"));
+            CHECK_AND_ASSERT_MES(r, false, "{}", tr("account creation failed"));
             password = *r;
             welcome = true;
         } else if (!m_generate_from_keys.empty()) {
@@ -3820,7 +3820,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
                 return false;
             }
             auto r = new_wallet(vm, info.address, spendkey, viewkey);
-            CHECK_AND_ASSERT_MES(r, false, tr("account creation failed"));
+            CHECK_AND_ASSERT_MES(r, false, "{}", tr("account creation failed"));
             password = *r;
             welcome = true;
         }
@@ -3949,7 +3949,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
 
             // create wallet
             auto r = new_wallet(vm, info.address, spendkey, viewkey);
-            CHECK_AND_ASSERT_MES(r, false, tr("account creation failed"));
+            CHECK_AND_ASSERT_MES(r, false, "{}", tr("account creation failed"));
             password = *r;
             welcome = true;
         }
@@ -3971,7 +3971,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
             m_wallet_file = m_generate_from_device;
             // create wallet
             auto r = new_device_wallet(vm);
-            CHECK_AND_ASSERT_MES(r, false, tr("account creation failed"));
+            CHECK_AND_ASSERT_MES(r, false, "{}", tr("account creation failed"));
             password = *r;
             welcome = true;
             default_restore_value = "curr";
@@ -3992,7 +3992,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
                         m_restore_deterministic_wallet,
                         m_non_deterministic,
                         old_language);
-            CHECK_AND_ASSERT_MES(r, false, tr("account creation failed"));
+            CHECK_AND_ASSERT_MES(r, false, "{}", tr("account creation failed"));
             password = *r;
             welcome = true;
         }
@@ -4091,7 +4091,7 @@ bool simple_wallet::init(const boost::program_options::variables_map& vm) {
             return false;
         }
         auto r = open_wallet(vm);
-        CHECK_AND_ASSERT_MES(r, false, tr("failed to open account"));
+        CHECK_AND_ASSERT_MES(r, false, "{}", tr("failed to open account"));
         password = *r;
     }
     if (!m_wallet) {
@@ -6464,7 +6464,8 @@ bool simple_wallet::query_locked_stakes(bool print_details, bool print_key_image
         });
 
         if (contributors.empty() || contributors[0].address != my_addr)
-            continue;  // We filtered out ourself
+            continue;  // We filtered out
+                       // ourself/home/jagerman/src/oxen-core/src/simplewallet/simplewallet.cpp
         auto& me = contributors.front();
 
         has_locked_stakes = true;
@@ -7256,10 +7257,9 @@ bool simple_wallet::ons_by_owner(const std::vector<std::string>& args) {
             name = got->second.name;
             ons::mapping_value mv;
             auto enc_val_hex = entry["encrypted_value"].get<std::string_view>();
-            if (oxenc::is_hex(enc_val_hex) && ons::mapping_value::validate_encrypted(
-                        ons_type,
-                        oxenc::from_hex(enc_val_hex),
-                        &mv) &&
+            if (oxenc::is_hex(enc_val_hex) &&
+                ons::mapping_value::validate_encrypted(
+                        ons_type, oxenc::from_hex(enc_val_hex), &mv) &&
                 mv.decrypt(name, ons_type))
                 value = mv.to_readable_value(nettype, ons_type);
         }
@@ -10189,7 +10189,7 @@ int main(int argc, char* argv[]) {
 
     cryptonote::simple_wallet w;
     const bool r = w.init(*vm);
-    CHECK_AND_ASSERT_MES(r, 1, sw::tr("Failed to initialize wallet"));
+    CHECK_AND_ASSERT_MES(r, 1, "{}", sw::tr("Failed to initialize wallet"));
 
     std::vector<std::string> command = command_line::get_arg(*vm, arg_command);
     if (!command.empty()) {
@@ -10220,7 +10220,7 @@ int main(int argc, char* argv[]) {
 
     w.deinit();
     return 0;
-    CATCH_ENTRY_L0("main", 1);
+    CATCH_ENTRY("main", 1);
 }
 
 #ifdef WALLET_ENABLE_MMS

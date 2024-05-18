@@ -2507,7 +2507,10 @@ void core_rpc_server::invoke(
                     get_service_node_registration_cmd.request.operator_cut)));
         } catch (const std::exception& e) {
             get_service_node_registration_cmd.response["status"] = "Invalid value: "s + e.what();
-            log::error(logcat, "{}", get_service_node_registration_cmd.response["status"].get<std::string_view>());
+            log::error(
+                    logcat,
+                    "{}",
+                    get_service_node_registration_cmd.response["status"].get<std::string_view>());
             return;
         }
     }

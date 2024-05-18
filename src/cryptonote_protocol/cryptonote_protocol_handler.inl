@@ -121,7 +121,7 @@ namespace cryptonote
   bool t_cryptonote_protocol_handler<t_core>::on_callback(cryptonote_connection_context& context)
   {
     log::debug(logcat, "callback fired");
-    CHECK_AND_ASSERT_MES_CC( context.m_callback_request_count > 0, false, "false callback fired, but context.m_callback_request_count=" << context.m_callback_request_count);
+    CHECK_AND_ASSERT_MES_CC( context.m_callback_request_count > 0, false, "false callback fired, but context.m_callback_request_count={}", context.m_callback_request_count.load());
     --context.m_callback_request_count;
 
     if(context.m_state == cryptonote_connection_context::state_synchronizing)
@@ -351,7 +351,7 @@ namespace cryptonote
     context.m_pruning_seed = hshd.pruning_seed;
     if constexpr (PRUNING_DEBUG_SPOOF_SEED) {
       context.m_pruning_seed = tools::make_pruning_seed(1 + (context.m_remote_address.as<epee::net_utils::ipv4_network_address>().ip()) % (1 << PRUNING_LOG_STRIPES), PRUNING_LOG_STRIPES);
-      log::info(logcat, "{}{}, seed address {}", context, "New connection posing as pruning seed ", epee::string_tools::to_string_hex(context.m_pruning_seed), &context.m_pruning_seed);
+      log::info(logcat, "{}New connection posing as pruning seed {}", context, tools::type_to_hex(context.m_pruning_seed));
     }
 
     // No chain synchronization over hidden networks (tor, i2p, etc.)
@@ -2213,12 +2213,18 @@ skip:
     {
       CHECK_AND_ASSERT_MES(context.m_last_response_height == context.m_remote_blockchain_height-1
                            && !context.m_needed_objects.size()
-                           && !context.m_requested_objects.size(), false, "request_missing_blocks final condition failed!"
-                           << "\r\nm_last_response_height=" << context.m_last_response_height
-                           << "\r\nm_remote_blockchain_height=" << context.m_remote_blockchain_height
-                           << "\r\nm_needed_objects.size()=" << context.m_needed_objects.size()
-                           << "\r\nm_requested_objects.size()=" << context.m_requested_objects.size()
-                           << "\r\non connection [" << epee::net_utils::print_connection_context_short(context)<< "]");
+                           && !context.m_requested_objects.size(), false,
+                           "request_missing_blocks final condition failed!"
+                           "\nm_last_response_height={}"
+                           "\nm_remote_blockchain_height="
+                           "\nm_needed_objects.size()="
+                           "\nm_requested_objects.size()="
+                           "\non connection [{}]",
+                           context.m_last_response_height,
+                           context.m_remote_blockchain_height,
+                           context.m_needed_objects.size(),
+                           context.m_requested_objects.size(),
+                           epee::net_utils::print_connection_context_short(context));
 
       context.m_state = cryptonote_connection_context::state_normal;
       if (context.m_remote_blockchain_height >= m_core.get_target_blockchain_height())

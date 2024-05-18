@@ -64,10 +64,11 @@
 namespace rpc = cryptonote::rpc;
 using namespace tools::wallet_rpc;
 
+static auto logcat = oxen::log::Cat("wallet.rpc");
+
 namespace tools {
 
 namespace {
-    auto logcat = log::Cat("wallet.rpc");
 
     constexpr auto DEFAULT_AUTO_REFRESH_PERIOD = 20s;
 
@@ -3719,7 +3720,7 @@ bool wallet_rpc_server::run(bool) {
         m_wallet = std::move(wal);
     bool r = init();
     CHECK_AND_ASSERT_MES(
-            r, false, tools::wallet_rpc_server::tr("Failed to initialize wallet RPC server"));
+            r, false, "{}", tools::wallet_rpc_server::tr("Failed to initialize wallet RPC server"));
     tools::signal_handler::install([this](int) {
         log::warning(logcat, "Shutting down...");
         m_stop = true;
@@ -3799,5 +3800,5 @@ int main(int argc, char** argv) {
                  ? 0
                  : 1;
 
-    CATCH_ENTRY_L0("main", 1);
+    CATCH_ENTRY("main", 1);
 }

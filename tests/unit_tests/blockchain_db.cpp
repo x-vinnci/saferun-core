@@ -159,6 +159,7 @@ class BlockchainDBTest : public testing::Test
 protected:
   BlockchainDBTest() : m_db(new T())
   {
+    auto logcat = oxen::log::Cat("db_test");
     for (auto& i : t_blocks)
     {
       block bl;

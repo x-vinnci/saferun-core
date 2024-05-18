@@ -414,8 +414,9 @@ crypto::secret_key decrypt_key(crypto::secret_key key, const epee::wipeable_stri
     CHECK_AND_ASSERT_MES(                                                                        \
             std::holds_alternative<specific_type>(variant_var),                                  \
             fail_return_val,                                                                     \
-            "wrong variant type: " << tools::type_name(tools::variant_type(variant_var))         \
-                                   << ", expected " << tools::type_name<specific_type>());       \
+            "wrong variant type: {}, expected {}",                                               \
+            tools::type_name(tools::variant_type(variant_var)),                                  \
+            tools::type_name<specific_type>());                                                  \
     auto& variable_name = var::get<specific_type>(variant_var);
 
 // Provide an inline header implementation of this function because device_default needs it (but

@@ -1305,9 +1305,11 @@ difficulty_type Blockchain::get_difficulty_for_alternative_chain(
         CHECK_AND_ASSERT_MES(
                 (alt_chain.size() + timestamps.size()) <= block_count,
                 false,
-                "Internal error, alt_chain.size()["
-                        << alt_chain.size() << "] + vtimestampsec.size()[" << timestamps.size()
-                        << "] NOT <= DIFFICULTY_WINDOW[]" << block_count);
+                "Internal error, alt_chain.size()[{}] + timestamps.size()[{}] NOT <= BLOCK COUNT "
+                "{}",
+                alt_chain.size(),
+                timestamps.size(),
+                block_count);
 
         for (const auto& bei : alt_chain) {
             timestamps.push_back(bei.bl.timestamp);
@@ -1370,9 +1372,9 @@ bool Blockchain::prevalidate_miner_transaction(const block& b, uint64_t height, 
         CHECK_AND_ASSERT_MES(
                 b.miner_tx.unlock_time == height + MINED_MONEY_UNLOCK_WINDOW,
                 false,
-                "coinbase transaction transaction has the wrong unlock time="
-                        << b.miner_tx.unlock_time << ", expected "
-                        << height + MINED_MONEY_UNLOCK_WINDOW);
+                "coinbase transaction transaction has the wrong unlock time={}, expected {}",
+                b.miner_tx.unlock_time,
+                height + MINED_MONEY_UNLOCK_WINDOW);
 
         if (hf_version >= hf::hf12_checkpointing) {
             if (b.miner_tx.type != txtype::standard) {
@@ -1869,10 +1871,11 @@ bool Blockchain::create_block_template_internal(
                 CHECK_AND_ASSERT_MES(
                         cumulative_weight + 1 == txs_weight + get_transaction_weight(b.miner_tx),
                         false,
-                        "unexpected case: cumulative_weight="
-                                << cumulative_weight << " + 1 is not equal txs_cumulative_weight="
-                                << txs_weight << " + get_transaction_weight(b.miner_tx)="
-                                << get_transaction_weight(b.miner_tx));
+                        "unexpected case: cumulative_weight={} + 1 does not equal "
+                        "txs_cumulative_weight={} + get_transaction_weight(b.miner_tx)={}",
+                        cumulative_weight,
+                        txs_weight,
+                        get_transaction_weight(b.miner_tx));
                 b.miner_tx.extra.resize(b.miner_tx.extra.size() - 1);
                 if (cumulative_weight != txs_weight + get_transaction_weight(b.miner_tx)) {
                     // fuck, not lucky, -1 makes varint-counter size smaller, in that case we
@@ -1895,10 +1898,11 @@ bool Blockchain::create_block_template_internal(
         CHECK_AND_ASSERT_MES(
                 cumulative_weight == txs_weight + get_transaction_weight(b.miner_tx),
                 false,
-                "unexpected case: cumulative_weight="
-                        << cumulative_weight << " is not equal txs_cumulative_weight=" << txs_weight
-                        << " + get_transaction_weight(b.miner_tx)="
-                        << get_transaction_weight(b.miner_tx));
+                "unexpected case: cumulative_weight={} does not equal txs_cumulative_weight={} + "
+                "get_transaction_weight(b.miner_tx)={}",
+                cumulative_weight,
+                txs_weight,
+                get_transaction_weight(b.miner_tx));
 
         if (!from_block)
             cache_block_template(
@@ -2058,8 +2062,9 @@ bool Blockchain::complete_timestamps_vector(
     CHECK_AND_ASSERT_MES(
             start_top_height < m_db->height(),
             false,
-            "internal error: passed start_height not < "
-                    << " m_db->height() -- " << start_top_height << " >= " << m_db->height());
+            "internal error: passed start_height not < m_db->height() -- {} >= {}",
+            start_top_height,
+            m_db->height());
     size_t stop_offset = start_top_height > need_elements ? start_top_height - need_elements : 0;
     timestamps.reserve(timestamps.size() + start_top_height - stop_offset);
     while (start_top_height != stop_offset) {
@@ -3532,9 +3537,9 @@ bool Blockchain::check_tx_inputs(
     CHECK_AND_ASSERT_MES(
             max_used_block_height < m_db->height(),
             false,
-            "internal error: max used block index=" << max_used_block_height
-                                                    << " is not less then blockchain size = "
-                                                    << m_db->height());
+            "internal error: max used block index={} is not less than blockchain size={}",
+            max_used_block_height,
+            m_db->height());
     max_used_block_id = m_db->get_block_hash_from_height(max_used_block_height);
     return true;
 }
@@ -3700,8 +3705,8 @@ bool Blockchain::expand_transaction_2(
         CHECK_AND_ASSERT_MES(
                 false,
                 false,
-                "Unsupported rct tx type: " +
-                        std::to_string(std::underlying_type_t<rct::RCTType>(rv.type)));
+                "Unsupported rct tx type: {}",
+                std::underlying_type_t<rct::RCTType>(rv.type));
     }
 
     // II
@@ -3731,8 +3736,8 @@ bool Blockchain::expand_transaction_2(
         CHECK_AND_ASSERT_MES(
                 false,
                 false,
-                "Unsupported rct tx type: " +
-                        std::to_string(static_cast<std::underlying_type_t<rct::RCTType>>(rv.type)));
+                "Unsupported rct tx type: {}",
+                static_cast<std::underlying_type_t<rct::RCTType>>(rv.type));
     }
 
     // outPk was already done by handle_incoming_tx
@@ -3820,8 +3825,8 @@ bool Blockchain::check_tx_inputs(
                 CHECK_AND_ASSERT_MES(
                         in_to_key.key_offsets.size(),
                         false,
-                        "empty in_to_key.key_offsets in transaction with id "
-                                << get_transaction_hash(tx));
+                        "empty in_to_key.key_offsets in transaction with id {}",
+                        get_transaction_hash(tx));
 
                 // Mixin Check, from hard fork 7, we require mixin at least 9, always.
                 if (in_to_key.key_offsets.size() - 1 != cryptonote::TX_OUTPUT_DECOYS) {
@@ -4132,9 +4137,9 @@ bool Blockchain::check_tx_inputs(
         CHECK_AND_ASSERT_MES(
                 tx.vin.size() == 0,
                 false,
-                "TX type: " << tx.type
-                            << " should have 0 inputs. This should have been rejected in "
-                               "check_tx_semantic!");
+                "TX type: {} should have 0 inputs. This should have been rejected in "
+                "check_tx_semantic!",
+                tx.type);
 
         if (tx.rct_signatures.txnFee != 0) {
             tvc.m_invalid_input = true;

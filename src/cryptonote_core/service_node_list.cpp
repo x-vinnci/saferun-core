@@ -458,8 +458,8 @@ void validate_registration(
         valid_stakes = check_service_node_portions(hf_version, reg.reserved);
         valid_fee = reg.fee <= cryptonote::old::STAKING_PORTIONS;
     } else {
-        valid_stakes = check_service_node_stakes(
-                hf_version, staking_requirement, extracted_amounts);
+        valid_stakes =
+                check_service_node_stakes(hf_version, staking_requirement, extracted_amounts);
         valid_fee = reg.fee <= cryptonote::STAKING_FEE_BASIS;
     }
 

@@ -862,12 +862,12 @@ bool init_key(
         bool r = tools::slurp_file(keypath, keystr);
         memcpy(&unwrap(unwrap(privkey)), keystr.data(), sizeof(privkey));
         memwipe(&keystr[0], keystr.size());
-        CHECK_AND_ASSERT_MES(
-                r, false, "failed to load service node key from " + keypath.u8string());
+        CHECK_AND_ASSERT_MES(r, false, "failed to load service node key from {}", keypath);
         CHECK_AND_ASSERT_MES(
                 keystr.size() == sizeof(privkey),
                 false,
-                "service node key file " + keypath.u8string() + " has an invalid size");
+                "service node key file {} has an invalid size",
+                keypath);
 
         r = get_pubkey(privkey, pubkey);
         CHECK_AND_ASSERT_MES(r, false, "failed to generate pubkey from secret key");
@@ -880,7 +880,7 @@ bool init_key(
         }
 
         bool r = tools::dump_file(keypath, tools::view_guts(privkey));
-        CHECK_AND_ASSERT_MES(r, false, "failed to save service node key to " + keypath.u8string());
+        CHECK_AND_ASSERT_MES(r, false, "failed to save service node key to {}", keypath);
 
         fs::permissions(keypath, fs::perms::owner_read, ec);
     }
@@ -2350,10 +2350,12 @@ bool core::handle_block_found(block& b, block_verification_context& bvc) {
         CHECK_AND_ASSERT_MES(
                 txs.size() == b.tx_hashes.size() && !missed_txs.size(),
                 false,
-                "can't find some transactions in found block:"
-                        << get_block_hash(b) << " txs.size()=" << txs.size()
-                        << ", b.tx_hashes.size()=" << b.tx_hashes.size() << ", missed_txs.size()"
-                        << missed_txs.size());
+                "can't find some transactions in found block:{} txs.size()={}, "
+                "b.tx_hashes.size()={}, missed_txs.size()={}",
+                get_block_hash(b),
+                txs.size(),
+                b.tx_hashes.size(),
+                missed_txs.size());
 
         cryptonote_connection_context exclude_context{};
         NOTIFY_NEW_FLUFFY_BLOCK::request arg{};
@@ -2443,7 +2445,7 @@ bool core::handle_incoming_block(
         m_miner.on_block_chain_update();
     return true;
 
-    CATCH_ENTRY_L0("core::handle_incoming_block()", false);
+    CATCH_ENTRY("core::handle_incoming_block()", false);
 }
 //-----------------------------------------------------------------------------------------------
 // Used by the RPC server to check the size of an incoming

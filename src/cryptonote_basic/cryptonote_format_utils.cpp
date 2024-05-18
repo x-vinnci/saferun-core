@@ -598,7 +598,9 @@ bool get_tx_miner_fee(
     CHECK_AND_ASSERT_MES(
             amount_in >= amount_out,
             false,
-            "transaction spend (" << amount_in << ") more than it has (" << amount_out << ")");
+            "transaction spends more than it has ({} > {})",
+            amount_out,
+            amount_in);
     fee = amount_in - amount_out;
     return true;
 }
@@ -1022,15 +1024,16 @@ uint64_t get_block_height(const block& b) {
         CHECK_AND_ASSERT_MES(
                 b.miner_tx.vin.size() == 1,
                 0,
-                "wrong miner tx in block: " << get_block_hash(b)
-                                            << ", b.miner_tx.vin.size() != 1 (size is: "
-                                            << b.miner_tx.vin.size() << ")");
+                "wrong miner tx in block: {}, b.miner_tx.vin.size() != 1 (size is: {})",
+                get_block_hash(b),
+                b.miner_tx.vin.size());
         CHECKED_GET_SPECIFIC_VARIANT(b.miner_tx.vin[0], txin_gen, coinbase_in, 0);
         if (b.major_version >= hf::hf19_reward_batching) {
             CHECK_AND_ASSERT_MES(
                     coinbase_in.height == b.height,
                     0,
-                    "wrong miner tx in block: " << get_block_hash(b));
+                    "wrong miner tx in block: {}",
+                    get_block_hash(b));
         }
         return coinbase_in.height;
     } else {
@@ -1043,9 +1046,10 @@ bool check_inputs_types_supported(const transaction& tx) {
         CHECK_AND_ASSERT_MES(
                 std::holds_alternative<txin_to_key>(in),
                 false,
-                "wrong variant type: " << tools::type_name(tools::variant_type(in)) << ", expected "
-                                       << tools::type_name<txin_to_key>()
-                                       << ", in transaction id=" << get_transaction_hash(tx));
+                "wrong variant type: {}, expected {}, in transaction id={}",
+                tools::type_name(tools::variant_type(in)),
+                tools::type_name<txin_to_key>(),
+                get_transaction_hash(tx));
     }
     return true;
 }
@@ -1074,9 +1078,10 @@ bool check_outs_valid(const transaction& tx) {
         CHECK_AND_ASSERT_MES(
                 std::holds_alternative<txout_to_key>(out.target),
                 false,
-                "wrong variant type: " << tools::type_name(tools::variant_type(out.target))
-                                       << ", expected " << tools::type_name<txout_to_key>()
-                                       << ", in transaction id=" << get_transaction_hash(tx));
+                "wrong variant type: {}, expected {}, in transaction id={}",
+                tools::type_name(tools::variant_type(out.target)),
+                tools::type_name<txout_to_key>(),
+                get_transaction_hash(tx));
 
         if (tx.version == txversion::v1) {
             if (out.amount <= 0) {
@@ -1527,9 +1532,10 @@ bool calculate_transaction_hash(const transaction& t, crypto::hash& res, size_t*
         CHECK_AND_ASSERT_MES(
                 prefix_size <= unprunable_size && unprunable_size <= blob.size(),
                 false,
-                "Inconsistent transaction prefix (" << prefix_size << "), unprunable ("
-                                                    << unprunable_size << ") and blob ("
-                                                    << blob.size() << ") sizes in: " << __func__);
+                "Inconsistent transaction prefix ({}), unprunable ({}) and blob ({}) sizes",
+                prefix_size,
+                unprunable_size,
+                blob.size());
         cryptonote::get_blob_hash(
                 std::string_view{blob}.substr(prefix_size, unprunable_size - prefix_size),
                 hashes[1]);
