@@ -2299,6 +2299,14 @@ void service_node_list::block_add(
             }
         }
     }
+    // Erase older entries in the recently expired nodes list
+    for (auto it = recently_expired_nodes.begin(); it != recently_expired_nodes.end(); )
+    {
+        if (it->second < height())
+            it = recently_expired_nodes.erase(it++);
+        else
+            ++it;
+    }
 }
 
 bool service_node_list::state_history_exists(uint64_t height) {
@@ -2334,10 +2342,7 @@ bool service_node_list::pop_batching_rewards_block(const cryptonote::block& bloc
     return m_blockchain.sqlite_db()->pop_block(block, m_state);
 }
 
-bool service_node_list::process_ethereum_transactions(
-        const cryptonote::network_type nettype,
-        const cryptonote::block& block,
-        const std::vector<cryptonote::transaction>& txs) {
+bool service_node_list::process_ethereum_address_notification_transactions(const cryptonote::network_type nettype, const cryptonote::block& block, const std::vector<cryptonote::transaction>& txs) {
     if (block.major_version < cryptonote::feature::ETH_BLS)
         return true;
     uint64_t block_height = cryptonote::get_block_height(block);
@@ -2824,6 +2829,7 @@ void service_node_list::state_t::update_from_block(
                         block_height);
 
             need_swarm_update += i->second->is_active();
+            sn_list->recently_expired_nodes.insert({tools::type_to_hex(i->second->bls_public_key), block_height + i->second->recommission_credit});
             service_nodes_infos.erase(i);
         }
     }
@@ -4308,6 +4314,10 @@ void service_node_list::record_timesync_status(crypto::public_key const& pubkey,
     std::lock_guard lock(m_sn_mutex);
     if (m_state.service_nodes_infos.count(pubkey))
         proofs[pubkey].timesync_status.add({synced});
+}
+
+bool service_node_list::is_recently_expired(std::string_view node_bls_pubkey) const {
+    return recently_expired_nodes.find(std::string(node_bls_pubkey)) != recently_expired_nodes.end();
 }
 
 std::optional<bool> proof_info::reachable_stats::reachable(

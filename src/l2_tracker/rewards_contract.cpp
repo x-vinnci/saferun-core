@@ -163,3 +163,86 @@ std::vector<RewardsLogEntry> RewardsContract::Logs(uint64_t height) {
 
     return logEntries;
 }
+
+std::vector<std::string> RewardsContract::getAllBLSPubkeys(uint64_t blockNumber) {
+    std::stringstream stream;
+    stream << "0x" << std::hex << blockNumber;
+    std::string blockNumberHex = stream.str();
+
+    // Get the sentinel node to start the iteration
+    const uint64_t service_node_sentinel_id = 0;
+    ContractServiceNode sentinelNode = serviceNodes(service_node_sentinel_id, blockNumberHex);
+    uint64_t currentNodeId = sentinelNode.next;
+
+    std::vector<std::string> blsPublicKeys;
+
+    // Iterate over the linked list of service nodes
+    while (currentNodeId != service_node_sentinel_id) {
+        ContractServiceNode serviceNode = serviceNodes(currentNodeId, blockNumberHex);
+        blsPublicKeys.push_back(serviceNode.pubkey);
+        currentNodeId = serviceNode.next;
+    }
+
+    return blsPublicKeys;
+}
+
+ContractServiceNode RewardsContract::serviceNodes(uint64_t index, std::string_view blockNumber)
+{
+    ReadCallData callData            = {};
+    std::string  indexABI            = utils::padTo32Bytes(utils::decimalToHex(index), utils::PaddingDirection::LEFT);
+    callData.contractAddress         = contractAddress;
+    callData.data                    = utils::getFunctionSignature("serviceNodes(uint64)") + indexABI;
+    nlohmann::json     callResult    = provider->callReadFunctionJSON(callData, blockNumber);
+    const std::string& callResultHex = callResult.get_ref<nlohmann::json::string_t&>();
+    std::string_view   callResultIt  = utils::trimPrefix(callResultHex, "0x");
+
+    const size_t        U256_HEX_SIZE                  = (256 / 8) * 2;
+    const size_t        BLS_PKEY_XY_COMPONENT_HEX_SIZE = 32 * 2;
+    const size_t        BLS_PKEY_HEX_SIZE              = BLS_PKEY_XY_COMPONENT_HEX_SIZE + BLS_PKEY_XY_COMPONENT_HEX_SIZE;
+    const size_t        ADDRESS_HEX_SIZE               = 32 * 2;
+
+    ContractServiceNode result                   = {};
+    size_t              walkIt                   = 0;
+    std::string_view    totalSize                = callResultIt.substr(walkIt, U256_HEX_SIZE);     walkIt += totalSize.size();
+    std::string_view    nextHex                  = callResultIt.substr(walkIt, U256_HEX_SIZE);     walkIt += nextHex.size();
+    std::string_view    prevHex                  = callResultIt.substr(walkIt, U256_HEX_SIZE);     walkIt += prevHex.size();
+    std::string_view    recipientHex             = callResultIt.substr(walkIt, ADDRESS_HEX_SIZE);  walkIt += recipientHex.size();
+    std::string_view    pubkeyHex                = callResultIt.substr(walkIt, BLS_PKEY_HEX_SIZE); walkIt += pubkeyHex.size();
+    std::string_view    leaveRequestTimestampHex = callResultIt.substr(walkIt, U256_HEX_SIZE);     walkIt += leaveRequestTimestampHex.size();
+    std::string_view    depositHex               = callResultIt.substr(walkIt, U256_HEX_SIZE);     walkIt += depositHex.size();
+    assert(walkIt == callResultIt.size());
+
+    // NOTE: Deserialize linked list
+    result.next                = utils::fromHexStringToUint64(nextHex);
+    result.prev                = utils::fromHexStringToUint64(prevHex);
+
+    // NOTE: Deserialise recipient
+    const size_t ETH_ADDRESS_HEX_SIZE = 20 * 2;
+    std::vector<unsigned char> recipientBytes = utils::fromHexString(recipientHex.substr(recipientHex.size() - ETH_ADDRESS_HEX_SIZE, ETH_ADDRESS_HEX_SIZE));
+    assert(recipientBytes.size() == result.recipient.max_size());
+    std::memcpy(result.recipient.data(), recipientBytes.data(), recipientBytes.size());
+
+    result.pubkey = std::string(pubkeyHex);
+
+    // NOTE: Deserialise metadata
+    result.leaveRequestTimestamp = utils::fromHexStringToUint64(leaveRequestTimestampHex);
+    result.deposit               = depositHex;
+    return result;
+}
+
+std::vector<uint64_t> RewardsContract::getNonSigners(const std::vector<std::string>& bls_public_keys) {
+    const uint64_t service_node_sentinel_id = 0;
+    ContractServiceNode service_node_end = serviceNodes(service_node_sentinel_id);
+    uint64_t service_node_id = service_node_end.next;
+    std::vector<uint64_t> non_signers;
+    
+    while (service_node_id != service_node_sentinel_id) {
+        ContractServiceNode service_node = serviceNodes(service_node_id);
+        if (std::find(bls_public_keys.begin(), bls_public_keys.end(), service_node.pubkey) == bls_public_keys.end()) {
+            non_signers.push_back(service_node_id);
+        }
+        service_node_id = service_node.next;
+    }
+
+    return non_signers;
+}

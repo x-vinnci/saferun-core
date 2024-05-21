@@ -2563,8 +2563,7 @@ void core_rpc_server::invoke(BLS_REWARDS_REQUEST& bls_rewards_request, rpc_conte
     bls_rewards_request.response["signed_message"] =
             bls_withdrawal_signature_response.signed_message;
     bls_rewards_request.response["signature"] = bls_withdrawal_signature_response.signature;
-    bls_rewards_request.response["signers_bls_pubkeys"] =
-            bls_withdrawal_signature_response.signers_bls_pubkeys;
+    bls_rewards_request.response["non_signers_bls_pubkeys"] = m_core.get_blockchain_storage().m_l2_tracker->get_non_signers(bls_withdrawal_signature_response.signers_bls_pubkeys);
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -2576,8 +2575,7 @@ void core_rpc_server::invoke(BLS_EXIT_REQUEST& bls_withdrawal_request, rpc_conte
     bls_withdrawal_request.response["signed_message"] =
             bls_withdrawal_signature_response.signed_message;
     bls_withdrawal_request.response["signature"] = bls_withdrawal_signature_response.signature;
-    bls_withdrawal_request.response["signers_bls_pubkeys"] =
-            bls_withdrawal_signature_response.signers_bls_pubkeys;
+    bls_withdrawal_request.response["non_signers_bls_pubkeys"] = m_core.get_blockchain_storage().m_l2_tracker->get_non_signers(bls_withdrawal_signature_response.signers_bls_pubkeys);
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
@@ -2589,8 +2587,7 @@ void core_rpc_server::invoke(BLS_LIQUIDATION_REQUEST& bls_withdrawal_request, rp
     bls_withdrawal_request.response["signed_message"] =
             bls_withdrawal_signature_response.signed_message;
     bls_withdrawal_request.response["signature"] = bls_withdrawal_signature_response.signature;
-    bls_withdrawal_request.response["signers_bls_pubkeys"] =
-            bls_withdrawal_signature_response.signers_bls_pubkeys;
+    bls_withdrawal_request.response["non_signers_bls_pubkeys"] = m_core.get_blockchain_storage().m_l2_tracker->get_non_signers(bls_withdrawal_signature_response.signers_bls_pubkeys);
     return;
 }
 //------------------------------------------------------------------------------------------------------------------------------
