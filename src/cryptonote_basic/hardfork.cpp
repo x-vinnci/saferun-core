@@ -145,17 +145,13 @@ static constexpr std::array testnet_hard_forks = {
 };
 
 static constexpr std::array devnet_hard_forks = {
-        hard_fork{hf::hf7, 0, 0, 1653500577},
-        hard_fork{hf::hf11_infinite_staking, 0, 2, 1653500577},
-        hard_fork{hf::hf12_checkpointing, 0, 3, 1653500577},
-        hard_fork{hf::hf13_enforce_checkpoints, 0, 4, 1653500577},
-        hard_fork{hf::hf14_blink, 0, 5, 1653500577},
-        hard_fork{hf::hf15_ons, 0, 200, 1653500577},
-        hard_fork{hf::hf16_pulse, 0, 250, 1653500577},
-        hard_fork{hf::hf17, 0, 251, 1653500577},
-        hard_fork{hf::hf18, 0, 252, 1653500577},
-        hard_fork{hf::hf19_reward_batching, 0, 253, 1653500577},
-        hard_fork{hf::hf20, 0, 379, 1653500577},
+        hard_fork{hf::hf7, 0, 0, 1716310007},
+        hard_fork{hf::hf14_blink, 0, 1, 1716310014},
+        hard_fork{hf::hf16_pulse, 0, 250, 1716310016},
+        hard_fork{hf::hf17, 0, 255, 1716310017},
+        hard_fork{hf::hf18, 0, 256, 1716310018},
+        hard_fork{hf::hf19_reward_batching, 0, 257, 1716310019},
+        hard_fork{hf::hf20, 0, 379, 1716310020},
 };
 
 template <size_t N>

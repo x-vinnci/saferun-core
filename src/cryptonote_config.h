@@ -481,7 +481,7 @@ namespace config {
                  0xf7,
                  0x5c,
                  0x7d,
-                 0x55,
+                 0x5d,
                  0x17,
                  0xcb,
                  0x6b,
