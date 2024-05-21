@@ -8847,11 +8847,9 @@ byte_and_output_fees wallet2::get_dynamic_base_fee_estimate() const {
 
     if (use_fork_rules(hf::hf18))
         fees = {FEE_PER_BYTE_V13, FEE_PER_OUTPUT_V18};  // v18 reduces fee
-    if (use_fork_rules(feature::PER_OUTPUT_FEE))
+    else
         fees = {FEE_PER_BYTE_V13, old::FEE_PER_OUTPUT_V13};  // v13 switches back from v12 per-byte
                                                              // fees, add per-output
-    else
-        fees = {old::FEE_PER_BYTE_V12, 0};
 
     log::info(
             logcat,
