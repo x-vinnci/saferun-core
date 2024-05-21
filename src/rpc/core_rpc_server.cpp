@@ -1973,18 +1973,18 @@ void core_rpc_server::invoke(GET_COINBASE_TX_SUM& get_coinbase_tx_sum, rpc_conte
     }
 }
 //------------------------------------------------------------------------------------------------------------------------------
-void core_rpc_server::invoke(GET_BASE_FEE_ESTIMATE& get_base_fee_estimate, rpc_context context) {
+void core_rpc_server::invoke(GET_FEE_ESTIMATE& get_fee_estimate, rpc_context context) {
     auto fees = m_core.get_blockchain_storage().get_dynamic_base_fee_estimate(
-            get_base_fee_estimate.request.grace_blocks);
-    get_base_fee_estimate.response["fee_per_byte"] = fees.first;
-    get_base_fee_estimate.response["fee_per_output"] = fees.second;
-    get_base_fee_estimate.response["blink_fee_fixed"] = oxen::BLINK_BURN_FIXED;
+            get_fee_estimate.request.grace_blocks);
+    get_fee_estimate.response["fee_per_byte"] = fees.first;
+    get_fee_estimate.response["fee_per_output"] = fees.second;
+    get_fee_estimate.response["blink_fee_fixed"] = oxen::BLINK_BURN_FIXED;
     constexpr auto blink_percent =
             oxen::BLINK_MINER_TX_FEE_PERCENT + oxen::BLINK_BURN_TX_FEE_PERCENT_V18;
-    get_base_fee_estimate.response["blink_fee_per_byte"] = fees.first * blink_percent / 100;
-    get_base_fee_estimate.response["blink_fee_per_output"] = fees.second * blink_percent / 100;
-    get_base_fee_estimate.response["quantization_mask"] = Blockchain::get_fee_quantization_mask();
-    get_base_fee_estimate.response["status"] = STATUS_OK;
+    get_fee_estimate.response["blink_fee_per_byte"] = fees.first * blink_percent / 100;
+    get_fee_estimate.response["blink_fee_per_output"] = fees.second * blink_percent / 100;
+    get_fee_estimate.response["quantization_mask"] = Blockchain::get_fee_quantization_mask();
+    get_fee_estimate.response["status"] = STATUS_OK;
 }
 //------------------------------------------------------------------------------------------------------------------------------
 void core_rpc_server::invoke(GET_ALTERNATE_CHAINS& get_alternate_chains, rpc_context context) {

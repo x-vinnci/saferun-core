@@ -248,8 +248,8 @@ void parse_request(GET_COINBASE_TX_SUM& get_coinbase_tx_sum, rpc_input in) {
             get_coinbase_tx_sum.request.height);
 }
 
-void parse_request(GET_BASE_FEE_ESTIMATE& get_base_fee_estimate, rpc_input in) {
-    get_values(in, "grace_blocks", get_base_fee_estimate.request.grace_blocks);
+void parse_request(GET_FEE_ESTIMATE& get_fee_estimate, rpc_input in) {
+    get_values(in, "grace_blocks", get_fee_estimate.request.grace_blocks);
 }
 
 void parse_request(OUT_PEERS& out_peers, rpc_input in) {

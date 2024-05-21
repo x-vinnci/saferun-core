@@ -1531,7 +1531,7 @@ struct GET_COINBASE_TX_SUM : RPC_COMMAND {
 /// ```
 ///
 /// Example-JSON-Fetch
-struct GET_BASE_FEE_ESTIMATE : PUBLIC {
+struct GET_FEE_ESTIMATE : PUBLIC {
     static constexpr auto names() { return NAMES("get_fee_estimate"); }
 
     struct request_parameters {
@@ -2771,7 +2771,7 @@ using core_rpc_types = tools::type_list<
         GET_ACCRUED_BATCHED_EARNINGS,
         GET_ALTERNATE_CHAINS,
         GET_BANS,
-        GET_BASE_FEE_ESTIMATE,
+        GET_FEE_ESTIMATE,
         GET_BLOCK,
         GET_BLOCK_COUNT,
         GET_BLOCK_HASH,

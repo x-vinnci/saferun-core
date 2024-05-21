@@ -16,7 +16,7 @@ void parse_request(BANNED& banned, rpc_input in);
 void parse_request(FLUSH_CACHE& flush_cache, rpc_input in);
 void parse_request(FLUSH_TRANSACTION_POOL& flush_transaction_pool, rpc_input in);
 void parse_request(GET_ACCRUED_BATCHED_EARNINGS& get_accrued_batched_earnings, rpc_input in);
-void parse_request(GET_BASE_FEE_ESTIMATE& get_base_fee_estimate, rpc_input in);
+void parse_request(GET_FEE_ESTIMATE& get_fee_estimate, rpc_input in);
 void parse_request(GET_BLOCK& get_block, rpc_input in);
 void parse_request(GET_BLOCK_HASH& bh, rpc_input in);
 void parse_request(GET_BLOCK_HEADERS_RANGE& get_block_headers_range, rpc_input in);

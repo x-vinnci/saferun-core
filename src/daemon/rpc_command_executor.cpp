@@ -1543,7 +1543,7 @@ bool rpc_command_executor::print_blockchain_dynamic_stats(uint64_t nblocks) {
     auto& hfinfo = *maybe_hf;
 
     auto maybe_fees = try_running(
-            [this] { return invoke<GET_BASE_FEE_ESTIMATE>(json{}); },
+            [this] { return invoke<GET_FEE_ESTIMATE>(json{}); },
             "Failed to retrieve current fee info");
     if (!maybe_fees)
         return false;

@@ -160,7 +160,7 @@ class core_rpc_server {
     void invoke(FLUSH_TRANSACTION_POOL& flush_transaction_pool, rpc_context context);
     void invoke(GET_VERSION& version, rpc_context context);
     void invoke(GET_COINBASE_TX_SUM& get_coinbase_tx_sum, rpc_context context);
-    void invoke(GET_BASE_FEE_ESTIMATE& get_base_fee_estimate, rpc_context context);
+    void invoke(GET_FEE_ESTIMATE& get_fee_estimate, rpc_context context);
     void invoke(OUT_PEERS& out_peers, rpc_context context);
     void invoke(IN_PEERS& in_peers, rpc_context context);
     void invoke(POP_BLOCKS& pop_blocks, rpc_context context);
