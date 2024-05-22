@@ -413,8 +413,8 @@ namespace config {
 
     // Details of the ethereum smart contract managing rewards and chain its kept on
     inline constexpr uint32_t ETHEREUM_CHAIN_ID = 421614;
-    inline constexpr std::string_view ETHEREUM_REWARDS_CONTRACT = "0x8E7085eEF00064D840FB69e32Ec3CC343DA98CFb";
-    inline constexpr std::string_view ETHEREUM_POOL_CONTRACT = "0x7F5D426c9011Df7a98dF3Ef95C9B0dfD2bD4C191";
+    inline constexpr std::string_view ETHEREUM_REWARDS_CONTRACT = "0xC75A34c31C2b8780a20AfCD75473Ac0Ad82352B6";
+    inline constexpr std::string_view ETHEREUM_POOL_CONTRACT = "0x821340A591C10492d7F494285BABFcc2645396a3";
 
 
     namespace testnet {
