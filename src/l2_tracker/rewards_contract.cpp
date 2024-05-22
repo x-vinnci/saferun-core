@@ -187,11 +187,11 @@ std::vector<std::string> RewardsContract::getAllBLSPubkeys(uint64_t blockNumber)
 
 ContractServiceNode RewardsContract::serviceNodes(uint64_t index, std::string_view blockNumber)
 {
-    ReadCallData callData            = {};
+    ethyl::ReadCallData callData     = {};
     std::string  indexABI            = utils::padTo32Bytes(utils::decimalToHex(index), utils::PaddingDirection::LEFT);
     callData.contractAddress         = contractAddress;
     callData.data                    = utils::getFunctionSignature("serviceNodes(uint64)") + indexABI;
-    nlohmann::json     callResult    = provider->callReadFunctionJSON(callData, blockNumber);
+    nlohmann::json     callResult    = provider.callReadFunctionJSON(callData, blockNumber);
     const std::string& callResultHex = callResult.get_ref<nlohmann::json::string_t&>();
     std::string_view   callResultIt  = utils::trimPrefix(callResultHex, "0x");
 
