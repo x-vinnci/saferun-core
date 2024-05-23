@@ -181,7 +181,7 @@ void BlockchainSQLite::upgrade_schema() {
             "SELECT COUNT(*) FROM sqlite_master WHERE type='table' AND "
             "name='eth_mapping';");
     if (eth_mapping_table_count == 0) {
-        log::info(logcat, "Adding eth mapping table to batching db");
+        log::info(logcat, "Adding eth mapping table and delayed payments table to batching db");
         SQLite::Transaction transaction{db, SQLite::TransactionBehavior::IMMEDIATE};
         db.exec(R"(
         CREATE TABLE eth_mapping(
@@ -194,6 +194,27 @@ void BlockchainSQLite::upgrade_schema() {
 
         CREATE INDEX eth_mapping_eth_address_idx ON eth_mapping(eth_address);
         )");
+
+        db.exec(R"(
+        CREATE TABLE delayed_payments(
+          eth_address VARCHAR NOT NULL,
+          amount BIGINT NOT NULL,
+          payout_height BIGINT NOT NULL,
+          entry_height BIGINT NOT NULL,
+          PRIMARY KEY (eth_address, payout_height)
+          CHECK(amount >= 0),
+          CHECK(payout_height > 0),
+          CHECK(entry_height >= 0)
+        );
+
+        CREATE INDEX delayed_payments_payout_height_idx ON delayed_payments(payout_height);
+
+        CREATE TRIGGER delayed_payments_prune AFTER UPDATE ON batch_db_info
+        FOR EACH ROW BEGIN
+            DELETE FROM delayed_payments WHERE payout_height < (NEW.height - 10000);
+        END;
+        )");
+        transaction.commit();
     }
 
     const auto archive_table_count = prepared_get<int64_t>(
@@ -643,6 +664,22 @@ bool BlockchainSQLite::add_block(
             return false;
         }
 
+        // Process delayed payments due at this block height
+        auto delayed_payments_st = prepared_results<std::string_view, int64_t>(
+                "SELECT eth_address, amount FROM delayed_payments WHERE payout_height = ?",
+                static_cast<int64_t>(block_height));
+        std::vector<cryptonote::batch_sn_payment> delayed_payments;
+        for (auto [eth_address_str, amount] : delayed_payments_st) {
+            crypto::eth_address eth_address;
+            tools::hex_to_type(eth_address_str.substr(2), eth_address);
+            delayed_payments.emplace_back(eth_address, amount);
+        }
+
+        // Add delayed payments to accrued payments
+        if (!delayed_payments.empty()) {
+            add_sn_rewards(delayed_payments);
+        }
+
         if (!reward_handler(block, service_nodes_state, /*add=*/true))
             return false;
 
@@ -651,30 +688,6 @@ bool BlockchainSQLite::add_block(
         transaction.commit();
     } catch (std::exception& e) {
         log::error(logcat, "Error adding reward payments: {}", e.what());
-        return false;
-    }
-    return true;
-}
-
-bool BlockchainSQLite::return_staked_amount_to_user(
-        const crypto::eth_address& eth_address, const uint64_t amount) {
-    log::trace(logcat, "BlockchainDB_SQLITE::{} called", __func__);
-
-    std::vector<cryptonote::batch_sn_payment> payments;
-
-    try {
-        SQLite::Transaction transaction{db, SQLite::TransactionBehavior::IMMEDIATE};
-
-        std::lock_guard a_s_lock{address_str_cache_mutex};
-
-        payments.emplace_back(eth_address, amount);
-
-        if (!add_sn_rewards(payments))
-            return false;
-
-        transaction.commit();
-    } catch (std::exception& e) {
-        log::error(logcat, "Error returning stakes: {}", e.what());
         return false;
     }
     return true;
@@ -704,6 +717,22 @@ bool BlockchainSQLite::pop_block(
     try {
         SQLite::Transaction transaction{db, SQLite::TransactionBehavior::IMMEDIATE};
 
+        // Process delayed payments due at this block height
+        auto delayed_payments_st = prepared_results<std::string_view, int64_t>(
+                "SELECT eth_address, amount FROM delayed_payments WHERE payout_height = ?",
+                static_cast<int64_t>(block_height));
+        std::vector<cryptonote::batch_sn_payment> delayed_payments;
+        for (auto [eth_address_str, amount] : delayed_payments_st) {
+            crypto::eth_address eth_address;
+            tools::hex_to_type(eth_address_str.substr(2), eth_address);
+            delayed_payments.emplace_back(eth_address, amount);
+        }
+
+        // Subtract delayed payments from accrued payments
+        if (!delayed_payments.empty()) {
+            subtract_sn_rewards(delayed_payments);
+        }
+
         if (!reward_handler(block, service_nodes_state, /*add=*/false))
             return false;
 
@@ -714,6 +743,42 @@ bool BlockchainSQLite::pop_block(
         transaction.commit();
     } catch (std::exception& e) {
         log::error(logcat, "Error subtracting reward payments: {}", e.what());
+        return false;
+    }
+    return true;
+}
+
+bool BlockchainSQLite::return_staked_amount_to_user(const std::vector<cryptonote::batch_sn_payment>& payments, uint64_t delay_blocks) {
+    log::trace(logcat, "BlockchainDB_SQLITE::{} called", __func__);
+
+    try {
+        SQLite::Transaction transaction{db, SQLite::TransactionBehavior::IMMEDIATE};
+
+        // Basic checks can be done here
+        // if (amount > max_staked_amount)
+        // throw std::logic_error{"Invalid payment: staked returned is too large"};
+            
+        std::lock_guard<std::mutex> a_s_lock{address_str_cache_mutex};
+
+        int64_t payout_height = height + (delay_blocks > 0 ? delay_blocks : 1);
+        auto insert_payment = prepared_st(
+            "INSERT INTO delayed_payments (eth_address, amount, payout_height, entry_height) VALUES (?, ?, ?, ?)");
+
+        for (auto& payment : payments) {
+            auto amt = static_cast<int64_t>(payment.amount);
+            const auto address_str = get_address_str(payment);
+            log::trace(
+                    logcat,
+                    "Adding delayed payment for SN reward contributor {} to database with amount {}",
+                    address_str,
+                    amt);
+            db::exec_query(insert_payment, address_str, amt, payout_height, static_cast<int64_t>(height));
+            insert_payment->reset();
+        }
+
+        transaction.commit();
+    } catch (std::exception& e) {
+        log::error(logcat, "Error returning stakes: {}", e.what());
         return false;
     }
     return true;
