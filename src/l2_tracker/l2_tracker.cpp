@@ -91,7 +91,7 @@ void L2Tracker::update_state() {
 
 static constexpr inline std::string_view NO_PROVIDER_CLIENTS_ERROR = "L2 tracker does not have any RPC servers configured for the Ethereum provider. Ensure that `--ethereum_provider` is set to an Ethereum RPC endpoint.";
 std::pair<uint64_t, crypto::hash> L2Tracker::latest_state() {
-    if (!provider.clients.empty()) {
+    if (provider.clients.empty()) {
         oxen::log::error(logcat, NO_PROVIDER_CLIENTS_ERROR);
         throw std::runtime_error(std::string(NO_PROVIDER_CLIENTS_ERROR));
     }
