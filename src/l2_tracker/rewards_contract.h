@@ -19,6 +19,7 @@ struct Contributor {
     crypto::eth_address addr;
     uint64_t amount;
 
+    Contributor() = default;
     Contributor(const crypto::eth_address& address, uint64_t amt) : addr(address), amount(amt) {}
 };
 
@@ -92,12 +93,15 @@ struct StateResponse {
 };
 
 struct ContractServiceNode {
-    uint64_t                      next;
-    uint64_t                      prev;
-    std::array<unsigned char, 20> recipient;
-    std::string                   pubkey;
-    uint64_t                      leaveRequestTimestamp;
-    std::string                   deposit;
+    bool good;
+    uint64_t next;
+    uint64_t prev;
+    crypto::eth_address operatorAddr;
+    std::string pubkey;
+    uint64_t leaveRequestTimestamp;
+    uint64_t deposit;
+    std::array<Contributor, 10> contributors;
+    size_t contributorsSize;
 };
 
 class RewardsContract {

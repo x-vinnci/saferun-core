@@ -229,17 +229,58 @@ ContractServiceNode RewardsContract::serviceNodes(uint64_t index, std::string_vi
         size_t contributorCount = utils::fromHexStringToUint64(contributorSize);
         size_t expectedContributorDataRemaining = contributorCount * HEX_PER_CONTRIBUTOR;
 
+        if (contributorCount > result.contributors.max_size()) {
+            oxen::log::error(
+                    logcat,
+                    "The number of contributors ({}) in the service node blob exceeded the "
+                    "available storage ({}) for service node {} with BLS public key {} at height "
+                    "{}. The service node blob was \n{}",
+                    contributorCount,
+                    result.contributors.max_size(),
+                    index,
+                    pubkeyHex,
+                    blockNumber,
+                    callResultHex);
+            return result;
+        }
+
         if (contributorDataRemaining.size() != expectedContributorDataRemaining) {
             oxen::log::error(
                     logcat,
                     "The contributor payload in the unpacked service node ABI blob does not have "
-                    "the correct amount of bytes. We parsed {} bytes but the payload had {} bytes. "
+                    "the correct amount of bytes. We parsed {} bytes but the payload had {} bytes "
+                    "for service node {} with BLS public key {} at height {}."
                     "The payload was\n{}\n\nThe service node payload was \n{}",
                     contributorDataRemaining.size() / 2,
                     expectedContributorDataRemaining / 2,
+                    index,
+                    pubkeyHex,
+                    blockNumber,
                     contributorDataRemaining,
                     callResultHex);
             return result;
+        }
+
+        for (size_t it = 0; it < contributorDataRemaining.size(); it += HEX_PER_CONTRIBUTOR) {
+            std::string_view addressHex      = tools::string_safe_substr(contributorDataRemaining, it + 0,                ADDRESS_HEX_SIZE);
+            std::string_view stakedAmountHex = tools::string_safe_substr(contributorDataRemaining, it + ADDRESS_HEX_SIZE, U256_HEX_SIZE);
+
+            Contributor& contributor = result.contributors[result.contributorsSize++];
+            if (!tools::hex_to_type(addressHex, contributor.addr)) {
+                oxen::log::error(
+                        logcat,
+                        "Contributor address hex '{}' ({} bytes) failed to be parsed into address "
+                        "({} bytes) for service node {} with BLS public key {} at height {}.",
+                        addressHex,
+                        addressHex.size(),
+                        contributor.addr.data_.max_size(),
+                        index,
+                        pubkeyHex,
+                        blockNumber);
+                return result;
+            }
+
+            contributor.amount = utils::fromHexStringToUint64(stakedAmountHex);
         }
     }
 
@@ -250,14 +291,15 @@ ContractServiceNode RewardsContract::serviceNodes(uint64_t index, std::string_vi
     // NOTE: Deserialise recipient
     const size_t ETH_ADDRESS_HEX_SIZE = 20 * 2;
     std::vector<unsigned char> recipientBytes = utils::fromHexString(operatorHex.substr(operatorHex.size() - ETH_ADDRESS_HEX_SIZE, ETH_ADDRESS_HEX_SIZE));
-    assert(recipientBytes.size() == result.recipient.max_size());
-    std::memcpy(result.recipient.data(), recipientBytes.data(), recipientBytes.size());
+    assert(recipientBytes.size() == result.operatorAddr.data_.max_size());
+    std::memcpy(result.operatorAddr.data(), recipientBytes.data(), recipientBytes.size());
 
     result.pubkey = std::string(pubkeyHex);
 
     // NOTE: Deserialise metadata
     result.leaveRequestTimestamp = utils::fromHexStringToUint64(leaveRequestTimestampHex);
-    result.deposit               = depositHex;
+    result.deposit = utils::fromHexStringToUint64(depositHex);
+    result.good = true;
     return result;
 }
 
