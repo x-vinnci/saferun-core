@@ -7,6 +7,7 @@
 #include <nlohmann/json.hpp>
 #pragma GCC diagnostic pop
 
+#include <common/string_util.h>
 #include "logging/oxen_logger.h"
 
 static auto logcat = oxen::log::Cat("l2_tracker");
@@ -185,17 +186,6 @@ std::vector<std::string> RewardsContract::getAllBLSPubkeys(uint64_t blockNumber)
     return blsPublicKeys;
 }
 
-static std::string_view string_safe_substr(std::string_view src, size_t pos, size_t size) {
-    std::string_view result = std::string_view(src.end(), 0);
-    if (pos < src.size()) {
-        result = src.substr(pos, size);
-    }
-    return result;
-}
-
-#define OXEN_CHECK_ERROR(expr, logcat, ...) \
-    ((expr) ? true : (oxen::log::error(logcat, "Check failed '" #expr "'. ", ## __VA_ARGS__), false))
-
 ContractServiceNode RewardsContract::serviceNodes(uint64_t index, std::string_view blockNumber)
 {
     ethyl::ReadCallData callData     = {};
@@ -213,24 +203,24 @@ ContractServiceNode RewardsContract::serviceNodes(uint64_t index, std::string_vi
 
     ContractServiceNode result                   = {};
     size_t              walkIt                   = 0;
-    std::string_view    totalSize                = string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += totalSize.size();
-    std::string_view    nextHex                  = string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += nextHex.size();
-    std::string_view    prevHex                  = string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += prevHex.size();
-    std::string_view    operatorHex              = string_safe_substr(callResultIt, walkIt, ADDRESS_HEX_SIZE);             walkIt += operatorHex.size();
-    std::string_view    pubkeyHex                = string_safe_substr(callResultIt, walkIt, BLS_PKEY_HEX_SIZE);            walkIt += pubkeyHex.size();
-    std::string_view    leaveRequestTimestampHex = string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += leaveRequestTimestampHex.size();
-    std::string_view    depositHex               = string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += depositHex.size();
-    std::string_view    contributorSize          = string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += contributorSize.size();
-    std::string_view    contributorDataRemaining = string_safe_substr(callResultIt, walkIt, callResultIt.size() - walkIt); walkIt += contributorDataRemaining.size();
+    std::string_view    totalSize                = tools::string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += totalSize.size();
+    std::string_view    nextHex                  = tools::string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += nextHex.size();
+    std::string_view    prevHex                  = tools::string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += prevHex.size();
+    std::string_view    operatorHex              = tools::string_safe_substr(callResultIt, walkIt, ADDRESS_HEX_SIZE);             walkIt += operatorHex.size();
+    std::string_view    pubkeyHex                = tools::string_safe_substr(callResultIt, walkIt, BLS_PKEY_HEX_SIZE);            walkIt += pubkeyHex.size();
+    std::string_view    leaveRequestTimestampHex = tools::string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += leaveRequestTimestampHex.size();
+    std::string_view    depositHex               = tools::string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += depositHex.size();
+    std::string_view    contributorSize          = tools::string_safe_substr(callResultIt, walkIt, U256_HEX_SIZE);                walkIt += contributorSize.size();
+    std::string_view    contributorDataRemaining = tools::string_safe_substr(callResultIt, walkIt, callResultIt.size() - walkIt); walkIt += contributorDataRemaining.size();
 
-    if (!OXEN_CHECK_ERROR(
-                walkIt == callResultIt.size(),
+    if (walkIt != callResultIt.size()) {
+        oxen::log::error(
                 logcat,
                 "Deserializing error when attempting to unpack service node ABI blob from rewards "
                 "contract. We parsed {} bytes but the payload had {} bytes. The payload was\n{}",
                 walkIt,
                 callResultIt.size(),
-                callResultHex)) {
+                callResultHex);
         return result;
     }
 
@@ -239,8 +229,8 @@ ContractServiceNode RewardsContract::serviceNodes(uint64_t index, std::string_vi
         size_t contributorCount = utils::fromHexStringToUint64(contributorSize);
         size_t expectedContributorDataRemaining = contributorCount * HEX_PER_CONTRIBUTOR;
 
-        if (!OXEN_CHECK_ERROR(
-                    contributorDataRemaining.size() == expectedContributorDataRemaining,
+        if (contributorDataRemaining.size() != expectedContributorDataRemaining) {
+            oxen::log::error(
                     logcat,
                     "The contributor payload in the unpacked service node ABI blob does not have "
                     "the correct amount of bytes. We parsed {} bytes but the payload had {} bytes. "
@@ -248,7 +238,7 @@ ContractServiceNode RewardsContract::serviceNodes(uint64_t index, std::string_vi
                     contributorDataRemaining.size() / 2,
                     expectedContributorDataRemaining / 2,
                     contributorDataRemaining,
-                    callResultHex)) {
+                    callResultHex);
             return result;
         }
     }
