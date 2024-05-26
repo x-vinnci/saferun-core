@@ -125,6 +125,30 @@ struct extra_printer {
         return "SN state change: {} for block height {}, SN index {}"_format(
                 type, x.block_height, x.service_node_index);
     }
+    std::string operator()(const tx_extra_ethereum_address_notification& x) {
+        return "Ethereum Address Notification: version {}, eth address {}, oxen address {}, signature {}"_format(
+            x.version, tools::type_to_hex(x.eth_address), x.oxen_address, tools::type_to_hex(x.signature));
+    }
+    std::string operator()(const tx_extra_ethereum_new_service_node& x) {
+        std::string contributors_info;
+        for (const auto& contributor : x.contributors) {
+            contributors_info += fmt::format("{{address: {}, amount: {}}}, ", tools::type_to_hex(contributor.address), print_money(contributor.amount));
+        }
+        return "New Ethereum Service Node: version {}, bls key {}, eth address {}, sn pubkey {}, fee {}, contributors [{}] signature {}"_format(
+            x.version, tools::type_to_hex(x.bls_key), tools::type_to_hex(x.eth_address), tools::type_to_hex(x.service_node_pubkey), print_money(x.fee), contributors_info, tools::type_to_hex(x.signature));
+    }
+    std::string operator()(const tx_extra_ethereum_service_node_leave_request& x) {
+        return "Ethereum Service Node Leave Request: version {}, bls key {}"_format(
+            x.version, tools::type_to_hex(x.bls_key));
+    }
+    std::string operator()(const tx_extra_ethereum_service_node_exit& x) {
+        return "Ethereum Service Node Exit: version {}, eth address {}, amount {}, bls key {}"_format(
+            x.version, tools::type_to_hex(x.eth_address), print_money(x.amount), tools::type_to_hex(x.bls_key));
+    }
+    std::string operator()(const tx_extra_ethereum_service_node_deregister& x) {
+        return "Ethereum Service Node Deregister: version {}, bls key {}"_format(
+            x.version, tools::type_to_hex(x.bls_key));
+    }
 };
 
 static void print_extra_fields(const std::vector<cryptonote::tx_extra_field>& fields) {
