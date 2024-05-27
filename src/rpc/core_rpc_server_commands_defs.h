@@ -2392,8 +2392,7 @@ struct BLS_PUBKEYS : PUBLIC, NO_ARGS {
 /// - `service_node_pubkey` -- The oxen nodes service node pubkey
 /// - `service_node_signature` -- A signature over the registration parameters
 ///
-/// TODO sean - This should not be public
-struct BLS_REGISTRATION : PUBLIC {
+struct BLS_REGISTRATION : RPC_COMMAND {
     static constexpr auto names() { return NAMES("bls_registration_request"); }
 
     struct request_parameters {

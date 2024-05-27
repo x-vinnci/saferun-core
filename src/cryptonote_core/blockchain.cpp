@@ -1583,8 +1583,10 @@ bool Blockchain::validate_miner_transaction(
         base_reward = money_in_use - reward_parts.miner_fee;
     }
 
-    // TODO sean check here that L2 height is reasonable (doesnt go backwards, isn't in future
-    // assuming eth blocks issued once every 6 seconds)
+    if (version >= cryptonote::feature::ETH_BLS && b.l2_height <= m_l2_tracker->get_last_l2_height()) {
+        log::error(logcat, "block l2 height needs to be above the last blocks l2 height");
+        return false;
+    }
 
     if (version <= hf::hf19_reward_batching) {
         if (b.reward >

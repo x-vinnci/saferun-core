@@ -85,6 +85,7 @@ class L2Tracker {
 
     std::pair<uint64_t, crypto::hash> latest_state();
     std::vector<TransactionStateChangeVariant> get_block_transactions();
+    uint64_t get_last_l2_height();
 
     uint64_t get_pool_block_reward(uint64_t timestamp, uint64_t ethereum_block_height);
     std::vector<uint64_t> get_non_signers(const std::vector<std::string>& bls_public_keys);

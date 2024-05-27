@@ -2374,9 +2374,6 @@ bool service_node_list::process_ethereum_address_notification_transactions(const
                 continue;
             service_node_info& new_info = duplicate_info(active_service_node->second);
             for (service_node_info::contributor_t& contributor : new_info.contributors) {
-                // TODO sean does this test for equality work on an account_public_address, looks
-                // like it does have the equality operator
-                //  but will it check correctly
                 if (contributor.address == addr_info.address)
                     contributor.ethereum_address = entry.eth_address;
             }
