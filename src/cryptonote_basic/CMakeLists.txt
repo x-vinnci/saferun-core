@@ -45,3 +45,6 @@ target_link_libraries(cryptonote_basic
     Boost::serialization
     logging
     extra)
+
+option(USE_LOCAL_DEVNET_ETH_ADDRESSES "Use hardcoded addresses for our Ethereum contracts as if they were deployed on a local-devnet" OFF)
+target_compile_definitions(cryptonote_basic PUBLIC OXEN_USE_LOCAL_DEVNET_ETH_ADDRESSES)
