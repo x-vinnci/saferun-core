@@ -206,6 +206,10 @@ std::vector<TransactionStateChangeVariant> L2Tracker::get_block_transactions() {
     return all_transactions;
 }
 
+uint64_t L2Tracker::get_last_l2_height() {
+    return oxen_to_ethereum_block_heights[latest_oxen_block];
+}
+
 void L2Tracker::record_block_height_mapping(
         uint64_t oxen_block_height, uint64_t ethereum_block_height) {
     std::lock_guard lock{mutex};
