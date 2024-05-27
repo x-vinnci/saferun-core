@@ -207,7 +207,11 @@ std::vector<TransactionStateChangeVariant> L2Tracker::get_block_transactions() {
 }
 
 uint64_t L2Tracker::get_last_l2_height() {
-    return oxen_to_ethereum_block_heights[latest_oxen_block];
+    uint64_t last_height = 0;
+    if (oxen_to_ethereum_block_heights.find(latest_oxen_block) != oxen_to_ethereum_block_heights.end()) {
+        last_height = oxen_to_ethereum_block_heights[latest_oxen_block];
+    }
+    return last_height;
 }
 
 void L2Tracker::record_block_height_mapping(
