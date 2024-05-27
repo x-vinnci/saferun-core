@@ -59,7 +59,7 @@ class L2Tracker {
     std::vector<State> state_history;
     std::unordered_map<uint64_t, uint64_t>
             oxen_to_ethereum_block_heights;  // Maps Oxen block height to Ethereum block height
-    uint64_t latest_oxen_block;
+    uint64_t latest_oxen_block = 0;
     std::atomic<bool> stop_thread;
     std::thread update_thread;
 
