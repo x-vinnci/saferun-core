@@ -665,10 +665,6 @@ bool BlockchainSQLite::return_staked_amount_to_user(
     try {
         SQLite::Transaction transaction{db, SQLite::TransactionBehavior::IMMEDIATE};
 
-        // TODO sean basic checks here
-        // if (amount > max_staked amount)
-        // throw std::logic_error{"Invalid payment: staked returned is too large"};
-
         std::lock_guard a_s_lock{address_str_cache_mutex};
 
         payments.emplace_back(eth_address, amount);

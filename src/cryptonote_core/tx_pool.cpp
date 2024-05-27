@@ -239,15 +239,14 @@ bool tx_memory_pool::have_duplicated_non_standard_tx(
         }
     } else if (tx.type == txtype::ethereum_new_service_node) {
         cryptonote::tx_extra_ethereum_new_service_node data = {};
-        // TODO sean bring this check back in
-        // if (!cryptonote::get_field_from_tx_extra(tx.extra, data)) {
-        // log::error(
-        // logcat,
-        //"Could not get ethereum new service node data from tx: {}, tx to add is possibly "
-        //"invalid, rejecting",
-        // get_transaction_hash(tx));
-        // return true;
-        //}
+        if (!cryptonote::get_field_from_tx_extra(tx.extra, data)) {
+            log::error(
+                logcat,
+                "Could not get ethereum new service node data from tx: {}, tx to add is possibly "
+                "invalid, rejecting",
+                get_transaction_hash(tx));
+            return true;
+        }
     } else if (tx.type == txtype::ethereum_service_node_leave_request) {
         cryptonote::tx_extra_ethereum_service_node_leave_request data = {};
         if (!cryptonote::get_field_from_tx_extra(tx.extra, data)) {
@@ -1773,8 +1772,6 @@ bool tx_memory_pool::is_transaction_ready_to_go(
             }
         }
     }
-    // TODO sean make sure the ethereum transactions are ready to go into the block
-
     // if we here, transaction seems valid, but, anyway, check for key_images collisions with
     // blockchain, just to be sure
     if (m_blockchain.have_tx_keyimges_as_spent(lazy_tx())) {

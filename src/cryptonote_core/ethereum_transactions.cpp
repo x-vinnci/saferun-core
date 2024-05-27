@@ -5,8 +5,6 @@
 using cryptonote::hf;
 
 #include "logging/oxen_logger.h"
-// TODO sean delete sstream
-#include <sstream>
 
 static auto logcat = oxen::log::Cat("l2_tracker");
 
@@ -97,11 +95,6 @@ bool validate_ethereum_new_service_node_tx(
             return false;
     }
 
-    {
-        // TODO sean: Add specific validation logic for BLS Key, Ethereum Address, and Service Node
-        // Public Key contributor.amount sums to required staking amount
-    }
-
     return true;
 }
 
@@ -127,10 +120,6 @@ bool validate_ethereum_service_node_leave_request_tx(
                     "{} didn't have ethereum service node leave request data in the tx_extra",
                     tx))
             return false;
-    }
-
-    {
-        // TODO sean: Add specific validation logic for BLS Key
     }
 
     return true;
@@ -160,10 +149,6 @@ bool validate_ethereum_service_node_exit_tx(
             return false;
     }
 
-    {
-        // TODO sean: Add specific validation logic for Eth address, Amount and BLS Key
-    }
-
     return true;
 }
 
@@ -189,10 +174,6 @@ bool validate_ethereum_service_node_deregister_tx(
                     "{} didn't have ethereum service node deregister data in the tx_extra",
                     tx))
             return false;
-    }
-
-    {
-        // TODO sean: Add specific validation logic for BLS Key and Refund Stake Flag
     }
 
     return true;
