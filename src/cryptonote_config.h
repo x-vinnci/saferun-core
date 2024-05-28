@@ -38,7 +38,6 @@
 #include <filesystem>
 #include <ratio>
 #include <stdexcept>
-#include <string>
 #include <string_view>
 
 using namespace std::literals;
@@ -508,6 +507,36 @@ namespace config {
         };
 
         inline constexpr auto UPTIME_PROOF_STARTUP_DELAY = 5s;
+
+#if defined(OXEN_USE_LOCAL_DEVNET_ETH_ADDRESSES)
+        // NOTE: A local-devnet involves launching typically a local Ethereum
+        // blockchain via Hardhat, Ganache or Foundry's Anvil for example.
+        // These use local-developer wallets which deploy our rewards contract
+        // to a deterministic address different from those deployed on a
+        // live-devnet (because the wallets may be live-wallets that produce
+        // different contract addresses).
+        //
+        // These addresses below are the current up-to-date contract addresses
+        // that would be used if deployed on a local-devnet and can be enabled
+        // by defining the macro accordingly.
+        //
+        // A local-devnet can be deployed by running
+        // `utils/local-devnet/service_node_network.py`
+        //
+        // TODO: This is probably best done with a `private_devnet`
+        // configuration type.
+
+        inline constexpr uint32_t ETHEREUM_CHAIN_ID = 31337;
+        inline constexpr std::string_view ETHEREUM_REWARDS_CONTRACT =
+                "0x5FC8d32690cc91D4c39d9d3abcBD16989F875707";
+        inline constexpr std::string_view ETHEREUM_POOL_CONTRACT =
+                "0x9fE46736679d2D9a65F0992F2272dE9f3c7fa6e0";
+#else
+        inline constexpr uint32_t ETHEREUM_CHAIN_ID = config::ETHEREUM_CHAIN_ID;
+        inline constexpr std::string_view ETHEREUM_REWARDS_CONTRACT =
+                config::ETHEREUM_REWARDS_CONTRACT;
+        inline constexpr std::string_view ETHEREUM_POOL_CONTRACT = config::ETHEREUM_POOL_CONTRACT;
+#endif
     }  // namespace devnet
 
     namespace fakechain {
@@ -653,9 +682,9 @@ inline constexpr network_config devnet_config{
         config::testnet::SERVICE_NODE_PAYABLE_AFTER_BLOCKS,
         config::HARDFORK_DEREGISTRATION_GRACE_PERIOD,
         config::STORE_LONG_TERM_STATE_INTERVAL,
-        config::ETHEREUM_CHAIN_ID,
-        config::ETHEREUM_REWARDS_CONTRACT,
-        config::ETHEREUM_POOL_CONTRACT,
+        config::devnet::ETHEREUM_CHAIN_ID,
+        config::devnet::ETHEREUM_REWARDS_CONTRACT,
+        config::devnet::ETHEREUM_POOL_CONTRACT,
 };
 inline constexpr network_config fakenet_config{
         network_type::FAKECHAIN,
