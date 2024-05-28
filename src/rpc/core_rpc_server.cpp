@@ -2674,6 +2674,7 @@ void core_rpc_server::fill_sn_response_entry(
     json_binary_proxy binary{entry, binary_format};
 
     const auto& info = *sn_info.info;
+    const std::string bls_pubkey = info.bls_public_key ? tools::type_to_hex(info.bls_public_key) : "";
     set_if_requested(reqed, binary, "service_node_pubkey", sn_info.pubkey);
     set_if_requested(
             reqed,
@@ -2716,7 +2717,11 @@ void core_rpc_server::fill_sn_response_entry(
             "swarm",
             "{:x}"_format(info.swarm_id),
             "bls_key",
-            info.bls_public_key ? tools::type_to_hex(info.bls_public_key) : "",
+            bls_pubkey,
+            "is_removable",
+            m_core.is_node_removable(bls_pubkey),
+            "is_liquidatable",
+            m_core.is_node_liquidatable(bls_pubkey),
             "registration_hf_version",
             info.registration_hf_version);
 
