@@ -1255,11 +1255,15 @@ std::vector<std::string> core::get_removable_nodes()
 }
 
 bool core::is_node_removable(std::string_view node_bls_pubkey) {
+    if (node_bls_pubkey == "")
+        return false;
     std::vector<std::string> removable_nodes = get_removable_nodes();
     return std::find(removable_nodes.begin(), removable_nodes.end(), node_bls_pubkey) != removable_nodes.end();
 }
 
 bool core::is_node_liquidatable(std::string_view node_bls_pubkey) {
+    if (node_bls_pubkey == "")
+        return false;
     return is_node_removable(node_bls_pubkey) and not m_service_node_list.is_recently_expired(node_bls_pubkey);
 }
 
