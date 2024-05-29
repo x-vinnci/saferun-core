@@ -1584,7 +1584,7 @@ bool Blockchain::validate_miner_transaction(
     }
 
     if (version >= cryptonote::feature::ETH_BLS && b.l2_height < m_l2_tracker->get_last_l2_height()) {
-        log::error(logcat, "block l2 height needs to be above the last blocks l2 height");
+        log::error(logcat, "block l2 height needs to be above the last blocks l2 height, l2_height: {} last_height: {}", b.l2_height, m_l2_tracker->get_last_l2_height());
         return false;
     }
 
@@ -5376,7 +5376,8 @@ bool Blockchain::handle_block_to_main_chain(
             throw std::logic_error("Blockchain missing SQLite Database");
     }
 
-    m_l2_tracker->record_block_height_mapping(bl.height, bl.l2_height);
+    if (hf_version >= cryptonote::feature::ETH_BLS)
+        m_l2_tracker->record_block_height_mapping(bl.height, bl.l2_height);
     block_add_info hook_data{bl, only_txs, checkpoint};
     for (const auto& hook : m_block_add_hooks) {
         try {
