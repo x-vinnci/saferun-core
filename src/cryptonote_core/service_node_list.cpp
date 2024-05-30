@@ -1113,8 +1113,25 @@ bool service_node_list::state_t::process_ethereum_exit_tx(
         return false;
     }
 
-    return sn_list->m_blockchain.sqlite_db()->return_staked_amount_to_user(
-            exit_data.eth_address, exit_data.amount);
+    uint64_t block_delay = 0;
+    uint64_t stake_reduction = 0;
+    uint64_t staking_requirement = get_staking_requirement(nettype, block_height);
+    if (exit_data.amount < staking_requirement) {
+        block_delay = staking_num_lock_blocks(nettype);
+        stake_reduction = staking_requirement - exit_data.amount;
+    }
+    auto node = std::find_if(service_nodes_infos.begin(), service_nodes_infos.end(),
+        [&exit_data](const auto& pair) {
+            const auto& [key, info] = pair;
+            return info->bls_public_key == exit_data.bls_key;
+        });
+    std::vector<cryptonote::batch_sn_payment> returned_stakes;
+    for (const auto& contributor : node->second->contributors)
+        returned_stakes.emplace_back(contributor.ethereum_address, contributor.amount);
+
+    returned_stakes[0].amount -= stake_reduction;
+
+    return sn_list->m_blockchain.sqlite_db()->return_staked_amount_to_user(returned_stakes, block_delay);
 }
 
 bool service_node_list::state_t::process_key_image_unlock_tx(
