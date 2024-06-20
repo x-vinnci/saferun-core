@@ -89,7 +89,7 @@ namespace cryptonote {
   {
     uint64_t emission_supply_component = (already_generated_coins * oxen::EMISSION_SUPPLY_MULTIPLIER) / oxen::EMISSION_SUPPLY_DIVISOR;
     uint64_t result = (oxen::EMISSION_LINEAR_BASE - emission_supply_component) / oxen::EMISSION_DIVISOR;
-
+    MINFO("v7 emission_supply_component="<<emission_supply_component<<",result="<<result);
     // Check if we just overflowed
     if (emission_supply_component > oxen::EMISSION_LINEAR_BASE)
       result = 0;
@@ -108,7 +108,7 @@ namespace cryptonote {
     //premine reward
     if (already_generated_coins == 0)
     {
-      reward = 22'500'000 * oxen::COIN;
+      reward = 210'000'000 * oxen::COIN;
       return true;
     }
 
@@ -119,7 +119,7 @@ namespace cryptonote {
       version >= hf::hf15_ons ? oxen::BLOCK_REWARD_HF15 :
       version >= hf::hf8  ? block_reward_unpenalized_formula_v8(height) :
         block_reward_unpenalized_formula_v7(already_generated_coins, height);
-
+    MINFO("base_reward = "<<base_reward<<",median_weight="<<median_weight<<",current_block_weight="<<current_block_weight<<",already_generated_coins="<<already_generated_coins<<",height="<<height);
     uint64_t full_reward_zone = get_min_block_weight(version);
 
     //make it soft

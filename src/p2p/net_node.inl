@@ -574,23 +574,18 @@ namespace nodetool
     std::set<std::string> full_addrs;
     if (nettype == cryptonote::network_type::TESTNET)
     {
-      full_addrs.insert("144.76.164.202:38156"); // public.loki.foundation
+      full_addrs.insert("testnet-seed1.saferun.io:12011"); 
     }
     else if (nettype == cryptonote::network_type::DEVNET)
     {
-      full_addrs.insert("144.76.164.202:38856");
+      full_addrs.insert("devnet-seed1.saferun.io:13011");
     }
     else if (nettype == cryptonote::network_type::FAKECHAIN)
     {
     }
     else
     {
-      full_addrs.insert("116.203.196.12:22022");  // Hetzner seed node
-      full_addrs.insert("149.56.165.115:22022");  // Jason's seed node
-      full_addrs.insert("199.127.60.6:22022");    // Oxen Foundation server "holstein"
-      full_addrs.insert("23.88.6.250:22022");     // Official Session open group server
-      full_addrs.insert("144.217.243.15:22022");  // OVH(1)
-      full_addrs.insert("51.38.133.145:22022");   // OVH(2)
+      full_addrs.insert("mainnet-seed1.saferun.io:11011");  
     }
     return full_addrs;
   }

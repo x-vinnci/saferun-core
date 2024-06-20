@@ -34,17 +34,17 @@ if (NOT (MINGW OR APPLE OR FREEBSD OR OPENBSD OR DRAGONFLY))
   add_compile_options("${WARNINGS_AS_ERRORS_FLAG}") # applies only to targets that follow
 endif()
 
-set_property(GLOBAL PROPERTY oxen_executable_targets "")
-function (oxen_add_executable target binary)
+set_property(GLOBAL PROPERTY saferun_executable_targets "")
+function (saferun_add_executable target binary)
   add_executable("${target}" ${ARGN})
   target_link_libraries("${target}" PRIVATE extra)
   set_target_properties("${target}" PROPERTIES
     OUTPUT_NAME "${binary}"
     RUNTIME_OUTPUT_DIRECTORY "${CMAKE_BINARY_DIR}/bin")
   install(TARGETS "${target}" DESTINATION bin)
-  get_property(exec_tgt GLOBAL PROPERTY oxen_executable_targets)
+  get_property(exec_tgt GLOBAL PROPERTY saferun_executable_targets)
   list(APPEND exec_tgt "${target}")
-  set_property(GLOBAL PROPERTY oxen_executable_targets "${exec_tgt}")
+  set_property(GLOBAL PROPERTY saferun_executable_targets "${exec_tgt}")
 endfunction ()
 
 add_subdirectory(common)
@@ -90,8 +90,8 @@ add_subdirectory(device)
 add_subdirectory(device_trezor)
 
 
-if(OXEN_VERSIONTAG)
-  set(VERSIONTAG "${OXEN_VERSIONTAG}")
+if(SAFERUN_VERSIONTAG)
+  set(VERSIONTAG "${SAFERUN_VERSIONTAG}")
   configure_file("${CMAKE_CURRENT_SOURCE_DIR}/version.cpp.in" "${CMAKE_CURRENT_BINARY_DIR}/version.cpp")
 else()
   set(GIT_INDEX_FILE "${PROJECT_SOURCE_DIR}/.git/index")
@@ -100,7 +100,7 @@ else()
     message(STATUS "Found Git: ${GIT_EXECUTABLE}")
 
     set(genversion_args "-DGIT=${GIT_EXECUTABLE}")
-    foreach(v oxen_VERSION oxen_VERSION_MAJOR oxen_VERSION_MINOR oxen_VERSION_PATCH OXEN_RELEASE_CODENAME OXEN_RELEASE_SUFFIX)
+    foreach(v saferun_VERSION saferun_VERSION_MAJOR saferun_VERSION_MINOR saferun_VERSION_PATCH SAFERUN_RELEASE_CODENAME SAFERUN_RELEASE_SUFFIX)
       list(APPEND genversion_args "-D${v}=${${v}}")
     endforeach()
 

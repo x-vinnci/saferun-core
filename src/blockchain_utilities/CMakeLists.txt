@@ -38,7 +38,7 @@ target_link_libraries(blockchain_tools_common_libs INTERFACE
     extra)
 
 
-oxen_add_executable(blockchain_import "oxen-blockchain-import"
+saferun_add_executable(blockchain_import "saferun-blockchain-import"
   blockchain_import.cpp
   bootstrap_file.cpp
   blocksdat_file.cpp
@@ -52,7 +52,7 @@ if(ARCH_WIDTH)
   target_compile_definitions(blockchain_import PRIVATE ARCH_WIDTH=${ARCH_WIDTH})
 endif()
 
-oxen_add_executable(blockchain_export "oxen-blockchain-export"
+saferun_add_executable(blockchain_export "saferun-blockchain-export"
   blockchain_export.cpp
   bootstrap_file.cpp
   blocksdat_file.cpp
@@ -60,7 +60,7 @@ oxen_add_executable(blockchain_export "oxen-blockchain-export"
 target_link_libraries(blockchain_export PRIVATE blockchain_tools_common_libs)
 
 
-oxen_add_executable(blockchain_blackball "oxen-blockchain-mark-spent-outputs"
+saferun_add_executable(blockchain_blackball "saferun-blockchain-mark-spent-outputs"
   blockchain_blackball.cpp
   )
 
@@ -70,28 +70,28 @@ target_link_libraries(blockchain_blackball
     wallet)
 
 
-oxen_add_executable(blockchain_usage "oxen-blockchain-usage"
+saferun_add_executable(blockchain_usage "saferun-blockchain-usage"
   blockchain_usage.cpp
   )
 target_link_libraries(blockchain_usage PRIVATE blockchain_tools_common_libs)
 
-oxen_add_executable(blockchain_ancestry "oxen-blockchain-ancestry"
+saferun_add_executable(blockchain_ancestry "saferun-blockchain-ancestry"
   blockchain_ancestry.cpp
   )
 target_link_libraries(blockchain_ancestry PRIVATE blockchain_tools_common_libs)
 
-oxen_add_executable(blockchain_depth "oxen-blockchain-depth"
+saferun_add_executable(blockchain_depth "saferun-blockchain-depth"
   blockchain_depth.cpp
   )
 target_link_libraries(blockchain_depth PRIVATE blockchain_tools_common_libs)
 
-oxen_add_executable(blockchain_stats "oxen-blockchain-stats"
+saferun_add_executable(blockchain_stats "saferun-blockchain-stats"
   blockchain_stats.cpp
   )
 target_link_libraries(blockchain_stats PRIVATE blockchain_tools_common_libs)
 
 # TODO(oxen): Blockchain pruning not supported in Oxen yet
-# oxen_add_executable(blockchain_prune_known_spent_data "oxen-blockchain-prune-known-spent-data"
+# saferun_add_executable(blockchain_prune_known_spent_data "saferun-blockchain-prune-known-spent-data"
 #   blockchain_prune_known_spent_data.cpp
 #   )
 # 
@@ -100,7 +100,7 @@ target_link_libraries(blockchain_stats PRIVATE blockchain_tools_common_libs)
 #     blockchain_tools_common_libs
 #     p2p)
 # 
-# oxen_add_executable(blockchain_prune "oxen-blockchain-prune"
+# saferun_add_executable(blockchain_prune "saferun-blockchain-prune"
 #   blockchain_prune.cpp
 #   )
 # 
@@ -110,8 +110,8 @@ target_link_libraries(blockchain_stats PRIVATE blockchain_tools_common_libs)
 #     p2p)
 
 if (TARGET sodium_vendor OR NOT SODIUM_VERSION VERSION_LESS 1.0.17)
-    oxen_add_executable(sn_key_tool "oxen-sn-keys" sn_key_tool.cpp)
+    saferun_add_executable(sn_key_tool "saferun-sn-keys" sn_key_tool.cpp)
     target_link_libraries(sn_key_tool PRIVATE sodium oxenmq filesystem)
 else()
-    message(STATUS "Not building oxen-sn-keys tool (requires libsodium >= 1.0.17)")
+    message(STATUS "Not building saferun-sn-keys tool (requires libsodium >= 1.0.17)")
 endif()

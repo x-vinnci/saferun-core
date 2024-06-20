@@ -27,7 +27,7 @@
 # STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF
 # THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-oxen_add_executable(cn_deserialize "oxen-utils-deserialize"
+saferun_add_executable(cn_deserialize "oxen-utils-deserialize"
   cn_deserialize.cpp
   )
 
@@ -37,7 +37,7 @@ target_link_libraries(cn_deserialize
     p2p
     extra)
 
-oxen_add_executable(object_sizes "oxen-utils-object-sizes"
+saferun_add_executable(object_sizes "oxen-utils-object-sizes"
   object_sizes.cpp
   )
 
