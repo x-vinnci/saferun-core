@@ -135,7 +135,8 @@ namespace cryptonote
 
   uint64_t governance_reward_formula(hf hf_version, uint64_t base_reward)
   {
-    return hf_version >= hf::hf17         ? oxen::FOUNDATION_REWARD_HF17 :
+    return hf_version >= hf::hf21_saferun ? oxen::FOUNDATION_REWARD_HF21 : 
+           hf_version >= hf::hf17         ? oxen::FOUNDATION_REWARD_HF17 :
            hf_version >= hf::hf16_pulse   ? oxen::FOUNDATION_REWARD_HF15 + oxen::CHAINFLIP_LIQUIDITY_HF16 :
            hf_version >= hf::hf15_ons     ? oxen::FOUNDATION_REWARD_HF15 :
            base_reward / 20;
@@ -201,6 +202,7 @@ namespace cryptonote
   uint64_t service_node_reward_formula(uint64_t base_reward, hf hard_fork_version)
   {
     return
+      hard_fork_version >= hf::hf21_saferun      ? oxen::SN_REWARD_HF21 :
       hard_fork_version >= hf::hf15_ons          ? oxen::SN_REWARD_HF15 :
       hard_fork_version >= hf::hf9_service_nodes ? base_reward / 2 : // 50% of base reward up until HF15's fixed payout
       0;

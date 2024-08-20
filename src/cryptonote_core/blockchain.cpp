@@ -5102,6 +5102,7 @@ bool Blockchain::calc_batched_governance_reward(uint64_t height, uint64_t &rewar
   if (hard_fork_version >= hf::hf15_ons)
   {
     reward = num_blocks * (
+        hard_fork_version >= hf::hf21_saferun ? oxen::FOUNDATION_REWARD_HF21 :
         hard_fork_version >= hf::hf17 ? oxen::FOUNDATION_REWARD_HF17 :
         hard_fork_version >= hf::hf16_pulse ? oxen::FOUNDATION_REWARD_HF15 + oxen::CHAINFLIP_LIQUIDITY_HF16 :
         oxen::FOUNDATION_REWARD_HF15);

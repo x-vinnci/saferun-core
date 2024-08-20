@@ -33,9 +33,14 @@ inline constexpr uint64_t CHAINFLIP_LIQUIDITY_HF16 = BLOCK_REWARD_HF15 * 24 / 10
 inline constexpr uint64_t BLOCK_REWARD_HF17      = 18'333'333'333;
 inline constexpr uint64_t FOUNDATION_REWARD_HF17 =  1'833'333'333;
 
+inline constexpr uint64_t BLOCK_REWARD_HF21      = 21'000'000'000;
+inline constexpr uint64_t SN_REWARD_HF21         = BLOCK_REWARD_HF21 * 90 /100;
+inline constexpr uint64_t FOUNDATION_REWARD_HF21 = BLOCK_REWARD_HF21 * 10 /100;
+
 static_assert(MINER_REWARD_HF15        + SN_REWARD_HF15 + FOUNDATION_REWARD_HF15 == BLOCK_REWARD_HF15);
 static_assert(CHAINFLIP_LIQUIDITY_HF16 + SN_REWARD_HF15 + FOUNDATION_REWARD_HF15 == BLOCK_REWARD_HF16);
 static_assert(                           SN_REWARD_HF15 + FOUNDATION_REWARD_HF17 == BLOCK_REWARD_HF17);
+static_assert(                           SN_REWARD_HF21 + FOUNDATION_REWARD_HF21 == BLOCK_REWARD_HF21);
 
 
 // -------------------------------------------------------------------------------------------------

@@ -115,6 +115,7 @@ namespace cryptonote {
     static_assert((TARGET_BLOCK_TIME % 1min) == 0s, "difficulty targets must be a multiple of a minute");
 
     uint64_t base_reward =
+      version >= hf::hf21_saferun ? oxen::BLOCK_REWARD_HF21 :
       version >= hf::hf17 ? oxen::BLOCK_REWARD_HF17 :
       version >= hf::hf15_ons ? oxen::BLOCK_REWARD_HF15 :
       version >= hf::hf8  ? block_reward_unpenalized_formula_v8(height) :

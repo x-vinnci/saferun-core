@@ -97,7 +97,7 @@ extern "C"
 
 // Uncomment to enable scanning of the genesis block (which is only useful for the actual
 // testnet/devnet governance wallets)
-// #define SCAN_GENESIS_BLOCK
+#define SCAN_GENESIS_BLOCK
 
 using namespace crypto;
 using namespace cryptonote;

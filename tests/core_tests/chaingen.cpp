@@ -1046,6 +1046,8 @@ bool oxen_chain_generator::block_begin(oxen_blockchain_entry &entry, oxen_create
       miner_tx_context.batched_governance = (oxen::FOUNDATION_REWARD_HF15 + oxen::CHAINFLIP_LIQUIDITY_HF16) * num_blocks;
     else if (blk.major_version >= hf::hf17)
       miner_tx_context.batched_governance = oxen::FOUNDATION_REWARD_HF17 * num_blocks;
+    else if (blk.major_version >= hf::hf21_saferun)
+      miner_tx_context.batched_governance = oxen::FOUNDATION_REWARD_HF21 * num_blocks;
     else
     {
       for (int i = (int)get_block_height(params.prev.block), count = 0;
